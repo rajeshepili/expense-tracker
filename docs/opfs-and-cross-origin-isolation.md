@@ -17,10 +17,10 @@ SQLocal runs SQLite compiled to WebAssembly in a **web worker**, then persists t
 
 OPFS + SQLite WASM needs `SharedArrayBuffer`. Browsers only expose that when the document is cross-origin isolated, which requires these response headers:
 
-| Header | Typical value |
-| --- | --- |
-| `Cross-Origin-Embedder-Policy` (COEP) | `require-corp` |
-| `Cross-Origin-Opener-Policy` (COOP) | `same-origin` |
+| Header                                | Typical value                               |
+| ------------------------------------- | ------------------------------------------- |
+| `Cross-Origin-Embedder-Policy` (COEP) | `require-corp`                              |
+| `Cross-Origin-Opener-Policy` (COOP)   | `same-origin`                               |
 | `Cross-Origin-Resource-Policy` (CORP) | `same-origin` (safe for same-origin assets) |
 
 The HTML document alone is not enough. Under COEP, **embedded workers and WASM** must also be allowed — in practice that means the same isolation headers on `/assets/*` (worker JS, `sqlite3.wasm`, etc.).
@@ -34,10 +34,11 @@ typeof SharedArrayBuffer !== 'undefined' // should be true
 
 ## How this repo sets the headers
 
-| Mode | Mechanism |
-| --- | --- |
-| `pnpm dev` | [`sqlocal()` Vite plugin](https://sqlocal.dev/guide/setup) adds COEP/COOP on the dev server |
-| `pnpm build` + `pnpm preview` / production | Nitro plugin [`server/plugins/cross-origin-isolation.ts`](../server/plugins/cross-origin-isolation.ts) stamps COEP/COOP/CORP on **every** response (HTML, JS, workers, WASM) via Nitro’s `response` hook |
+| Mode                                       | Mechanism                                                                                                                                                                                                        |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                                 | [`sqlocal()` Vite plugin](https://sqlocal.dev/guide/setup) adds COEP/COOP on the dev server                                                                                                                      |
+| `pnpm build` + `pnpm preview` / Node hosts | Nitro plugin [`server/plugins/cross-origin-isolation.ts`](../server/plugins/cross-origin-isolation.ts) stamps COEP/COOP/CORP on **every** response (HTML, JS, workers, WASM) via Nitro’s `response` hook         |
+| Vercel (demo / production)                 | [`vercel.json`](../vercel.json) sets COEP/COOP/CORP (plus nosniff, referrer, frame deny, Permissions-Policy) on all paths so CDN/static assets stay isolated even if the Nitro hook does not run for every asset |
 
 `pnpm preview` runs the Nitro Node server (`node .output/server/index.mjs`), not Vite’s static preview. That matters: Vite preview can serve `/assets/*` **without** Nitro’s headers, which reproduces the worker-blocked failure below.
 
@@ -69,9 +70,18 @@ Any host in front of this app must send the same headers on **all** responses th
 - `/assets/worker-*.js` (and related SQLite worker scripts)
 - `/assets/sqlite3-*.wasm`
 
-Examples: CDN / reverse proxy config, static hosts that allow custom headers, or keep serving via the Nitro Node build so the plugin applies.
+**Vercel:** ship with the root [`vercel.json`](../vercel.json) headers. After deploy, verify:
+
+```bash
+curl -sI https://YOUR_DEPLOYMENT/ | grep -iE 'cross-origin|x-content-type'
+# Also check a worker and wasm URL from the Network tab
+```
+
+Other hosts: CDN / reverse proxy config, static hosts that allow custom headers, or keep serving via the Nitro Node build so the plugin applies.
 
 If you strip headers on a CDN cache layer for “immutable” assets only, you will reintroduce this bug.
+
+Phone install and Android notes: [mobile.md](./mobile.md).
 
 ## What the app does for users
 
@@ -83,14 +93,14 @@ Code: `src/components/local-data.tsx`, `src/data/backup.ts`, `src/lib/backup.ts`
 
 ## Troubleshooting
 
-| Issue | Likely cause |
-| --- | --- |
-| Stuck on “Loading…” after preview/deploy | Worker/WASM missing COEP; check `curl -sI` on those assets |
-| Could not open the local database | Wrong browser, private mode, or missing COOP/COEP — see callouts and headers section |
-| Data gone after closing the browser | Incognito, or site data cleared — restore from an exported backup |
-| Works in Chrome, not elsewhere | OPFS / SQLite WASM support — use Chromium |
-| `crossOriginIsolated === false` | COOP/COEP not applied to the document |
-| Dev works, production doesn’t | Production proxy/CDN not forwarding headers; don’t use bare `vite preview` for a realistic check |
+| Issue                                    | Likely cause                                                                                     |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Stuck on “Loading…” after preview/deploy | Worker/WASM missing COEP; check `curl -sI` on those assets                                       |
+| Could not open the local database        | Wrong browser, private mode, or missing COOP/COEP — see callouts and headers section             |
+| Data gone after closing the browser      | Incognito, or site data cleared — restore from an exported backup                                |
+| Works in Chrome, not elsewhere           | OPFS / SQLite WASM support — use Chromium                                                        |
+| `crossOriginIsolated === false`          | COOP/COEP not applied to the document                                                            |
+| Dev works, production doesn’t            | Production proxy/CDN not forwarding headers; don’t use bare `vite preview` for a realistic check |
 
 ## Further reading
 
