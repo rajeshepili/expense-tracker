@@ -8,7 +8,7 @@ export const settings = sqliteTable('settings', {
   seededAt: integer('seeded_at', { mode: 'timestamp' }),
 })
 
-/** Optional budget for a calendar month (YYYY-MM). Falls back to settings.budget. */
+/** Optional budget for a calendar month (YYYY-MM). Falls back to settings.budget */
 export const monthlyBudgets = sqliteTable('monthly_budgets', {
   yearMonth: text('year_month').primaryKey(),
   budget: real('budget').notNull(),
@@ -51,7 +51,11 @@ export const transactions = sqliteTable('transactions', {
   categoryId: text('category_id')
     .notNull()
     .references(() => categories.id),
-  paymentMethodId: text('payment_method_id').references(() => paymentMethods.id),
+  paymentMethodId: text('payment_method_id').references(
+    () => paymentMethods.id,
+  ),
+  /** Recurring bill id if created via Record (no FK). */
+  sourceRecurringId: text('source_recurring_id'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -62,7 +66,10 @@ export const recurringExpenses = sqliteTable('recurring_expenses', {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
+  /** Cycle amount; restored after full settle. */
   amount: real('amount').notNull(),
+  /** Still owed this cycle; null = due equals amount. */
+  remainingAmount: real('remaining_amount'),
   cadence: text('cadence', { enum: ['weekly', 'monthly', 'yearly'] })
     .notNull()
     .default('monthly'),
@@ -72,6 +79,9 @@ export const recurringExpenses = sqliteTable('recurring_expenses', {
   categoryId: text('category_id')
     .notNull()
     .references(() => categories.id),
+  paymentMethodId: text('payment_method_id').references(
+    () => paymentMethods.id,
+  ),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),

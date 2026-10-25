@@ -1,2 +1,3 @@
 export const RECENT_TRANSACTION_LIMIT = 10
 export const UPCOMING_RECURRING_LIMIT = 4
+export const DUE_RECURRING_LIMIT = 8

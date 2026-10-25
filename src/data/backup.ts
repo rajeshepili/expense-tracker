@@ -3,12 +3,8 @@ import {
   importDatabaseFile,
   ensureDatabase,
 } from '#/db/index'
-import {
-  downloadBlob,
-  markBackupExported,
-} from '#/lib/backup'
+import { downloadBlob, markBackupExported } from '#/lib/backup'
 
-/** Download the on-device SQLite file as a dated backup. */
 export async function downloadBackup() {
   await ensureDatabase()
   const file = await exportDatabaseFile()
@@ -19,10 +15,7 @@ export async function downloadBackup() {
   return { filename }
 }
 
-/**
- * Replace local data with an exported `.sqlite3` file, then reload
- * so every query cache reconnects to the new DB.
- */
+/** Overwrite local DB, then reload. */
 export async function restoreBackup(file: File) {
   if (!file.size) throw new Error('Choose a backup file to restore')
   await ensureDatabase()

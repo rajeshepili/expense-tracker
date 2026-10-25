@@ -43,14 +43,14 @@ export async function ensureSettingsRow() {
 
 export async function needsOnboarding() {
   const row = await ensureSettingsRow()
-  if (row?.seededAt) return false
+  if (row.seededAt) return false
 
   const db = await getDb()
   const [{ value: categoryCount }] = await db
     .select({ value: count() })
     .from(categories)
 
-  if ((categoryCount ?? 0) > 0) {
+  if (categoryCount > 0) {
     await db
       .update(settings)
       .set({ seededAt: new Date() })
@@ -105,7 +105,7 @@ async function insertSampleActivity(
       amount: row.amount,
       type: row.type,
       transactionDate: row.date,
-      categoryId: categoryByName[row.category]!,
+      categoryId: categoryByName[row.category],
       paymentMethodId: methodByName[row.paymentMethod] ?? null,
     })),
   )
@@ -118,7 +118,8 @@ async function insertSampleActivity(
       cadence: row.cadence,
       nextDate: row.nextDate,
       active: row.active,
-      categoryId: categoryByName[row.category]!,
+      categoryId: categoryByName[row.category],
+      paymentMethodId: methodByName[row.paymentMethod] ?? null,
     })),
   )
 }
@@ -126,7 +127,7 @@ async function insertSampleActivity(
 export async function completeOnboarding(input: OnboardingInput) {
   const db = await getDb()
   const row = await ensureSettingsRow()
-  if (row?.seededAt) return { alreadyDone: true as const }
+  if (row.seededAt) return { alreadyDone: true as const }
 
   const catalog = await insertDefaultCatalog()
   if (input.loadSample) {

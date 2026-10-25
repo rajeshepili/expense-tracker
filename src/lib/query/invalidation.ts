@@ -1,17 +1,17 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { queryKeys } from './keys'
 
-/** Invalidate only the caches that a mutation actually changes. */
+export type InvalidateScope =
+  | 'transactions'
+  | 'recurring'
+  | 'categories'
+  | 'settings'
+  | 'paymentMethods'
+  | 'overview'
+
 export async function invalidateAfter(
   queryClient: QueryClient,
-  scopes: Array<
-    | 'transactions'
-    | 'recurring'
-    | 'categories'
-    | 'settings'
-    | 'paymentMethods'
-    | 'overview'
-  >,
+  scopes: InvalidateScope[],
 ) {
   const tasks: Promise<unknown>[] = []
   const set = new Set(scopes)
@@ -36,9 +36,11 @@ export async function invalidateAfter(
   if (set.has('paymentMethods')) {
     tasks.push(
       queryClient.invalidateQueries({ queryKey: queryKeys.paymentMethods }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.paymentMethodsUsage,
+      }),
     )
   }
-  // Overview is derived from the above; invalidate when any input changes.
   if (
     set.has('overview') ||
     set.has('transactions') ||

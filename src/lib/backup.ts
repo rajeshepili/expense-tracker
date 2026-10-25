@@ -3,14 +3,14 @@ const REMINDER_DISMISS_KEY = 'expense-tracker-backup-reminder-dismissed-until'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-/** Remind if never exported, or last export older than this. */
+/** Remind if never exported, or last export older than this */
 export const BACKUP_REMINDER_AFTER_MS = 14 * DAY_MS
-/** After dismiss, hide the reminder for this long. */
+/** After dismiss, hide the reminder for this long */
 export const BACKUP_REMINDER_SNOOZE_MS = 7 * DAY_MS
 
 function readNumber(key: string): number | null {
   try {
-    const raw = globalThis.localStorage?.getItem(key)
+    const raw = globalThis.localStorage.getItem(key)
     if (!raw) return null
     const n = Number(raw)
     return Number.isFinite(n) ? n : null
@@ -21,7 +21,7 @@ function readNumber(key: string): number | null {
 
 function writeNumber(key: string, value: number) {
   try {
-    globalThis.localStorage?.setItem(key, String(value))
+    globalThis.localStorage.setItem(key, String(value))
   } catch {
     // ignore quota / private mode
   }
@@ -61,7 +61,6 @@ export function formatLastExportLabel(
   return `Last backup: ${days} days ago`
 }
 
-/** Trigger a browser download for a Blob/File. */
 export function downloadBlob(file: Blob, filename: string) {
   const url = URL.createObjectURL(file)
   const anchor = document.createElement('a')

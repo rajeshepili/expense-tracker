@@ -11,24 +11,35 @@ import {
 import {
   completeOnboarding as completeOnboardingSeed,
   ensureSettingsRow,
-  needsOnboarding,
-  type OnboardingInput,
+  needsOnboarding
+  
 } from '#/data/seed'
+import type {OnboardingInput} from '#/data/seed';
 import {
+  DUE_RECURRING_LIMIT,
   RECENT_TRANSACTION_LIMIT,
   UPCOMING_RECURRING_LIMIT,
 } from '#/lib/app-config'
 import {
+  advanceRecurringDate,
+  amountDue,
   categoryBudgetBreakdown,
   currentYearMonth,
+  defaultRecordDate,
+  dueStatus,
+  isYearMonth,
   monthlyEquivalent,
   resolveMonthBudget,
+  settleRecurringPayment,
+  shiftYearMonth,
+  todayIso,
 } from '#/lib/finance'
 import type {
   AppSettings,
   CategoryRow,
   LedgerTransaction,
   MonthBudget,
+  PaymentMethodRow,
   RecurrenceCadence,
   RecurringExpenseRow,
   TransactionType,
@@ -43,7 +54,26 @@ type TransactionInput = {
   date: string
   categoryId: string
   paymentMethodId?: string | null
+  sourceRecurringId?: string | null
 }
+
+export type RecordRecurringOverrides = {
+  amount?: number
+  date?: string
+  paymentMethodId?: string | null
+  force?: boolean
+}
+
+export type RecordRecurringResult =
+  | {
+      ok: true
+      transactionId: string
+      nextDate: string
+      alreadyRecorded: boolean
+      partial: boolean
+      remainingAmount: number | null
+    }
+  | { ok: false; reason: 'already_recorded'; nextDate: string }
 
 type RecurringInput = {
   name: string
@@ -51,6 +81,7 @@ type RecurringInput = {
   cadence: RecurrenceCadence
   nextDate: string
   categoryId: string
+  paymentMethodId?: string | null
   active: boolean
 }
 
@@ -64,17 +95,21 @@ const transactionColumns = {
   categoryId: categories.id,
   paymentMethod: paymentMethods.name,
   paymentMethodId: paymentMethods.id,
+  sourceRecurringId: transactions.sourceRecurringId,
 }
 
 const recurringColumns = {
   id: recurringExpenses.id,
   name: recurringExpenses.name,
   amount: recurringExpenses.amount,
+  remainingAmount: recurringExpenses.remainingAmount,
   cadence: recurringExpenses.cadence,
   nextDate: recurringExpenses.nextDate,
   active: recurringExpenses.active,
   category: categories.name,
   categoryId: categories.id,
+  paymentMethod: paymentMethods.name,
+  paymentMethodId: paymentMethods.id,
 }
 
 let bootstrapped: Promise<{ needsOnboarding: boolean }> | null = null
@@ -92,6 +127,7 @@ function transactionValues(input: TransactionInput) {
     transactionDate: input.date,
     categoryId: input.categoryId,
     paymentMethodId: input.paymentMethodId ?? null,
+    sourceRecurringId: input.sourceRecurringId ?? null,
   }
 }
 
@@ -102,6 +138,7 @@ function recurringValues(input: RecurringInput) {
     cadence: input.cadence,
     nextDate: input.nextDate,
     categoryId: input.categoryId,
+    paymentMethodId: input.paymentMethodId ?? null,
     active: input.active,
   }
 }
@@ -123,6 +160,10 @@ function recurringQuery(db: Db) {
     .select(recurringColumns)
     .from(recurringExpenses)
     .innerJoin(categories, eq(recurringExpenses.categoryId, categories.id))
+    .leftJoin(
+      paymentMethods,
+      eq(recurringExpenses.paymentMethodId, paymentMethods.id),
+    )
 }
 
 export async function bootstrapApp() {
@@ -147,9 +188,9 @@ export async function getSettings(): Promise<AppSettings> {
   await bootstrapDatabase()
   const row = await ensureSettingsRow()
   return {
-    budget: row!.budget,
-    currency: row!.currency,
-    seeded: Boolean(row!.seededAt),
+    budget: row.budget,
+    currency: row.currency,
+    seeded: Boolean(row.seededAt),
   }
 }
 
@@ -158,10 +199,6 @@ export async function completeOnboarding(input: OnboardingInput) {
   const result = await completeOnboardingSeed(input)
   bootstrapped = Promise.resolve({ needsOnboarding: false })
   return result
-}
-
-export async function updateBudget(budget: number) {
-  return updateSettings({ budget })
 }
 
 export async function updateSettings(patch: {
@@ -376,8 +413,123 @@ export async function listPaymentMethods() {
   )
 }
 
+export async function listPaymentMethodsWithUsage(): Promise<
+  PaymentMethodRow[]
+> {
+  return withDb(async (db) => {
+    const [rows, txCounts, recCounts] = await Promise.all([
+      db.select().from(paymentMethods).orderBy(paymentMethods.name),
+      db
+        .select({
+          paymentMethodId: transactions.paymentMethodId,
+          value: count(),
+        })
+        .from(transactions)
+        .groupBy(transactions.paymentMethodId),
+      db
+        .select({
+          paymentMethodId: recurringExpenses.paymentMethodId,
+          value: count(),
+        })
+        .from(recurringExpenses)
+        .groupBy(recurringExpenses.paymentMethodId),
+    ])
+    const byMethod = new Map(
+      txCounts
+        .filter((row) => row.paymentMethodId)
+        .map((row) => [row.paymentMethodId!, row.value ?? 0]),
+    )
+    const byRecMethod = new Map(
+      recCounts
+        .filter((row) => row.paymentMethodId)
+        .map((row) => [row.paymentMethodId!, row.value ?? 0]),
+    )
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      transactionCount: byMethod.get(row.id) ?? 0,
+      recurringCount: byRecMethod.get(row.id) ?? 0,
+    }))
+  })
+}
+
+export async function createPaymentMethod(input: { name: string }) {
+  return withDb(async (db) => {
+    const name = input.name.trim()
+    if (!name) throw new Error('Enter a payment method name')
+    const existing = await db
+      .select({ id: paymentMethods.id })
+      .from(paymentMethods)
+      .where(eq(paymentMethods.name, name))
+      .limit(1)
+    if (existing[0]) throw new Error(`“${name}” already exists`)
+    const [row] = await db
+      .insert(paymentMethods)
+      .values({ name })
+      .returning({ id: paymentMethods.id })
+    return row
+  })
+}
+
+export async function updatePaymentMethod(id: string, input: { name: string }) {
+  return withDb(async (db) => {
+    const name = input.name.trim()
+    if (!name) throw new Error('Enter a payment method name')
+    const duplicate = await db
+      .select({ id: paymentMethods.id })
+      .from(paymentMethods)
+      .where(eq(paymentMethods.name, name))
+      .limit(1)
+    if (duplicate[0] && duplicate[0].id !== id) {
+      throw new Error(`“${name}” already exists`)
+    }
+    await db
+      .update(paymentMethods)
+      .set({ name })
+      .where(eq(paymentMethods.id, id))
+    return { success: true }
+  })
+}
+
+export async function deletePaymentMethod(id: string) {
+  return withDb(async (db) => {
+    const [{ value: used }] = await db
+      .select({ value: count() })
+      .from(transactions)
+      .where(eq(transactions.paymentMethodId, id))
+    if ((used ?? 0) > 0) {
+      await db
+        .update(transactions)
+        .set({ paymentMethodId: null })
+        .where(eq(transactions.paymentMethodId, id))
+    }
+    const [{ value: recUsed }] = await db
+      .select({ value: count() })
+      .from(recurringExpenses)
+      .where(eq(recurringExpenses.paymentMethodId, id))
+    if ((recUsed ?? 0) > 0) {
+      await db
+        .update(recurringExpenses)
+        .set({ paymentMethodId: null })
+        .where(eq(recurringExpenses.paymentMethodId, id))
+    }
+    await db.delete(paymentMethods).where(eq(paymentMethods.id, id))
+    return {
+      success: true,
+      clearedFromTransactions: used ?? 0,
+      clearedFromRecurring: recUsed ?? 0,
+    }
+  })
+}
+
 export async function listTransactions(): Promise<LedgerTransaction[]> {
   return withDb(async (db) => transactionsQuery(db))
+}
+
+export async function listRecentTransactions(limit = RECENT_TRANSACTION_LIMIT): Promise<LedgerTransaction[]> {
+  return withDb(async (db) =>
+    transactionsQuery(db).limit(limit),
+  )
 }
 
 export async function createTransaction(input: TransactionInput) {
@@ -452,14 +604,145 @@ export async function deleteRecurring(id: string) {
   })
 }
 
-export async function getOverview() {
+export async function recordRecurringPayment(
+  id: string,
+  overrides: RecordRecurringOverrides = {},
+): Promise<RecordRecurringResult> {
   return withDb(async (db) => {
-    const yearMonth = currentYearMonth()
-    const monthPrefix = `${yearMonth}%`
+    const [bill] = await recurringQuery(db)
+      .where(eq(recurringExpenses.id, id))
+      .limit(1)
+    if (!bill) throw new Error('Recurring bill not found')
+    if (!bill.active) throw new Error('This bill is paused')
+
+    const today = todayIso()
+    const recordDate = overrides.date ?? defaultRecordDate(bill.nextDate, today)
+    const due = amountDue(bill)
+    const amount = overrides.amount ?? due
+    if (!Number.isFinite(amount) || amount < 0) {
+      throw new Error('Enter a valid amount (0 or more)')
+    }
+
+    const priorLinked = await db
+      .select({
+        id: transactions.id,
+        date: transactions.transactionDate,
+      })
+      .from(transactions)
+      .where(eq(transactions.sourceRecurringId, id))
+      .orderBy(desc(transactions.transactionDate))
+      .limit(1)
+
+    const hasPaymentThisCycle = Boolean(
+      priorLinked[0] && priorLinked[0].date >= bill.nextDate,
+    )
+    const cycleOpen =
+      bill.remainingAmount !== null && bill.remainingAmount > 0
+    const alreadyRecorded = hasPaymentThisCycle && !cycleOpen
+    if (alreadyRecorded && !overrides.force) {
+      return {
+        ok: false,
+        reason: 'already_recorded',
+        nextDate: bill.nextDate,
+      }
+    }
+
+    const settlement = settleRecurringPayment(due, amount)
+    const [tx] = await db
+      .insert(transactions)
+      .values(
+        transactionValues({
+          description: bill.name,
+          amount,
+          type: 'expense',
+          date: recordDate,
+          categoryId: bill.categoryId,
+          paymentMethodId:
+            overrides.paymentMethodId !== undefined
+              ? overrides.paymentMethodId
+              : bill.paymentMethodId,
+          sourceRecurringId: id,
+        }),
+      )
+      .returning({ id: transactions.id })
+
+    if (settlement.kind === 'partial') {
+      await db
+        .update(recurringExpenses)
+        .set({ remainingAmount: settlement.remaining })
+        .where(eq(recurringExpenses.id, id))
+
+      return {
+        ok: true,
+        transactionId: tx.id,
+        nextDate: bill.nextDate,
+        alreadyRecorded: false,
+        partial: true,
+        remainingAmount: settlement.remaining,
+      }
+    }
+
+    const nextDate = advanceRecurringDate(recordDate, bill.cadence)
+    await db
+      .update(recurringExpenses)
+      .set({ nextDate, remainingAmount: null })
+      .where(eq(recurringExpenses.id, id))
+
+    return {
+      ok: true,
+      transactionId: tx.id,
+      nextDate,
+      alreadyRecorded: false,
+      partial: false,
+      remainingAmount: null,
+    }
+  })
+}
+
+export async function skipRecurringOccurrence(id: string) {
+  return withDb(async (db) => {
+    const [bill] = await db
+      .select()
+      .from(recurringExpenses)
+      .where(eq(recurringExpenses.id, id))
+      .limit(1)
+    if (!bill) throw new Error('Recurring bill not found')
+    const nextDate = advanceRecurringDate(bill.nextDate, bill.cadence)
+    await db
+      .update(recurringExpenses)
+      .set({ nextDate })
+      .where(eq(recurringExpenses.id, id))
+    return { nextDate }
+  })
+}
+
+function monthSummarySelect(db: Db, monthPrefix: string) {
+  return db
+    .select({
+      income:
+        sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amount} else 0 end), 0)`.mapWith(
+          Number,
+        ),
+      expenses:
+        sql<number>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amount} else 0 end), 0)`.mapWith(
+          Number,
+        ),
+    })
+    .from(transactions)
+    .where(like(transactions.transactionDate, monthPrefix))
+}
+
+export async function getOverview(yearMonth = currentYearMonth()) {
+  return withDb(async (db) => {
+    const month = isYearMonth(yearMonth) ? yearMonth : currentYearMonth()
+    const monthPrefix = `${month}%`
+    const priorMonth = shiftYearMonth(month, -1)
+    const priorPrefix = `${priorMonth}%`
     const [
       settingsRows,
       monthBudgetRows,
       summaryRows,
+      priorSummaryRows,
       categorySpend,
       recentRows,
       activeRecurring,
@@ -476,21 +759,13 @@ export async function getOverview() {
       db
         .select({ budget: monthlyBudgets.budget })
         .from(monthlyBudgets)
-        .where(eq(monthlyBudgets.yearMonth, yearMonth))
+        .where(eq(monthlyBudgets.yearMonth, month))
         .limit(1),
+      monthSummarySelect(db, monthPrefix),
+      monthSummarySelect(db, priorPrefix),
       db
         .select({
-          income: sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amount} else 0 end), 0)`.mapWith(
-            Number,
-          ),
-          expenses: sql<number>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amount} else 0 end), 0)`.mapWith(
-            Number,
-          ),
-        })
-        .from(transactions)
-        .where(like(transactions.transactionDate, monthPrefix)),
-      db
-        .select({
+          categoryId: categories.id,
           name: categories.name,
           amount: sql<number>`coalesce(sum(${transactions.amount}), 0)`.mapWith(
             Number,
@@ -506,7 +781,9 @@ export async function getOverview() {
         )
         .groupBy(categories.id, categories.name)
         .orderBy(sql`sum(${transactions.amount}) desc`),
-      transactionsQuery(db).limit(RECENT_TRANSACTION_LIMIT),
+      transactionsQuery(db)
+        .where(like(transactions.transactionDate, monthPrefix))
+        .limit(RECENT_TRANSACTION_LIMIT),
       recurringQuery(db)
         .where(eq(recurringExpenses.active, true))
         .orderBy(recurringExpenses.nextDate),
@@ -520,7 +797,7 @@ export async function getOverview() {
       seeded: Boolean(settingsRow?.seededAt),
     }
     const monthBudget: MonthBudget = resolveMonthBudget(
-      yearMonth,
+      month,
       defaultBudget,
       monthBudgetRows[0]?.budget,
     )
@@ -528,51 +805,57 @@ export async function getOverview() {
       income: summaryRows[0]?.income ?? 0,
       expenses: summaryRows[0]?.expenses ?? 0,
     }
+    const priorSummary = {
+      income: priorSummaryRows[0]?.income ?? 0,
+      expenses: priorSummaryRows[0]?.expenses ?? 0,
+    }
     const budget = monthBudget.budget
-    const categoryRows = categoryBudgetBreakdown(
+    const breakdown = categoryBudgetBreakdown(
       categorySpend.map((row) => ({
         category: row.name,
         amount: row.amount,
       })),
       budget,
     )
+    const categoryRows = breakdown.map((row) => {
+      const match = categorySpend.find((item) => item.name === row.name)
+      return {
+        ...row,
+        categoryId: match?.categoryId ?? '',
+      }
+    })
     const recurringMonthly = activeRecurring.reduce(
       (sum, row) => sum + monthlyEquivalent(row.amount, row.cadence),
       0,
     )
 
+    const today = todayIso()
+    const recurringRows = activeRecurring as RecurringExpenseRow[]
+    const dueRecurring = recurringRows.filter((row) => {
+      const status = dueStatus(row.nextDate, today)
+      return status === 'due' || status === 'overdue'
+    })
+    const upcomingRecurring =
+      dueRecurring.length > 0
+        ? dueRecurring.slice(0, DUE_RECURRING_LIMIT)
+        : recurringRows.slice(0, UPCOMING_RECURRING_LIMIT)
+
     return {
       settings: settingsData,
+      yearMonth: month,
+      priorYearMonth: priorMonth,
       monthBudget,
       summary,
+      priorSummary,
       remaining: budget - summary.expenses,
       budgetUsed: budget > 0 ? summary.expenses / budget : 0,
       categories: categoryRows,
-      recentTransactions: recentRows as LedgerTransaction[],
+      recentTransactions: recentRows,
       recurringMonthly,
       recurringOfBudget: budget > 0 ? recurringMonthly / budget : 0,
-      upcomingRecurring: activeRecurring.slice(
-        0,
-        UPCOMING_RECURRING_LIMIT,
-      ) as RecurringExpenseRow[],
+      upcomingRecurring,
+      dueRecurringCount: dueRecurring.length,
     }
   })
 }
 
-export async function findCategoryIdByName(
-  name: string,
-  type?: TransactionType,
-) {
-  return withDb(async (db) => {
-    const rows = await db
-      .select()
-      .from(categories)
-      .where(
-        type
-          ? and(eq(categories.name, name), eq(categories.type, type))
-          : eq(categories.name, name),
-      )
-      .limit(1)
-    return rows[0]?.id ?? null
-  })
-}

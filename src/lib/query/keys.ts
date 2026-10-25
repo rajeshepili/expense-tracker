@@ -6,5 +6,7 @@ export const queryKeys = {
   categories: ['categories'] as const,
   categoriesUsage: ['categories', 'usage'] as const,
   paymentMethods: ['paymentMethods'] as const,
+  paymentMethodsUsage: ['paymentMethods', 'usage'] as const,
   overview: ['overview'] as const,
+  overviewMonth: (yearMonth: string) => ['overview', yearMonth] as const,
 }

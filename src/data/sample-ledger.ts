@@ -2,8 +2,6 @@ import type { RecurrenceCadence, TransactionType } from '#/lib/types'
 
 export type { RecurrenceCadence, TransactionType }
 
-export const monthlyBudget = 2500
-
 export const ledgerTransactions = [
   {
     id: '1',
@@ -102,6 +100,7 @@ export const recurringExpenses = [
     id: 'r1',
     name: 'Studio rent',
     category: 'Housing',
+    paymentMethod: 'Bank transfer',
     amount: 1200,
     cadence: 'monthly' as RecurrenceCadence,
     nextDate: '2026-11-01',
@@ -111,6 +110,7 @@ export const recurringExpenses = [
     id: 'r2',
     name: 'Transit pass',
     category: 'Transport',
+    paymentMethod: 'Debit card',
     amount: 89,
     cadence: 'monthly' as RecurrenceCadence,
     nextDate: '2026-11-01',
@@ -120,6 +120,7 @@ export const recurringExpenses = [
     id: 'r3',
     name: 'Gym membership',
     category: 'Health',
+    paymentMethod: 'Credit card',
     amount: 45,
     cadence: 'monthly' as RecurrenceCadence,
     nextDate: '2026-11-03',
@@ -129,6 +130,7 @@ export const recurringExpenses = [
     id: 'r4',
     name: 'Streaming',
     category: 'Other',
+    paymentMethod: 'Credit card',
     amount: 15.99,
     cadence: 'monthly' as RecurrenceCadence,
     nextDate: '2026-11-05',
@@ -138,6 +140,7 @@ export const recurringExpenses = [
     id: 'r5',
     name: 'Cloud backup',
     category: 'Other',
+    paymentMethod: 'Credit card',
     amount: 2.99,
     cadence: 'monthly' as RecurrenceCadence,
     nextDate: '2026-11-08',
@@ -147,21 +150,13 @@ export const recurringExpenses = [
     id: 'r6',
     name: 'Annual domain',
     category: 'Other',
+    paymentMethod: 'Debit card',
     amount: 14,
     cadence: 'yearly' as RecurrenceCadence,
     nextDate: '2027-03-12',
     active: true,
   },
 ]
-
-export const ledgerCategories = [
-  'Food',
-  'Housing',
-  'Transport',
-  'Health',
-  'Income',
-  'Other',
-] as const
 
 export const expenseCategories = [
   'Food',

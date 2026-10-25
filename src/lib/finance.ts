@@ -78,9 +78,20 @@ export function todayIso() {
   return new Date().toISOString().slice(0, 10)
 }
 
-/** Calendar month key used for budgets and month filters (YYYY-MM). */
+/** YYYY-MM */
 export function currentYearMonth(date = new Date()) {
   return date.toISOString().slice(0, 7)
+}
+
+export function isYearMonth(value: string) {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value)
+}
+
+export function shiftYearMonth(yearMonth: string, deltaMonths: number) {
+  if (!isYearMonth(yearMonth)) return yearMonth
+  const [year, month] = yearMonth.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1 + deltaMonths, 1))
+  return currentYearMonth(date)
 }
 
 export function formatYearMonth(yearMonth: string) {
@@ -92,7 +103,100 @@ export function formatYearMonth(yearMonth: string) {
   }).format(new Date(Date.UTC(year, month - 1, 1)))
 }
 
-/** Merge default + optional month override into the effective month budget. */
+/** Negative if a < b (YYYY-MM-DD). */
+export function compareIsoDate(a: string, b: string) {
+  if (a === b) return 0
+  return a < b ? -1 : 1
+}
+
+export type DueStatus = 'upcoming' | 'due' | 'overdue'
+
+export function dueStatus(nextDate: string, today = todayIso()): DueStatus {
+  const cmp = compareIsoDate(nextDate, today)
+  if (cmp < 0) return 'overdue'
+  if (cmp === 0) return 'due'
+  return 'upcoming'
+}
+
+/** Record one-tap only when due/overdue. */
+export function canOneTapRecord(nextDate: string, today = todayIso()) {
+  return dueStatus(nextDate, today) !== 'upcoming'
+}
+
+export function roundMoney(amount: number) {
+  return Math.round(amount * 100) / 100
+}
+
+export function amountDue(bill: {
+  amount: number
+  remainingAmount: number | null
+}) {
+  return bill.remainingAmount ?? bill.amount
+}
+
+/** Underpay keeps remaining; full/over settles. */
+export function settleRecurringPayment(
+  due: number,
+  paid: number,
+): { kind: 'partial'; remaining: number } | { kind: 'settled' } {
+  const dueRounded = roundMoney(due)
+  const paidRounded = roundMoney(paid)
+  const remaining = roundMoney(dueRounded - paidRounded)
+  if (remaining > 0) {
+    return { kind: 'partial', remaining }
+  }
+  return { kind: 'settled' }
+}
+
+export function defaultRecordDate(nextDate: string, today = todayIso()) {
+  return compareIsoDate(nextDate, today) < 0 ? today : nextDate
+}
+
+/** Current month → today; other months → last day. */
+export function defaultDateForMonth(
+  yearMonth: string | undefined,
+  today = todayIso(),
+) {
+  if (!yearMonth || yearMonth === 'all' || !isYearMonth(yearMonth)) {
+    return today
+  }
+  if (yearMonth === currentYearMonth(new Date(`${today}T12:00:00`))) {
+    return today
+  }
+  const [year, month] = yearMonth.split('-').map(Number)
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate()
+  return `${yearMonth}-${String(lastDay).padStart(2, '0')}`
+}
+
+export function advanceRecurringDate(
+  isoDate: string,
+  cadence: RecurrenceCadence,
+) {
+  const [year, month, day] = isoDate.split('-').map(Number)
+  if (!year || !month || !day) return isoDate
+  const date = new Date(Date.UTC(year, month - 1, day))
+  if (cadence === 'weekly') {
+    date.setUTCDate(date.getUTCDate() + 7)
+  } else if (cadence === 'yearly') {
+    date.setUTCFullYear(date.getUTCFullYear() + 1)
+  } else {
+    const targetDay = day
+    date.setUTCDate(1)
+    date.setUTCMonth(date.getUTCMonth() + 1)
+    const lastDay = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0),
+    ).getUTCDate()
+    date.setUTCDate(Math.min(targetDay, lastDay))
+  }
+  return date.toISOString().slice(0, 10)
+}
+
+/** null when prior is 0 */
+export function priorDeltaRatio(current: number, prior: number) {
+  if (prior === 0) return current === 0 ? 0 : null
+  return (current - prior) / prior
+}
+
 export function resolveMonthBudget(
   yearMonth: string,
   defaultBudget: number,
@@ -119,7 +223,6 @@ export function resolveMonthBudget(
   }
 }
 
-/** When saving, matching the default clears the month override. */
 export function monthBudgetMatchesDefault(
   monthBudget: number,
   defaultBudget: number,
