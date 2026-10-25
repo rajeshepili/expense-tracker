@@ -8,10 +8,12 @@ import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
 import sqlocal from 'sqlocal/vite'
+import { sqlRaw } from './src/vite-sql-raw.ts'
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
   plugins: [
+    sqlRaw(),
     devtools(),
     // Dev server COEP/COOP (OPFS). Production headers: server/plugins/cross-origin-isolation.ts
     sqlocal(),

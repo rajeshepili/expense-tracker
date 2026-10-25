@@ -34,7 +34,8 @@ Personal, local-only money tracker. Not tax software, payroll, banking, or multi
 | `src/components/layout/` | Page chrome (shell, header, empty/loading) |
 | `src/components/` | Shared product widgets (charts, dialogs, stats) |
 | `src/data/` | Repository, seed, sample ledger |
-| `src/db/` | Schema + browser SQLite client |
+| `src/db/` | Drizzle schema + SQLocal client + migrator |
+| `drizzle/` | Kit-generated SQL + `migrations.js` (commit these) |
 | `src/lib/` | Domain helpers (`finance`, `types`, `transaction-defaults`, `backup`) |
 | `src/lib/query/` | Query keys, invalidation, prefetch |
 | `tests/unit/` | Vitest unit tests (keep out of `src/`) |
@@ -43,6 +44,7 @@ Personal, local-only money tracker. Not tax software, payroll, banking, or multi
 
 - All reads/writes go through `src/data/repository.ts`
 - Schema in `src/db/schema.ts`; seed in `src/data/seed.ts`
+- Schema changes: edit `schema.ts`, run `pnpm db:generate`, commit `drizzle/` — applied in-browser via `migrateSchema` (do not hand-write DDL)
 - Invalidate TanStack Query keys from `src/lib/query/keys.ts` after mutations
 - Amounts are numbers; format with `money(amount, currency)` from `src/lib/finance.ts`
 
