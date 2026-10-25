@@ -46,11 +46,7 @@ export function ConfirmDeleteDialog({
         ) : null}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
-          <Button
-            variant="destructive"
-            disabled={pending}
-            onClick={onConfirm}
-          >
+          <Button variant="destructive" disabled={pending} onClick={onConfirm}>
             {pending ? pendingLabel : confirmLabel}
           </Button>
         </AlertDialogFooter>

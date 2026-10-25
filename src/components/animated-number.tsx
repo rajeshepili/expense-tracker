@@ -2,14 +2,11 @@ import { useEffect, useRef, type HTMLAttributes } from 'react'
 import { money, percent } from '#/lib/finance'
 import { cn } from 'cn'
 
-/** Strong ease-out — punches at the start, settles cleanly. */
 const EASE_OUT = (t: number) => 1 - Math.pow(1 - t, 4)
 const COUNT_MS = 750
-/** Chip stays readable; matches CSS `delta-pop` duration. */
 const DELTA_MS = 2200
 const EASING_CSS = 'cubic-bezier(0.23, 1, 0.32, 1)'
 
-/** Survives route unmount so Overview can count from the last seen total. */
 const remembered = new Map<string, number>()
 
 export type DeltaGoodWhen = 'up' | 'down'
@@ -37,20 +34,12 @@ type AnimatedNumberProps = {
   value: number
   format: (value: number) => string
   persistKey?: string
-  /** Floating signed delta beside the value (default true). */
   showDelta?: boolean
-  /**
-   * Which direction is favorable for this metric.
-   * Income / budget left → `up`. Expenses / budget used → `down`.
-   */
+  /** Income / remaining → `up`. Expenses / used → `down`. */
   goodWhen?: DeltaGoodWhen
   className?: string
 } & Omit<HTMLAttributes<HTMLSpanElement>, 'children'>
 
-/**
- * Counts between values with a blur settle + signed delta chip.
- * Text updates via rAF; motion via WAAPI/CSS (transform/opacity/filter).
- */
 export function AnimatedNumber({
   value,
   format,

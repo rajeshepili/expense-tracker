@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react'
 import { cn } from 'cn'
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '#/components/ui/empty'
 
 type EmptyStateProps = {
   title: string
@@ -19,28 +27,23 @@ export function EmptyState({
   compact = false,
 }: EmptyStateProps) {
   return (
-    <div
+    <Empty
       className={cn(
-        'flex flex-col items-center justify-center text-center',
-        compact ? 'gap-2 px-4 py-8' : 'gap-3 px-6 py-12',
+        'border-0',
+        compact ? 'gap-3 p-4 md:p-6' : 'gap-4 p-6 md:p-10',
         className,
       )}
     >
-      {icon ? (
-        <span
-          className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground [&_svg]:size-5"
-          aria-hidden
-        >
-          {icon}
-        </span>
-      ) : null}
-      <p className="text-sm font-medium text-foreground">{title}</p>
-      {description ? (
-        <p className="max-w-sm text-pretty text-sm text-muted-foreground">
-          {description}
-        </p>
-      ) : null}
-      {action ? <div className="pt-1">{action}</div> : null}
-    </div>
+      <EmptyHeader className={compact ? 'gap-1.5' : undefined}>
+        {icon ? <EmptyMedia variant="icon">{icon}</EmptyMedia> : null}
+        <EmptyTitle className={compact ? 'text-base' : undefined}>
+          {title}
+        </EmptyTitle>
+        {description ? (
+          <EmptyDescription>{description}</EmptyDescription>
+        ) : null}
+      </EmptyHeader>
+      {action ? <EmptyContent className="gap-2">{action}</EmptyContent> : null}
+    </Empty>
   )
 }

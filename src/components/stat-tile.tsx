@@ -31,7 +31,10 @@ export function StatTile({
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
         {icon ? (
-          <span className="text-muted-foreground/80 [&_svg]:size-3.5" aria-hidden>
+          <span
+            className="text-muted-foreground/80 [&_svg]:size-3.5"
+            aria-hidden
+          >
             {icon}
           </span>
         ) : null}

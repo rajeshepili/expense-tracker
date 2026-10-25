@@ -92,7 +92,7 @@ function prepareSlices(
     share: whole > 0 ? row.amount / whole : 0,
     color: row.isRemainder
       ? 'var(--muted-foreground)'
-      : CHART_COLORS[index % CHART_COLORS.length]!,
+      : CHART_COLORS[index % CHART_COLORS.length],
   }))
 }
 
@@ -136,7 +136,7 @@ export function CategorySpendChart({
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-        <div className="relative size-44 shrink-0">
+        <div className="relative size-36 shrink-0 md:size-44">
           <svg
             viewBox="0 0 100 100"
             className="size-full -rotate-0"

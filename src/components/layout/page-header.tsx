@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 type PageHeaderProps = {
   title: string
-  description: string
+  description: ReactNode
   actions?: ReactNode
 }
 
@@ -13,12 +13,14 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
         <h1 className="text-pretty text-xl font-semibold tracking-tight md:text-2xl">
           {title}
         </h1>
-        <p className="max-w-2xl text-pretty text-sm text-muted-foreground">
+        <div className="max-w-2xl text-pretty text-xs text-muted-foreground sm:text-sm">
           {description}
-        </p>
+        </div>
       </div>
       {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {actions}
+        </div>
       ) : null}
     </div>
   )
