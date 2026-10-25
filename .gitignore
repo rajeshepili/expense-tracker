@@ -13,3 +13,5 @@ __unconfig*
 todos.json
 .pnpm-store
 .idea
+.vercel
+.env*

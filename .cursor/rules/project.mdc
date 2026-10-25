@@ -13,11 +13,14 @@ Personal, local-only money tracker. Not tax software, payroll, banking, or multi
 - Overview, ledger, recurring expenses, categories
 - Monthly budget + display currency (optional per-month override)
 - Browser SQLite via SQLocal / OPFS (Chromium)
+- Android Chrome installable PWA + mobile shell (bottom tabs)
+- HTTPS demo host (Vercel) with COEP/COOP headers
 - TanStack Start / Router / Query + shadcn/ui (new-york) + Tailwind
 
 ## Out of scope for v1
 
-- Capacitor, Expo, native apps, Play Store packaging
+- Capacitor / Expo / Play Store / App Store packaging (later phase)
+- iOS Safari as a supported runtime (later: Capacitor + native SQLite)
 - Cloud sync, accounts, auth, remote APIs
 - Employer / tax / bank integrations
 
@@ -32,7 +35,7 @@ Personal, local-only money tracker. Not tax software, payroll, banking, or multi
 | `src/components/` | Shared product widgets (charts, dialogs, stats) |
 | `src/data/` | Repository, seed, sample ledger |
 | `src/db/` | Schema + browser SQLite client |
-| `src/lib/` | Domain helpers (`finance`, `types`, preferences) |
+| `src/lib/` | Domain helpers (`finance`, `types`, `transaction-defaults`, `backup`) |
 | `src/lib/query/` | Query keys, invalidation, prefetch |
 | `tests/unit/` | Vitest unit tests (keep out of `src/`) |
 

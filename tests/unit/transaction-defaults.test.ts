@@ -3,37 +3,24 @@ import {
   readTransactionDefaults,
   rememberTransactionDefaults,
 } from '#/lib/transaction-defaults'
+import { installMemoryLocalStorage } from '../test-utils'
 
 const STORAGE_KEY = 'expense-tracker-tx-defaults'
 
+const emptyDefaults = {
+  type: 'expense' as const,
+  categoryIdByType: {},
+  paymentMethodId: '',
+}
+
+beforeEach(() => {
+  installMemoryLocalStorage()
+})
+
 describe('transaction defaults', () => {
-  beforeEach(() => {
-    const store = new Map<string, string>()
-    Object.defineProperty(globalThis, 'window', {
-      configurable: true,
-      value: {
-        localStorage: {
-          getItem: (key: string) => store.get(key) ?? null,
-          setItem: (key: string, value: string) => {
-            store.set(key, value)
-          },
-          removeItem: (key: string) => {
-            store.delete(key)
-          },
-        },
-      },
-    })
-  })
+  it('starts empty and remembers the last type, category, and method', () => {
+    expect(readTransactionDefaults()).toEqual(emptyDefaults)
 
-  it('returns expense defaults when empty', () => {
-    expect(readTransactionDefaults()).toEqual({
-      type: 'expense',
-      categoryIdByType: {},
-      paymentMethodId: '',
-    })
-  })
-
-  it('remembers type, category, and payment method', () => {
     rememberTransactionDefaults({
       type: 'expense',
       categoryId: 'food',
@@ -47,20 +34,13 @@ describe('transaction defaults', () => {
 
     expect(readTransactionDefaults()).toEqual({
       type: 'income',
-      categoryIdByType: {
-        expense: 'food',
-        income: 'salary',
-      },
+      categoryIdByType: { expense: 'food', income: 'salary' },
       paymentMethodId: 'bank',
     })
   })
 
-  it('recovers from invalid stored JSON', () => {
+  it('falls back to empty defaults when stored JSON is corrupt', () => {
     window.localStorage.setItem(STORAGE_KEY, '{not-json')
-    expect(readTransactionDefaults()).toEqual({
-      type: 'expense',
-      categoryIdByType: {},
-      paymentMethodId: '',
-    })
+    expect(readTransactionDefaults()).toEqual(emptyDefaults)
   })
 })

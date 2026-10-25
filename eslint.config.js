@@ -12,9 +12,10 @@ export default [
       '@typescript-eslint/array-type': 'off',
       '@typescript-eslint/require-await': 'off',
       'pnpm/json-enforce-catalog': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
     },
   },
   {
-    ignores: ['eslint.config.js', 'prettier.config.js'],
+    ignores: ['eslint.config.js', 'prettier.config.js', '.output', 'node_modules', 'dist', 'build', '*.config.js', '*.config.ts', '.cta.json', 'components.json', 'package-lock.json', 'pnpm-lock.yaml'],
   },
 ]
