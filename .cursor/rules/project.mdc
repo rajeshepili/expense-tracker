@@ -1,0 +1,48 @@
+---
+description: Expense Tracker v1 product scope and stack
+alwaysApply: true
+---
+
+# Expense Tracker (v1)
+
+Personal, local-only money tracker. Not tax software, payroll, banking, or multi-user sync.
+
+## In scope
+
+- First-run onboarding (currency, budget, empty vs sample)
+- Overview, ledger, recurring expenses, categories
+- Monthly budget + display currency (optional per-month override)
+- Browser SQLite via SQLocal / OPFS (Chromium)
+- TanStack Start / Router / Query + shadcn/ui (new-york) + Tailwind
+
+## Out of scope for v1
+
+- Capacitor, Expo, native apps, Play Store packaging
+- Cloud sync, accounts, auth, remote APIs
+- Employer / tax / bank integrations
+
+## Layout
+
+| Path | Role |
+| --- | --- |
+| `src/app/` | Shell: gate, nav, theme, onboarding |
+| `src/routes/` | Screens (Overview, Ledger, Recurring, Categories) |
+| `src/components/ui/` | shadcn primitives |
+| `src/components/layout/` | Page chrome (shell, header, empty/loading) |
+| `src/components/` | Shared product widgets (charts, dialogs, stats) |
+| `src/data/` | Repository, seed, sample ledger |
+| `src/db/` | Schema + browser SQLite client |
+| `src/lib/` | Domain helpers (`finance`, `types`, preferences) |
+| `src/lib/query/` | Query keys, invalidation, prefetch |
+| `tests/unit/` | Vitest unit tests (keep out of `src/`) |
+
+## Data
+
+- All reads/writes go through `src/data/repository.ts`
+- Schema in `src/db/schema.ts`; seed in `src/data/seed.ts`
+- Invalidate TanStack Query keys from `src/lib/query/keys.ts` after mutations
+- Amounts are numbers; format with `money(amount, currency)` from `src/lib/finance.ts`
+
+## Imports
+
+Use `#/` path aliases (e.g. `#/components/ui/button`, `#/app/app-nav`, `#/lib/query/keys`).

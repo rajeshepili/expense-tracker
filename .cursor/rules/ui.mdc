@@ -1,0 +1,28 @@
+---
+description: UI patterns for routes and shadcn components
+globs: src/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# UI conventions
+
+## Layout
+
+- Page chrome lives in `src/components/layout/` (`PageShell`, `PageHeader`, empty/loading)
+- Page shell: `max-w-6xl`, `gap-6`, `p-6 md:p-8`
+- Use `PageHeader` for title, description, and primary actions
+- Prefer dense tables/cards; icons only where they speed scanning
+- Income / expense amounts: `text-income` / `text-expense`
+
+## Components
+
+- App shell (nav, theme, gate, onboarding): `src/app/`
+- Add shadcn pieces with: `pnpm dlx shadcn@latest add <component>` → `src/components/ui/`
+- Destructive deletes: `ConfirmDeleteDialog` (alert-dialog)
+- Loading / empty / error states on every data screen
+
+## Design
+
+- Keep the neutral IBM Plex / token look in `src/styles.css`
+- Avoid purple gradients, cream+terracotta “AI landing” looks, emoji, glow pills
+- No cards in heroes; cards only when they group interactive content

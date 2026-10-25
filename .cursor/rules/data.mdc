@@ -1,0 +1,15 @@
+---
+description: Local SQLite repository and query patterns
+globs: src/data/**/*.{ts,tsx},src/db/**/*.{ts,tsx},src/lib/query/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Data layer
+
+- Bootstrap via `bootstrapDatabase()` / app gate before queries
+- Prefer repository functions over raw Drizzle in routes
+- Default budget / currency live in `settings` row `id = 'default'`
+- Optional month overrides live in `monthly_budgets` (`year_month` = `YYYY-MM`)
+- Category delete must reassign dependent transactions / recurring rows
+- Do not introduce a server database or `DATABASE_URL` for the app UI
+- Query keys / invalidation / prefetch live under `src/lib/query/`

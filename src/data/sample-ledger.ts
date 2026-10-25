@@ -1,0 +1,180 @@
+import type { RecurrenceCadence, TransactionType } from '#/lib/types'
+
+export type { RecurrenceCadence, TransactionType }
+
+export const monthlyBudget = 2500
+
+export const ledgerTransactions = [
+  {
+    id: '1',
+    description: 'Grocery run',
+    category: 'Food',
+    paymentMethod: 'Debit card',
+    date: '2026-10-22',
+    amount: 64.2,
+    type: 'expense' as TransactionType,
+  },
+  {
+    id: '2',
+    description: 'Monthly salary',
+    category: 'Income',
+    paymentMethod: 'Direct deposit',
+    date: '2026-10-20',
+    amount: 4200,
+    type: 'income' as TransactionType,
+  },
+  {
+    id: '3',
+    description: 'Transit pass',
+    category: 'Transport',
+    paymentMethod: 'Cash',
+    date: '2026-10-18',
+    amount: 89,
+    type: 'expense' as TransactionType,
+  },
+  {
+    id: '4',
+    description: 'Studio rent',
+    category: 'Housing',
+    paymentMethod: 'Bank transfer',
+    date: '2026-10-15',
+    amount: 1200,
+    type: 'expense' as TransactionType,
+  },
+  {
+    id: '5',
+    description: 'Pharmacy',
+    category: 'Health',
+    paymentMethod: 'Debit card',
+    date: '2026-10-12',
+    amount: 28.5,
+    type: 'expense' as TransactionType,
+  },
+  {
+    id: '6',
+    description: 'Coffee shop',
+    category: 'Food',
+    paymentMethod: 'Debit card',
+    date: '2026-10-11',
+    amount: 6.75,
+    type: 'expense' as TransactionType,
+  },
+  {
+    id: '7',
+    description: 'Freelance invoice',
+    category: 'Income',
+    paymentMethod: 'Bank transfer',
+    date: '2026-10-09',
+    amount: 350,
+    type: 'income' as TransactionType,
+  },
+  {
+    id: '8',
+    description: 'Streaming',
+    category: 'Other',
+    paymentMethod: 'Credit card',
+    date: '2026-10-05',
+    amount: 15.99,
+    type: 'expense' as TransactionType,
+  },
+  {
+    id: '9',
+    description: 'Gym membership',
+    category: 'Health',
+    paymentMethod: 'Credit card',
+    date: '2026-10-03',
+    amount: 45,
+    type: 'expense' as TransactionType,
+  },
+  {
+    id: '10',
+    description: 'Weekend market',
+    category: 'Food',
+    paymentMethod: 'Cash',
+    date: '2026-10-01',
+    amount: 38.4,
+    type: 'expense' as TransactionType,
+  },
+]
+
+export const recurringExpenses = [
+  {
+    id: 'r1',
+    name: 'Studio rent',
+    category: 'Housing',
+    amount: 1200,
+    cadence: 'monthly' as RecurrenceCadence,
+    nextDate: '2026-11-01',
+    active: true,
+  },
+  {
+    id: 'r2',
+    name: 'Transit pass',
+    category: 'Transport',
+    amount: 89,
+    cadence: 'monthly' as RecurrenceCadence,
+    nextDate: '2026-11-01',
+    active: true,
+  },
+  {
+    id: 'r3',
+    name: 'Gym membership',
+    category: 'Health',
+    amount: 45,
+    cadence: 'monthly' as RecurrenceCadence,
+    nextDate: '2026-11-03',
+    active: true,
+  },
+  {
+    id: 'r4',
+    name: 'Streaming',
+    category: 'Other',
+    amount: 15.99,
+    cadence: 'monthly' as RecurrenceCadence,
+    nextDate: '2026-11-05',
+    active: true,
+  },
+  {
+    id: 'r5',
+    name: 'Cloud backup',
+    category: 'Other',
+    amount: 2.99,
+    cadence: 'monthly' as RecurrenceCadence,
+    nextDate: '2026-11-08',
+    active: false,
+  },
+  {
+    id: 'r6',
+    name: 'Annual domain',
+    category: 'Other',
+    amount: 14,
+    cadence: 'yearly' as RecurrenceCadence,
+    nextDate: '2027-03-12',
+    active: true,
+  },
+]
+
+export const ledgerCategories = [
+  'Food',
+  'Housing',
+  'Transport',
+  'Health',
+  'Income',
+  'Other',
+] as const
+
+export const expenseCategories = [
+  'Food',
+  'Housing',
+  'Transport',
+  'Health',
+  'Other',
+] as const
+
+export const paymentMethods = [
+  'Debit card',
+  'Credit card',
+  'Cash',
+  'Bank transfer',
+  'Direct deposit',
+] as const
