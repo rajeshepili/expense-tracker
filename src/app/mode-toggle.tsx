@@ -21,12 +21,12 @@ export function ModeToggle() {
     const el = buttonRef.current
     const origin = el
       ? (() => {
-        const rect = el.getBoundingClientRect()
-        return {
-          x: rect.left + rect.width / 2,
-          y: rect.top + rect.height / 2,
-        }
-      })()
+          const rect = el.getBoundingClientRect()
+          return {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+          }
+        })()
       : undefined
     setTheme(upcoming, origin)
   }
@@ -38,8 +38,8 @@ export function ModeToggle() {
       ref={buttonRef}
       type="button"
       variant="ghost"
-      size="icon-sm"
-      className="shrink-0"
+      size="icon"
+      className="min-h-11 min-w-11 shrink-0 touch-manipulation md:min-h-8 md:min-w-8"
       aria-label={`Theme: ${theme}. Switch to ${upcoming}`}
       title={`Theme: ${theme}`}
       onClick={cycle}

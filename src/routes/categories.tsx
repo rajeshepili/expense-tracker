@@ -22,14 +22,14 @@ import {
   CardTitle,
 } from '#/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '#/components/ui/dialog'
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalTrigger,
+} from '#/components/ui/responsive-modal'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +37,12 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
-import { Label } from '#/components/ui/label'
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '#/components/ui/field'
 import {
   Select,
   SelectContent,
@@ -57,13 +62,16 @@ import {
 } from '#/components/ui/table'
 import { PageHeader } from '#/components/layout/page-header'
 import { PageError, PageLoading } from '#/components/layout/page-query-state'
+import { MobileList, MobileListRow } from '#/components/layout/mobile-list'
 import { PageShell, TableScroll } from '#/components/layout/page-shell'
+import { PaymentMethodsPanel } from '#/components/payment-methods-panel'
 import {
   createCategory,
   deleteCategory,
   listCategoriesWithUsage,
   updateCategory,
 } from '#/data/repository'
+import { useComposer } from '#/hooks/use-composer'
 import { invalidateAfter } from '#/lib/query/invalidation'
 import { queryKeys } from '#/lib/query/keys'
 import type { CategoryRow, TransactionType } from '#/lib/types'
@@ -89,11 +97,18 @@ function formFromRow(row: CategoryRow): FormState {
 function CategoriesPage() {
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState<'all' | TransactionType>('all')
-  const [composerOpen, setComposerOpen] = useState(false)
-  const [editing, setEditing] = useState<CategoryRow | null>(null)
-  const [form, setForm] = useState<FormState>(emptyForm)
   const [deleting, setDeleting] = useState<CategoryRow | null>(null)
   const [replacementId, setReplacementId] = useState('')
+  const {
+    editing,
+    form,
+    composerOpen,
+    setForm,
+    setComposerOpen,
+    openCreate,
+    openEdit,
+    reset,
+  } = useComposer<FormState, CategoryRow>({ emptyForm, formFromRow })
 
   const categoriesQuery = useQuery({
     queryKey: queryKeys.categoriesUsage,
@@ -110,23 +125,19 @@ function CategoriesPage() {
       }
     },
     onSuccess: async () => {
-      // Names are denormalized into transaction/recurring query joins.
       await invalidateAfter(queryClient, [
         'categories',
         'transactions',
         'recurring',
       ])
-      setComposerOpen(false)
-      setEditing(null)
-      setForm(emptyForm())
+      reset()
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (!deleting) throw new Error('No category selected')
-      const inUse =
-        deleting.transactionCount + deleting.recurringCount > 0
+      const inUse = deleting.transactionCount + deleting.recurringCount > 0
       await deleteCategory(
         deleting.id,
         inUse ? { replacementCategoryId: replacementId } : undefined,
@@ -168,18 +179,6 @@ function CategoriesPage() {
     ? deleting.transactionCount + deleting.recurringCount > 0
     : false
 
-  function openCreate() {
-    setEditing(null)
-    setForm(emptyForm())
-    setComposerOpen(true)
-  }
-
-  function openEdit(row: CategoryRow) {
-    setEditing(row)
-    setForm(formFromRow(row))
-    setComposerOpen(true)
-  }
-
   function openDelete(row: CategoryRow) {
     setDeleting(row)
     setReplacementId('')
@@ -201,100 +200,107 @@ function CategoriesPage() {
   }
 
   return (
-    <PageShell>
+    <PageShell scroll="page">
       <PageHeader
         title="Categories"
-        description="Organize income and expenses. Deleting a used category moves its items to a replacement you choose."
+        description="Organize income and expenses."
         actions={
-          <Dialog
+          <ResponsiveModal
             open={composerOpen}
             onOpenChange={(open) => {
-              setComposerOpen(open)
               if (!open) {
-                setEditing(null)
-                setForm(emptyForm())
+                reset()
                 saveMutation.reset()
+              } else {
+                setComposerOpen(true)
               }
             }}
           >
-            <DialogTrigger asChild>
+            <ResponsiveModalTrigger asChild>
               <Button size="sm" onClick={openCreate}>
                 <Plus data-icon="inline-start" />
-                Add category
+                <span className="md:hidden">Add</span>
+                <span className="hidden md:inline">Add category</span>
               </Button>
-            </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {editing ? 'Edit category' : 'Add category'}
-              </DialogTitle>
-              <DialogDescription>
-                Categories appear in Ledger and Recurring pickers.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-2">
-              <div className="grid gap-2">
-                <Label htmlFor="category-name">Name</Label>
-                <Input
-                  id="category-name"
-                  name="name"
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder="Subscriptions…"
-                  value={form.name}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      name: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="category-type">Type</Label>
-                <Select
-                  value={form.type}
-                  onValueChange={(value) =>
-                    setForm((current) => ({
-                      ...current,
-                      type: value as TransactionType,
-                    }))
-                  }
-                >
-                  <SelectTrigger id="category-type" className="w-full">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="expense">Expense</SelectItem>
-                      <SelectItem value="income">Income</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-              {saveMutation.isError ? (
-                <p className="text-sm text-destructive">
-                  {saveMutation.error.message}
-                </p>
-              ) : null}
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setComposerOpen(false)}
-                disabled={saveMutation.isPending}
+            </ResponsiveModalTrigger>
+            <ResponsiveModalContent className="sm:max-w-md">
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  saveMutation.mutate()
+                }}
               >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending}
-              >
-                {saveMutation.isPending ? 'Saving…' : 'Save'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-          </Dialog>
+                <ResponsiveModalHeader>
+                  <ResponsiveModalTitle>
+                    {editing ? 'Edit category' : 'Add category'}
+                  </ResponsiveModalTitle>
+                  <ResponsiveModalDescription>
+                    Used in Ledger and Recurring.
+                  </ResponsiveModalDescription>
+                </ResponsiveModalHeader>
+                <FieldGroup className="gap-4 py-2">
+                  <Field>
+                    <FieldLabel htmlFor="category-name">Name</FieldLabel>
+                    <Input
+                      id="category-name"
+                      name="name"
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="Subscriptions…"
+                      value={form.name}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          name: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="category-type">Type</FieldLabel>
+                    <Select
+                      value={form.type}
+                      onValueChange={(value) =>
+                        setForm((current) => ({
+                          ...current,
+                          type: value as TransactionType,
+                        }))
+                      }
+                    >
+                      <SelectTrigger id="category-type" className="w-full">
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="expense">Expense</SelectItem>
+                          <SelectItem value="income">Income</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  {saveMutation.isError ? (
+                    <FieldError>{saveMutation.error.message}</FieldError>
+                  ) : null}
+                </FieldGroup>
+                <ResponsiveModalFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      reset()
+                      saveMutation.reset()
+                    }}
+                    disabled={saveMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={saveMutation.isPending}>
+                    {saveMutation.isPending ? 'Saving…' : 'Save'}
+                  </Button>
+                </ResponsiveModalFooter>
+              </form>
+            </ResponsiveModalContent>
+          </ResponsiveModal>
         }
       />
 
@@ -305,7 +311,7 @@ function CategoriesPage() {
             {totals.expense} expense · {totals.income} income
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 px-4 py-4">
+        <CardContent className="flex min-h-0 flex-1 flex-col gap-3 px-3 py-3 md:gap-4 md:px-4 md:py-4">
           <Tabs
             value={filter}
             onValueChange={(value) =>
@@ -313,76 +319,46 @@ function CategoriesPage() {
             }
             className="shrink-0"
           >
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="expense">Expense</TabsTrigger>
-              <TabsTrigger value="income">Income</TabsTrigger>
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="all" className="flex-1 sm:flex-none">
+                All
+              </TabsTrigger>
+              <TabsTrigger value="expense" className="flex-1 sm:flex-none">
+                Expense
+              </TabsTrigger>
+              <TabsTrigger value="income" className="flex-1 sm:flex-none">
+                Income
+              </TabsTrigger>
             </TabsList>
           </Tabs>
 
-          <TableScroll>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right whitespace-nowrap">
-                  Transactions
-                </TableHead>
-                <TableHead className="hidden text-right whitespace-nowrap sm:table-cell">
-                  Recurring
-                </TableHead>
-                <TableHead className="w-10">
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.length === 0 ? (
-                <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={5} className="p-0">
-                    <EmptyState
-                      title="No categories yet"
-                      description="Categories keep your ledger organized. Add one to get started."
-                      action={
-                        <Button size="sm" onClick={openCreate}>
-                          <Plus data-icon="inline-start" />
-                          Add category
-                        </Button>
-                      }
-                    />
-                  </TableCell>
-                </TableRow>
-              ) : (
-                rows.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">
-                      {category.name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          category.type === 'income'
-                            ? 'badge-income capitalize'
-                            : 'badge-expense capitalize'
-                        }
-                      >
-                        {category.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap tabular-nums">
-                      {category.transactionCount}
-                    </TableCell>
-                    <TableCell className="hidden text-right whitespace-nowrap tabular-nums sm:table-cell">
-                      {category.recurringCount}
-                    </TableCell>
-                    <TableCell>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain md:hidden">
+            {rows.length === 0 ? (
+              <EmptyState
+                title="No categories yet"
+                description="Add a category to get started."
+                action={
+                  <Button size="sm" onClick={openCreate}>
+                    <Plus data-icon="inline-start" />
+                    Add
+                  </Button>
+                }
+              />
+            ) : (
+              <MobileList>
+                {rows.map((category) => (
+                  <MobileListRow
+                    key={category.id}
+                    title={category.name}
+                    meta={`${category.type} · ${category.transactionCount} txn${category.recurringCount ? ` · ${category.recurringCount} bills` : ''}`}
+                    onClick={() => openEdit(category)}
+                    actions={
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="ghost"
-                            size="icon-sm"
+                            size="icon"
+                            className="min-h-11 min-w-11"
                             aria-label={`Actions for ${category.name}`}
                           >
                             <MoreHorizontal />
@@ -400,15 +376,106 @@ function CategoriesPage() {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                    }
+                  />
+                ))}
+              </MobileList>
+            )}
+          </div>
+
+          <TableScroll className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
+                    Transactions
+                  </TableHead>
+                  <TableHead className="hidden text-right whitespace-nowrap sm:table-cell">
+                    Recurring
+                  </TableHead>
+                  <TableHead className="w-10">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.length === 0 ? (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={5} className="p-0">
+                      <EmptyState
+                        title="No categories yet"
+                        description="Add a category to get started."
+                        action={
+                          <Button size="sm" onClick={openCreate}>
+                            <Plus data-icon="inline-start" />
+                            Add category
+                          </Button>
+                        }
+                      />
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  rows.map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell className="font-medium">
+                        {category.name}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={
+                            category.type === 'income'
+                              ? 'badge-income capitalize'
+                              : 'badge-expense capitalize'
+                          }
+                        >
+                          {category.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap tabular-nums">
+                        {category.transactionCount}
+                      </TableCell>
+                      <TableCell className="hidden text-right whitespace-nowrap tabular-nums sm:table-cell">
+                        {category.recurringCount}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label={`Actions for ${category.name}`}
+                            >
+                              <MoreHorizontal />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => openEdit(category)}
+                            >
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() => openDelete(category)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </TableScroll>
         </CardContent>
       </Card>
+
+      <PaymentMethodsPanel />
 
       <AlertDialog
         open={Boolean(deleting)}
@@ -442,8 +509,10 @@ function CategoriesPage() {
           </AlertDialogHeader>
 
           {deletingInUse ? (
-            <div className="grid gap-2">
-              <Label htmlFor="category-replacement">Move items to</Label>
+            <Field className="py-2">
+              <FieldLabel htmlFor="category-replacement">
+                Move items to
+              </FieldLabel>
               {replacementOptions.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   Create another {deleting?.type} category first, then try
@@ -473,13 +542,11 @@ function CategoriesPage() {
                   </SelectContent>
                 </Select>
               )}
-            </div>
+            </Field>
           ) : null}
 
           {deleteMutation.isError ? (
-            <p className="text-sm text-destructive" role="alert">
-              {deleteMutation.error.message}
-            </p>
+            <FieldError>{deleteMutation.error.message}</FieldError>
           ) : null}
 
           <AlertDialogFooter>

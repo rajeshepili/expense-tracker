@@ -5,6 +5,8 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   ChartPie,
+  ChevronLeft,
+  ChevronRight,
   List,
   MoreHorizontal,
   Plus,
@@ -25,13 +27,13 @@ import {
   CardTitle,
 } from '#/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '#/components/ui/dialog'
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+} from '#/components/ui/responsive-modal'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +41,13 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
-import { Label } from '#/components/ui/label'
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '#/components/ui/field'
 import { Progress } from '#/components/ui/progress'
 import { Tabs, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import {
@@ -58,15 +66,13 @@ import {
   TableHeader,
   TableRow,
 } from '#/components/ui/table'
-import {
-  AnimatedMoney,
-  AnimatedPercent,
-} from '#/components/animated-number'
+import { AnimatedMoney, AnimatedPercent } from '#/components/animated-number'
 import { CategorySpendChart } from '#/components/category-spend-chart'
 import { ConfirmDeleteDialog } from '#/components/confirm-delete-dialog'
 import { EmptyState } from '#/components/layout/empty-state'
 import { PageHeader } from '#/components/layout/page-header'
 import { PageError, PageLoading } from '#/components/layout/page-query-state'
+import { MobileList, MobileListRow } from '#/components/layout/mobile-list'
 import { PageShell, TableScroll } from '#/components/layout/page-shell'
 import {
   BackupPanel,
@@ -74,23 +80,34 @@ import {
   LocalDataCallout,
 } from '#/components/local-data'
 import { StatTile } from '#/components/stat-tile'
+import { RecordRecurringControls } from '#/components/record-recurring-controls'
 import {
   clearMonthBudget,
   deleteTransaction,
   getOverview,
+  listPaymentMethods,
   setMonthBudget,
   updateSettings,
 } from '#/data/repository'
+import { useRecordRecurring } from '#/hooks/use-record-recurring'
 import type { LedgerTransaction } from '#/lib/types'
 import {
   amountToneClass,
   CURRENCIES,
   currencyLabel,
+  currentYearMonth,
+  amountDue,
+  canOneTapRecord,
+  dueStatus,
   formatIsoDate,
   formatYearMonth,
   isCurrencyCode,
+  isYearMonth,
   money,
   monthBudgetMatchesDefault,
+  percent,
+  priorDeltaRatio,
+  shiftYearMonth,
   signedAmountPrefix,
 } from '#/lib/finance'
 import { invalidateAfter } from '#/lib/query/invalidation'
@@ -98,7 +115,27 @@ import { prefetchRoute } from '#/lib/query/prefetch'
 import { queryKeys } from '#/lib/query/keys'
 import { cn } from 'cn'
 
-export const Route = createFileRoute('/')({ component: Home })
+type OverviewSearch = {
+  month?: string
+}
+
+export const Route = createFileRoute('/')({
+  validateSearch: (search: Record<string, unknown>): OverviewSearch => {
+    const month = typeof search.month === 'string' ? search.month : undefined
+    return {
+      month: month && isYearMonth(month) ? month : undefined,
+    }
+  },
+  component: Home,
+})
+
+function quietDelta(current: number, prior: number) {
+  const ratio = priorDeltaRatio(current, prior)
+  if (ratio === null) return 'new vs prior'
+  if (ratio === 0) return 'same as prior'
+  const sign = ratio > 0 ? '+' : '−'
+  return `${sign}${percent(Math.abs(ratio))} vs prior`
+}
 
 type CategoryView = 'list' | 'chart'
 
@@ -114,20 +151,36 @@ function readCategoryView(): CategoryView {
 function Home() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { month: monthParam } = Route.useSearch()
+  const yearMonth = monthParam ?? currentYearMonth()
+  const isCurrentMonth = yearMonth === currentYearMonth()
+  const recorder = useRecordRecurring()
   const [deleting, setDeleting] = useState<LedgerTransaction | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [defaultBudgetDraft, setDefaultBudgetDraft] = useState('')
   const [monthBudgetDraft, setMonthBudgetDraft] = useState('')
   const [currencyDraft, setCurrencyDraft] = useState('USD')
-  const [categoryView, setCategoryView] = useState<CategoryView>(readCategoryView)
+  const [categoryView, setCategoryView] =
+    useState<CategoryView>(readCategoryView)
   const overviewQuery = useQuery({
-    queryKey: queryKeys.overview,
+    queryKey: queryKeys.overviewMonth(yearMonth),
     queryFn: async () => {
-      const overview = await getOverview()
+      const overview = await getOverview(yearMonth)
       queryClient.setQueryData(queryKeys.settings, overview.settings)
       return overview
     },
   })
+  const methodsQuery = useQuery({
+    queryKey: queryKeys.paymentMethods,
+    queryFn: listPaymentMethods,
+  })
+
+  function goMonth(next: string) {
+    void navigate({
+      to: '/',
+      search: next === currentYearMonth() ? {} : { month: next },
+    })
+  }
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -160,14 +213,14 @@ function Home() {
         throw new Error('Choose a valid currency')
       }
 
-      const yearMonth = overviewQuery.data?.monthBudget.yearMonth
-      if (!yearMonth) throw new Error('Could not resolve the current month')
+      const targetYearMonth = overviewQuery.data?.monthBudget.yearMonth
+      if (!targetYearMonth) throw new Error('Could not resolve the current month')
 
       await updateSettings({ budget: defaultBudget, currency })
       if (monthBudgetMatchesDefault(monthBudget, defaultBudget)) {
-        await clearMonthBudget(yearMonth)
+        await clearMonthBudget(targetYearMonth)
       } else {
-        await setMonthBudget(yearMonth, monthBudget)
+        await setMonthBudget(targetYearMonth, monthBudget)
       }
     },
     onSuccess: async () => {
@@ -178,9 +231,9 @@ function Home() {
 
   const revertMonthMutation = useMutation({
     mutationFn: async () => {
-      const yearMonth = overviewQuery.data?.monthBudget.yearMonth
-      if (!yearMonth) throw new Error('Could not resolve the current month')
-      await clearMonthBudget(yearMonth)
+      const targetYearMonth = overviewQuery.data?.monthBudget.yearMonth
+      if (!targetYearMonth) throw new Error('Could not resolve the current month')
+      await clearMonthBudget(targetYearMonth)
     },
     onSuccess: async () => {
       const defaultBudget =
@@ -218,12 +271,15 @@ function Home() {
       if (event.key === 'n' || event.key === 'N') {
         event.preventDefault()
         prefetchRoute(queryClient, '/ledger')
-        void navigate({ to: '/ledger', search: { new: true } })
+        void navigate({
+          to: '/ledger',
+          search: { new: true, month: yearMonth },
+        })
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [settingsOpen, deleting, navigate, queryClient])
+  }, [settingsOpen, deleting, navigate, queryClient, yearMonth])
 
   if (overviewQuery.isPending) {
     return <PageLoading label="Loading overview…" />
@@ -241,6 +297,7 @@ function Home() {
 
   const {
     summary,
+    priorSummary,
     remaining,
     budgetUsed,
     categories,
@@ -253,14 +310,57 @@ function Home() {
   } = overviewQuery.data
   const monthLabel = formatYearMonth(monthBudget.yearMonth)
   const effectiveBudget = monthBudget.budget
+  const paymentMethods = methodsQuery.data ?? []
 
   return (
-    <PageShell>
-      <LocalDataCallout />
+    <PageShell scroll="page">
+      <LocalDataCallout compact className="md:hidden" />
+      <LocalDataCallout className="hidden md:block" />
       <BackupReminder />
       <PageHeader
         title="Overview"
-        description={`${monthLabel} · tracked against this month's budget.`}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="min-h-11 min-w-11 md:min-h-8 md:min-w-8"
+                aria-label="Previous month"
+                onClick={() => goMonth(shiftYearMonth(yearMonth, -1))}
+              >
+                <ChevronLeft />
+              </Button>
+              <span className="min-w-[9.5rem] text-center font-medium text-foreground">
+                {monthLabel}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="min-h-11 min-w-11 md:min-h-8 md:min-w-8"
+                aria-label="Next month"
+                onClick={() => goMonth(shiftYearMonth(yearMonth, 1))}
+              >
+                <ChevronRight />
+              </Button>
+            </span>
+            {!isCurrentMonth ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={() => goMonth(currentYearMonth())}
+              >
+                This month
+              </Button>
+            ) : null}
+            <span className="text-muted-foreground">
+              · tracked against this month&apos;s budget.
+            </span>
+          </span>
+        }
         actions={
           <>
             <Button variant="outline" size="sm" onClick={openSettingsEditor}>
@@ -271,14 +371,14 @@ function Home() {
             <Button asChild size="sm">
               <Link
                 to="/ledger"
-                search={{ new: true }}
+                search={{ new: true, month: yearMonth }}
                 onMouseEnter={() => prefetchRoute(queryClient, '/ledger')}
                 onFocus={() => prefetchRoute(queryClient, '/ledger')}
               >
                 <Plus data-icon="inline-start" />
                 <span className="hidden sm:inline">Add</span>
                 <span className="sr-only sm:hidden">Add transaction</span>
-                <Kbd className="bg-primary-foreground/15 text-primary-foreground">
+                <Kbd className="hidden bg-primary-foreground/15 text-primary-foreground md:inline-flex">
                   N
                 </Kbd>
               </Link>
@@ -287,47 +387,65 @@ function Home() {
         }
       />
 
-      <section className="grid shrink-0 grid-cols-2 gap-3 xl:grid-cols-4">
+      <section className="grid shrink-0 grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4">
         <StatTile
           label="Income"
           tone="income"
           icon={<ArrowDownLeft />}
+          className="px-3 py-2.5 md:px-4 md:py-3"
           value={
             <AnimatedMoney
-              persistKey="overview:income"
+              persistKey={`overview:${yearMonth}:income`}
               amount={summary.income}
               currency={settings.currency}
               goodWhen="up"
-              className="text-xl font-semibold tracking-tight text-income"
+              className="text-lg font-semibold tracking-tight text-income md:text-xl"
             />
           }
-          hint={monthLabel}
+          hint={
+            <span className="tabular-nums">
+              {quietDelta(summary.income, priorSummary.income)}
+            </span>
+          }
         />
         <StatTile
           label="Expenses"
           tone="expense"
           icon={<ArrowUpRight />}
+          className="px-3 py-2.5 md:px-4 md:py-3"
           value={
-            <AnimatedMoney
-              persistKey="overview:expenses"
-              amount={summary.expenses}
-              currency={settings.currency}
-              goodWhen="down"
-              className="text-xl font-semibold tracking-tight text-expense"
-            />
+            <Link
+              to="/ledger"
+              search={{ month: yearMonth }}
+              className="inline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onMouseEnter={() => prefetchRoute(queryClient, '/ledger')}
+            >
+              <AnimatedMoney
+                persistKey={`overview:${yearMonth}:expenses`}
+                amount={summary.expenses}
+                currency={settings.currency}
+                goodWhen="down"
+                className="text-lg font-semibold tracking-tight text-expense md:text-xl"
+              />
+            </Link>
           }
-          hint={monthLabel}
+          hint={
+            <span className="tabular-nums">
+              {quietDelta(summary.expenses, priorSummary.expenses)}
+            </span>
+          }
         />
         <StatTile
           label="Budget left"
           icon={<Wallet />}
+          className="px-3 py-2.5 md:px-4 md:py-3"
           value={
             <AnimatedMoney
-              persistKey="overview:remaining"
+              persistKey={`overview:${yearMonth}:remaining`}
               amount={remaining}
               currency={settings.currency}
               goodWhen="up"
-              className="text-xl font-semibold tracking-tight"
+              className="text-lg font-semibold tracking-tight md:text-xl"
             />
           }
           hint={
@@ -344,17 +462,18 @@ function Home() {
         <StatTile
           label="Budget used"
           icon={<ChartPie />}
+          className="px-3 py-2.5 md:px-4 md:py-3"
           value={
             <AnimatedPercent
-              persistKey="overview:budget-used"
+              persistKey={`overview:${yearMonth}:budget-used`}
               value={budgetUsed}
               goodWhen="down"
-              className="text-xl font-semibold tracking-tight"
+              className="text-lg font-semibold tracking-tight md:text-xl"
             />
           }
           hint={
             <Progress
-              className="mt-1.5 h-1.5"
+              className="mt-1.5 hidden h-1.5 md:block"
               value={Math.min(budgetUsed * 100, 100)}
               aria-label="Budget used"
             />
@@ -362,86 +481,86 @@ function Home() {
         />
       </section>
 
-      <section className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(16rem,1fr)]">
-        <Card className="flex min-h-0 min-w-0 flex-col gap-0 py-0">
+      <div className="shrink-0 md:hidden">
+        <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span>Budget used</span>
+          <span className="tabular-nums">
+            {Math.round(Math.min(budgetUsed * 100, 999))}%
+          </span>
+        </div>
+        <Progress
+          className="h-2"
+          value={Math.min(budgetUsed * 100, 100)}
+          aria-label="Budget used"
+        />
+      </div>
+
+      <section className="grid gap-4 md:min-h-0 md:flex-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(16rem,1fr)]">
+        <Card className="flex min-w-0 flex-col gap-0 py-0 md:min-h-0">
           <CardHeader className="shrink-0 border-b py-3">
             <CardTitle className="text-base">Recent transactions</CardTitle>
-            <CardDescription>Latest local activity</CardDescription>
             <CardAction>
               <Button asChild variant="ghost" size="sm">
-                <Link to="/ledger">View all</Link>
+                <Link to="/ledger" search={{ month: yearMonth }}>
+                  View all
+                </Link>
               </Button>
             </CardAction>
           </CardHeader>
-          <CardContent className="flex min-h-0 flex-1 flex-col px-0 pb-1">
-            <TableScroll>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="w-[7.5rem] text-right whitespace-nowrap">
-                    Amount
-                  </TableHead>
-                  <TableHead className="w-10 pr-3">
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentTransactions.length === 0 ? (
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={5} className="p-0">
-                      <EmptyState
-                        compact
-                        icon={<Receipt />}
-                        title="No transactions yet"
-                        description="Log your first expense or income to see activity here."
-                        action={
-                          <Button asChild size="sm">
-                            <Link
-                              to="/ledger"
-                              search={{ new: true }}
-                              onMouseEnter={() =>
-                                prefetchRoute(queryClient, '/ledger')
-                              }
-                            >
-                              <Plus data-icon="inline-start" />
-                              Add
-                            </Link>
-                          </Button>
+          <CardContent className="flex flex-col px-0 pb-1 md:min-h-0 md:flex-1">
+            {/* Phone: card rows */}
+            <div className="px-3 py-2 md:hidden">
+              {recentTransactions.length === 0 ? (
+                <EmptyState
+                  compact
+                  icon={<Receipt />}
+                  title="No transactions yet"
+                  description="Add an expense or income."
+                  action={
+                    <Button asChild size="sm">
+                      <Link
+                        to="/ledger"
+                        search={{ new: true, month: yearMonth }}
+                        onMouseEnter={() =>
+                          prefetchRoute(queryClient, '/ledger')
                         }
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  recentTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell className="font-medium">
-                        {transaction.description}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{transaction.category}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatIsoDate(transaction.date)}
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          'text-right whitespace-nowrap tabular-nums',
-                          amountToneClass(transaction.type),
-                        )}
                       >
-                        {signedAmountPrefix(transaction.type)}
-                        {money(transaction.amount, settings.currency)}
-                      </TableCell>
-                      <TableCell>
+                        <Plus data-icon="inline-start" />
+                        Add
+                      </Link>
+                    </Button>
+                  }
+                />
+              ) : (
+                <MobileList>
+                  {recentTransactions.map((transaction) => (
+                    <MobileListRow
+                      key={transaction.id}
+                      title={transaction.description}
+                      meta={`${transaction.category} · ${formatIsoDate(transaction.date)}`}
+                      trailing={
+                        <span className={amountToneClass(transaction.type)}>
+                          {signedAmountPrefix(transaction.type)}
+                          {money(transaction.amount, settings.currency)}
+                        </span>
+                      }
+                      onClick={() => {
+                        prefetchRoute(queryClient, '/ledger')
+                        void navigate({
+                          to: '/ledger',
+                          search: {
+                            month: yearMonth,
+                            edit: transaction.id,
+                          },
+                        })
+                      }}
+                      actions={
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
-                              size="icon-sm"
+                              size="icon"
+                              className="min-h-11 min-w-11"
                               aria-label={`Actions for ${transaction.description}`}
                             >
                               <MoreHorizontal />
@@ -449,7 +568,15 @@ function Home() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                              <Link to="/ledger">Edit in ledger</Link>
+                              <Link
+                                to="/ledger"
+                                search={{
+                                  month: yearMonth,
+                                  edit: transaction.id,
+                                }}
+                              >
+                                Edit in ledger
+                              </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               variant="destructive"
@@ -462,17 +589,138 @@ function Home() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
+                      }
+                    />
+                  ))}
+                </MobileList>
+              )}
+            </div>
+
+            {/* Desktop: table */}
+            <TableScroll className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="w-[7.5rem] text-right whitespace-nowrap">
+                      Amount
+                    </TableHead>
+                    <TableHead className="w-10 pr-3">
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentTransactions.length === 0 ? (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={5} className="p-0">
+                        <EmptyState
+                          compact
+                          icon={<Receipt />}
+                          title="No transactions yet"
+                          description="Add an expense or income."
+                          action={
+                            <Button asChild size="sm">
+                              <Link
+                                to="/ledger"
+                                search={{ new: true, month: yearMonth }}
+                                onMouseEnter={() =>
+                                  prefetchRoute(queryClient, '/ledger')
+                                }
+                              >
+                                <Plus data-icon="inline-start" />
+                                Add
+                              </Link>
+                            </Button>
+                          }
+                        />
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    recentTransactions.map((transaction) => (
+                      <TableRow
+                        key={transaction.id}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          prefetchRoute(queryClient, '/ledger')
+                          void navigate({
+                            to: '/ledger',
+                            search: {
+                              month: yearMonth,
+                              edit: transaction.id,
+                            },
+                          })
+                        }}
+                      >
+                        <TableCell className="font-medium">
+                          {transaction.description}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {transaction.category}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatIsoDate(transaction.date)}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            'text-right whitespace-nowrap tabular-nums',
+                            amountToneClass(transaction.type),
+                          )}
+                        >
+                          {signedAmountPrefix(transaction.type)}
+                          {money(transaction.amount, settings.currency)}
+                        </TableCell>
+                        <TableCell
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={`Actions for ${transaction.description}`}
+                              >
+                                <MoreHorizontal />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link
+                                  to="/ledger"
+                                  search={{
+                                    month: yearMonth,
+                                    edit: transaction.id,
+                                  }}
+                                >
+                                  Edit in ledger
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => {
+                                  deleteMutation.reset()
+                                  setDeleting(transaction)
+                                }}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </TableScroll>
           </CardContent>
         </Card>
 
-        <div className="scroll-panel flex min-h-0 flex-col gap-4">
+        <div className="flex flex-col gap-4 md:scroll-panel md:min-h-0">
           <Card className="gap-0 py-0">
             <CardHeader className="border-b py-3">
               <CardTitle className="text-base">Categories vs budget</CardTitle>
@@ -529,7 +777,18 @@ function Home() {
                 />
               ) : (
                 categories.map((category) => (
-                  <div key={category.name} className="flex flex-col gap-1.5">
+                  <Link
+                    key={category.categoryId || category.name}
+                    to="/ledger"
+                    search={{
+                      month: yearMonth,
+                      ...(category.categoryId
+                        ? { category: category.categoryId }
+                        : {}),
+                    }}
+                    className="flex flex-col gap-1.5 rounded-md outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
+                    onMouseEnter={() => prefetchRoute(queryClient, '/ledger')}
+                  >
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="text-sm font-medium">
                         {category.name}
@@ -552,7 +811,7 @@ function Home() {
                       value={Math.min(category.ofBudget * 100, 100)}
                       aria-label={`${category.name} share of budget`}
                     />
-                  </div>
+                  </Link>
                 ))
               )}
             </CardContent>
@@ -577,7 +836,12 @@ function Home() {
                 of budget
               </CardDescription>
               <CardAction>
-                <Button asChild variant="ghost" size="icon-sm" aria-label="Manage recurring">
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Manage recurring"
+                >
                   <Link to="/recurring">
                     <Repeat />
                   </Link>
@@ -606,27 +870,68 @@ function Home() {
                   }
                 />
               ) : (
-                upcomingRecurring.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-start justify-between gap-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Next {formatIsoDate(item.nextDate)}
-                      </p>
+                upcomingRecurring.map((item) => {
+                  const status = dueStatus(item.nextDate)
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex items-start justify-between gap-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="flex flex-wrap items-center gap-2 truncate text-sm font-medium">
+                          <span className="truncate">{item.name}</span>
+                          {status === 'overdue' ? (
+                            <Badge variant="destructive">Overdue</Badge>
+                          ) : status === 'due' ? (
+                            <Badge>Due</Badge>
+                          ) : null}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Next {formatIsoDate(item.nextDate)}
+                          {item.remainingAmount !== null
+                            ? ` · ${money(amountDue(item), settings.currency)} left`
+                            : ''}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1.5">
+                        <span className="pt-0.5 text-sm tabular-nums">
+                          {money(amountDue(item), settings.currency)}
+                        </span>
+                        {canOneTapRecord(item.nextDate) ? (
+                          <Button
+                            size="xs"
+                            className="active:scale-[0.97]"
+                            disabled={recorder.recording}
+                            onClick={() => recorder.recordOneTap(item)}
+                          >
+                            Record
+                          </Button>
+                        ) : (
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            className="active:scale-[0.97]"
+                            disabled={recorder.recording}
+                            onClick={() => recorder.openAdjust(item)}
+                          >
+                            Pay early
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <span className="shrink-0 pt-0.5 text-sm tabular-nums">
-                      {money(item.amount, settings.currency)}
-                    </span>
-                  </div>
-                ))
+                  )
+                })
               )}
             </CardContent>
           </Card>
         </div>
       </section>
+
+      <RecordRecurringControls
+        recorder={recorder}
+        paymentMethods={paymentMethods}
+        currencyHint={settings.currency}
+      />
 
       <ConfirmDeleteDialog
         open={Boolean(deleting)}
@@ -637,13 +942,13 @@ function Home() {
           }
         }}
         title={`Delete “${deleting?.description ?? 'transaction'}”?`}
-        description="This transaction will be removed from your local ledger. This cannot be undone."
+        description="This transaction will be removed. This cannot be undone."
         pending={deleteMutation.isPending}
         error={deleteMutation.error?.message ?? null}
         onConfirm={() => deleteMutation.mutate()}
       />
 
-      <Dialog
+      <ResponsiveModal
         open={settingsOpen}
         onOpenChange={(open) => {
           setSettingsOpen(open)
@@ -653,17 +958,17 @@ function Home() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Budget & currency</DialogTitle>
-            <DialogDescription>
-              Set a default monthly budget, or a one-off amount for {monthLabel}.
-              Percentages use this month’s budget.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label htmlFor="display-currency">Currency</Label>
+        <ResponsiveModalContent className="sm:max-w-lg">
+          <ResponsiveModalHeader>
+            <ResponsiveModalTitle>Budget & currency</ResponsiveModalTitle>
+            <ResponsiveModalDescription>
+              Set a default monthly budget, or a one-off amount for {monthLabel}
+              . Percentages use this month’s budget.
+            </ResponsiveModalDescription>
+          </ResponsiveModalHeader>
+          <FieldGroup className="gap-4 py-2">
+            <Field>
+              <FieldLabel htmlFor="display-currency">Currency</FieldLabel>
               <Select value={currencyDraft} onValueChange={setCurrencyDraft}>
                 <SelectTrigger id="display-currency" className="w-full">
                   <SelectValue placeholder="Choose currency" />
@@ -681,11 +986,11 @@ function Home() {
                   </SelectGroup>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="default-budget">
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="default-budget">
                 Default monthly budget ({currencyDraft})
-              </Label>
+              </FieldLabel>
               <Input
                 id="default-budget"
                 name="defaultBudget"
@@ -697,15 +1002,15 @@ function Home() {
                 value={defaultBudgetDraft}
                 onChange={(event) => setDefaultBudgetDraft(event.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
+              <FieldDescription>
                 Used every month unless you set a custom amount below.
-              </p>
-            </div>
-            <div className="grid gap-2">
+              </FieldDescription>
+            </Field>
+            <Field>
               <div className="flex items-center justify-between gap-2">
-                <Label htmlFor="month-budget">
+                <FieldLabel htmlFor="month-budget">
                   This month’s budget · {monthLabel}
-                </Label>
+                </FieldLabel>
                 {monthBudget.isCustom ||
                 monthBudgetDraft !== defaultBudgetDraft ? (
                   <Button
@@ -737,25 +1042,21 @@ function Home() {
                 value={monthBudgetDraft}
                 onChange={(event) => setMonthBudgetDraft(event.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
+              <FieldDescription>
                 {monthBudget.isCustom
-                  ? `Custom for ${monthLabel}. Revert anytime to the default.`
+                  ? `Custom for ${monthLabel}.`
                   : 'Matches your default until you change it.'}
-              </p>
-            </div>
+              </FieldDescription>
+            </Field>
             {settingsMutation.isError ? (
-              <p className="text-sm text-destructive" role="alert">
-                {settingsMutation.error.message}
-              </p>
+              <FieldError>{settingsMutation.error.message}</FieldError>
             ) : null}
             {revertMonthMutation.isError ? (
-              <p className="text-sm text-destructive" role="alert">
-                {revertMonthMutation.error.message}
-              </p>
+              <FieldError>{revertMonthMutation.error.message}</FieldError>
             ) : null}
             <BackupPanel />
-          </div>
-          <DialogFooter>
+          </FieldGroup>
+          <ResponsiveModalFooter>
             <Button
               variant="outline"
               onClick={() => setSettingsOpen(false)}
@@ -769,9 +1070,9 @@ function Home() {
             >
               {settingsMutation.isPending ? 'Saving…' : 'Save'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveModalFooter>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
     </PageShell>
   )
 }

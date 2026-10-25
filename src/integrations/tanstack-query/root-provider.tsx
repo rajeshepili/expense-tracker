@@ -4,7 +4,6 @@ export function getContext() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        // Local SQLite only changes via our mutations — stay warm until invalidated.
         staleTime: Infinity,
         gcTime: 1000 * 60 * 30,
         refetchOnWindowFocus: false,
@@ -18,4 +17,3 @@ export function getContext() {
     queryClient,
   }
 }
-export default function TanstackQueryProvider() {}

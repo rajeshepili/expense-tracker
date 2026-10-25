@@ -2,7 +2,13 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
-import { Label } from '#/components/ui/label'
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '#/components/ui/field'
 import {
   Select,
   SelectContent,
@@ -12,12 +18,7 @@ import {
   SelectValue,
 } from '#/components/ui/select'
 import { completeOnboarding } from '#/data/repository'
-import {
-  CURRENCIES,
-  currencyLabel,
-  isCurrencyCode,
-  money,
-} from '#/lib/finance'
+import { CURRENCIES, currencyLabel, isCurrencyCode, money } from '#/lib/finance'
 import { LocalDataCallout } from '#/components/local-data'
 import { invalidateAfter } from '#/lib/query/invalidation'
 import { cn } from 'cn'
@@ -79,9 +80,9 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
 
       <LocalDataCallout />
 
-      <div className="flex flex-col gap-5 rounded-xl border bg-card/80 p-5 shadow-sm backdrop-blur-sm md:p-6">
-        <div className="grid gap-2">
-          <Label htmlFor="onboarding-currency">Currency</Label>
+      <FieldGroup className="gap-5 rounded-xl border bg-card/80 p-5 shadow-sm backdrop-blur-sm md:p-6">
+        <Field>
+          <FieldLabel htmlFor="onboarding-currency">Currency</FieldLabel>
           <Select value={currency} onValueChange={setCurrency}>
             <SelectTrigger id="onboarding-currency" className="w-full">
               <SelectValue placeholder="Choose currency" />
@@ -99,12 +100,12 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
               </SelectGroup>
             </SelectContent>
           </Select>
-        </div>
+        </Field>
 
-        <div className="grid gap-2">
-          <Label htmlFor="onboarding-budget">
+        <Field>
+          <FieldLabel htmlFor="onboarding-budget">
             Default monthly budget ({currency})
-          </Label>
+          </FieldLabel>
           <Input
             id="onboarding-budget"
             name="budget"
@@ -116,24 +117,22 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
             value={budget}
             onChange={(event) => setBudget(event.target.value)}
           />
-        </div>
+        </Field>
 
-        <fieldset className="grid gap-2">
-          <legend className="text-sm font-medium">Starting data</legend>
+        <FieldSet className="gap-2">
+          <FieldLegend variant="label">Starting data</FieldLegend>
           <div className="grid gap-2">
             {(
               [
                 {
                   id: 'empty' as const,
                   title: 'Start empty',
-                  description:
-                    'Default categories and payment methods only. Add your own entries.',
+                  description: 'Categories and payment methods only.',
                 },
                 {
                   id: 'sample' as const,
                   title: 'Load sample data',
-                  description:
-                    'Includes example transactions and recurring bills you can edit or delete.',
+                  description: 'Example transactions and bills.',
                 },
               ] as const
             ).map((option) => (
@@ -156,7 +155,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
               </button>
             ))}
           </div>
-        </fieldset>
+        </FieldSet>
 
         {mutation.isError ? (
           <p className="text-sm text-destructive" role="alert">
@@ -172,7 +171,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
         >
           {mutation.isPending ? 'Setting up…' : 'Continue'}
         </Button>
-      </div>
+      </FieldGroup>
     </div>
   )
 }

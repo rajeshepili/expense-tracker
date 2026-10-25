@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { MoreHorizontal, Plus, Receipt, Search } from 'lucide-react'
 import { Badge } from '#/components/ui/badge'
@@ -12,14 +12,14 @@ import {
   CardTitle,
 } from '#/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '#/components/ui/dialog'
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalTrigger,
+} from '#/components/ui/responsive-modal'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +48,7 @@ import {
 import { AnimatedMoney } from '#/components/animated-number'
 import { ConfirmDeleteDialog } from '#/components/confirm-delete-dialog'
 import { EmptyState } from '#/components/layout/empty-state'
+import { MobileList, MobileListRow } from '#/components/layout/mobile-list'
 import { PageHeader } from '#/components/layout/page-header'
 import { PageError, PageLoading } from '#/components/layout/page-query-state'
 import { PageShell, TableScroll } from '#/components/layout/page-shell'
@@ -57,17 +58,19 @@ import {
   getSettings,
   listCategories,
   listPaymentMethods,
-  listTransactions,
+  listRecentTransactions,
   updateTransaction,
 } from '#/data/repository'
 import {
   amountToneClass,
+  defaultDateForMonth,
   formatIsoDate,
+  formatYearMonth,
+  isYearMonth,
   money,
   signedAmountPrefix,
   todayIso,
 } from '#/lib/finance'
-import { invalidateAfter } from '#/lib/query/invalidation'
 import { queryKeys } from '#/lib/query/keys'
 import {
   readTransactionDefaults,
@@ -75,15 +78,35 @@ import {
 } from '#/lib/transaction-defaults'
 import type { LedgerTransaction, TransactionType } from '#/lib/types'
 import { cn } from 'cn'
+import { useComposer } from '#/hooks/use-composer'
+import { useOptimisticMutation } from '#/hooks/use-optimistic-mutation'
 
 type LedgerSearch = {
   new?: boolean
+  edit?: string
+  month?: string
+  category?: string
+  method?: string
+  q?: string
 }
 
 export const Route = createFileRoute('/ledger')({
-  validateSearch: (search: Record<string, unknown>): LedgerSearch => ({
-    new: search.new === true || search.new === '1' || search.new === 1,
-  }),
+  validateSearch: (search: Record<string, unknown>): LedgerSearch => {
+    const monthRaw = typeof search.month === 'string' ? search.month : undefined
+    const month =
+      monthRaw === 'all' || (monthRaw && isYearMonth(monthRaw))
+        ? monthRaw
+        : undefined
+    return {
+      new: search.new === true || search.new === '1' || search.new === 1,
+      edit: typeof search.edit === 'string' ? search.edit : undefined,
+      month,
+      category:
+        typeof search.category === 'string' ? search.category : undefined,
+      method: typeof search.method === 'string' ? search.method : undefined,
+      q: typeof search.q === 'string' ? search.q : undefined,
+    }
+  },
   component: LedgerPage,
 })
 
@@ -134,20 +157,46 @@ function formFromTransaction(row: LedgerTransaction): FormState {
 function LedgerPage() {
   const queryClient = useQueryClient()
   const navigate = Route.useNavigate()
-  const { new: openNew } = Route.useSearch()
+  const search = Route.useSearch()
+  const {
+    new: openNew,
+    edit: editId,
+    month: monthFilter,
+    category: categoryFilter,
+    method: methodFilter,
+    q: qParam,
+  } = search
   const descriptionRef = useRef<HTMLInputElement>(null)
 
   const [filter, setFilter] = useState<'all' | TransactionType>('all')
-  const [query, setQuery] = useState('')
-  const [composerOpen, setComposerOpen] = useState(false)
-  const [editing, setEditing] = useState<LedgerTransaction | null>(null)
+  const [query, setQuery] = useState(qParam ?? '')
   const [deleting, setDeleting] = useState<LedgerTransaction | null>(null)
-  const [form, setForm] = useState<FormState>(emptyForm)
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const {
+    editing,
+    form,
+    saveError,
+    composerOpen,
+    setForm,
+    setSaveError,
+    setComposerOpen,
+    openCreate,
+    openEdit,
+    reset,
+  } = useComposer<FormState, LedgerTransaction>({
+    emptyForm,
+    formFromRow: formFromTransaction,
+  })
+
+  const urlFiltersActive = Boolean(
+    (monthFilter && monthFilter !== 'all') ||
+      categoryFilter ||
+      methodFilter ||
+      qParam,
+  )
 
   const transactionsQuery = useQuery({
     queryKey: queryKeys.transactions,
-    queryFn: listTransactions,
+    queryFn: () => listRecentTransactions(1000),
   })
   const settingsQuery = useQuery({
     queryKey: queryKeys.settings,
@@ -170,8 +219,15 @@ function LedgerPage() {
       : category.type === 'expense',
   )
 
-  const saveMutation = useMutation({
-    mutationFn: async (vars: SaveVars) => {
+  const saveMutation = useOptimisticMutation<
+    LedgerTransaction[],
+    SaveVars,
+    { mode: 'edit' | 'create'; id: string }
+  >({
+    queryClient,
+    queryKey: queryKeys.transactions,
+    invalidateKeys: ['transactions', 'categories'],
+    mutationFn: async (vars) => {
       const payload = {
         description: vars.description,
         amount: vars.amount,
@@ -187,12 +243,8 @@ function LedgerPage() {
       const row = await createTransaction(payload)
       return { mode: 'create' as const, id: row.id }
     },
-    onMutate: async (vars) => {
+    onMutate: (vars) => {
       setSaveError(null)
-      await queryClient.cancelQueries({ queryKey: queryKeys.transactions })
-      const previous = queryClient.getQueryData<LedgerTransaction[]>(
-        queryKeys.transactions,
-      )
 
       const nextRow: LedgerTransaction = {
         id: vars.editingId ?? `temp-${crypto.randomUUID()}`,
@@ -204,6 +256,7 @@ function LedgerPage() {
         category: vars.categoryName,
         paymentMethodId: vars.paymentMethodId,
         paymentMethod: vars.paymentMethodName,
+        sourceRecurringId: null,
       }
 
       queryClient.setQueryData<LedgerTransaction[]>(
@@ -225,11 +278,9 @@ function LedgerPage() {
         paymentMethodId: vars.paymentMethodId ?? '',
       })
 
-      setComposerOpen(false)
-      setEditing(null)
-      setForm(emptyForm())
+      reset()
 
-      return { previous, tempId: vars.editingId ? null : nextRow.id }
+      return { tempId: vars.editingId ? null : nextRow.id }
     },
     onSuccess: (result, _vars, context) => {
       if (result.mode === 'create' && context?.tempId) {
@@ -242,51 +293,46 @@ function LedgerPage() {
         )
       }
     },
-    onError: (error, _vars, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(queryKeys.transactions, context.previous)
-      }
-      setSaveError(
-        error instanceof Error ? error.message : 'Could not save transaction',
-      )
+    onError: (error) => {
+      setSaveError(error.message || 'Could not save transaction')
       setComposerOpen(true)
-    },
-    onSettled: () => {
-      void invalidateAfter(queryClient, ['transactions', 'categories'])
     },
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+  const deleteMutation = useOptimisticMutation<LedgerTransaction[], string>({
+    queryClient,
+    queryKey: queryKeys.transactions,
+    invalidateKeys: ['transactions', 'categories'],
+    mutationFn: async (id) => {
       await deleteTransaction(id)
     },
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.transactions })
-      const previous = queryClient.getQueryData<LedgerTransaction[]>(
-        queryKeys.transactions,
-      )
+    onMutate: (id) => {
       queryClient.setQueryData<LedgerTransaction[]>(
         queryKeys.transactions,
         (current) => current?.filter((row) => row.id !== id),
       )
       setDeleting(null)
-      return { previous }
-    },
-    onError: (_error, _id, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(queryKeys.transactions, context.previous)
-      }
-    },
-    onSettled: () => {
-      void invalidateAfter(queryClient, ['transactions', 'categories'])
     },
   })
 
   const rows = useMemo(() => {
     const all = transactionsQuery.data ?? []
     const normalized = query.trim().toLowerCase()
-    return all.filter((transaction) => {
+    return all.filter((transaction: LedgerTransaction) => {
       if (filter !== 'all' && transaction.type !== filter) return false
+      if (
+        monthFilter &&
+        monthFilter !== 'all' &&
+        !transaction.date.startsWith(monthFilter)
+      ) {
+        return false
+      }
+      if (categoryFilter && transaction.categoryId !== categoryFilter) {
+        return false
+      }
+      if (methodFilter && transaction.paymentMethodId !== methodFilter) {
+        return false
+      }
       if (!normalized) return true
       return (
         transaction.description.toLowerCase().includes(normalized) ||
@@ -294,11 +340,31 @@ function LedgerPage() {
         (transaction.paymentMethod ?? '').toLowerCase().includes(normalized)
       )
     })
-  }, [filter, query, transactionsQuery.data])
+  }, [
+    categoryFilter,
+    filter,
+    methodFilter,
+    monthFilter,
+    query,
+    transactionsQuery.data,
+  ])
+
+  const categoryFilterName = useMemo(() => {
+    if (!categoryFilter) return null
+    return (
+      categories.find((category) => category.id === categoryFilter)?.name ??
+      null
+    )
+  }, [categories, categoryFilter])
+
+  const methodFilterName = useMemo(() => {
+    if (!methodFilter) return null
+    return methods.find((method) => method.id === methodFilter)?.name ?? null
+  }, [methodFilter, methods])
 
   const totals = useMemo(() => {
     return rows.reduce(
-      (acc, row) => {
+      (acc: { income: number; expenses: number }, row: LedgerTransaction) => {
         if (row.type === 'income') acc.income += row.amount
         else acc.expenses += row.amount
         return acc
@@ -307,18 +373,35 @@ function LedgerPage() {
     )
   }, [rows])
 
-  function openCreate() {
-    setEditing(null)
-    setSaveError(null)
-    setForm(emptyForm())
-    setComposerOpen(true)
+  function stripComposerSearch() {
+    void navigate({
+      search: (prev) => {
+        const { new: _new, edit: _edit, ...rest } = prev
+        return rest
+      },
+      replace: true,
+    })
   }
 
-  function openEdit(row: LedgerTransaction) {
-    setEditing(row)
-    setSaveError(null)
-    setForm(formFromTransaction(row))
-    setComposerOpen(true)
+  function openCreateInContext() {
+    openCreate()
+    setForm((current) => ({
+      ...current,
+      date: defaultDateForMonth(monthFilter),
+    }))
+  }
+
+  function clearFilters() {
+    setFilter('all')
+    setQuery('')
+    void navigate({ search: {}, replace: true })
+  }
+
+  function filterByMethod(methodId: string) {
+    void navigate({
+      search: (prev) => ({ ...prev, method: methodId }),
+      replace: true,
+    })
   }
 
   function setType(type: TransactionType) {
@@ -358,13 +441,38 @@ function LedgerPage() {
   }
 
   useEffect(() => {
+    setQuery(qParam ?? '')
+  }, [qParam])
+
+  useEffect(() => {
+    const trimmed = query.trim()
+    const timer = window.setTimeout(() => {
+      if ((qParam ?? '') === trimmed) return
+      void navigate({
+        search: (prev) => {
+          const { q: _q, ...rest } = prev
+          return trimmed ? { ...rest, q: trimmed } : rest
+        },
+        replace: true,
+      })
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [query, qParam, navigate])
+
+  useEffect(() => {
     if (!openNew) return
-    setEditing(null)
-    setSaveError(null)
-    setForm(emptyForm())
-    setComposerOpen(true)
-    void navigate({ search: {}, replace: true })
-  }, [openNew, navigate])
+    openCreateInContext()
+    stripComposerSearch()
+  }, [openNew])
+
+  useEffect(() => {
+    if (!editId || !transactionsQuery.data) return
+    const row = transactionsQuery.data.find(
+      (transaction) => transaction.id === editId,
+    )
+    if (row) openEdit(row)
+    stripComposerSearch()
+  }, [editId, transactionsQuery.data])
 
   useEffect(() => {
     if (!composerOpen || editing) return
@@ -407,12 +515,12 @@ function LedgerPage() {
       }
       if (event.key === 'n' || event.key === 'N') {
         event.preventDefault()
-        openCreate()
+        openCreateInContext()
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [composerOpen, deleting])
+  }, [composerOpen, deleting, monthFilter])
 
   if (transactionsQuery.isPending || settingsQuery.isPending) {
     return <PageLoading label="Loading ledger…" />
@@ -435,49 +543,53 @@ function LedgerPage() {
 
   const allCount = transactionsQuery.data.length
   const currency = settingsQuery.data.currency
+  const viewingMonth =
+    monthFilter && monthFilter !== 'all' ? monthFilter : null
 
   return (
     <PageShell>
       <PageHeader
         title="Ledger"
-        description="Transactions saved in your local database."
+        description={
+          viewingMonth ? formatYearMonth(viewingMonth) : 'All transactions.'
+        }
         actions={
-          <Dialog
+          <ResponsiveModal
             open={composerOpen}
             onOpenChange={(open) => {
-              setComposerOpen(open)
               if (!open) {
-                setEditing(null)
-                setForm(emptyForm())
-                setSaveError(null)
+                reset()
                 saveMutation.reset()
+              } else {
+                setComposerOpen(true)
               }
             }}
           >
-            <DialogTrigger asChild>
-              <Button size="sm" onClick={openCreate}>
+            <ResponsiveModalTrigger asChild>
+              <Button size="sm" onClick={openCreateInContext}>
                 <Plus data-icon="inline-start" />
-                Add transaction
+                <span className="md:hidden">Add</span>
+                <span className="hidden md:inline">Add transaction</span>
                 <kbd className="app-kbd app-kbd-on-primary ml-1.5 hidden sm:inline-flex">
                   N
                 </kbd>
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            </ResponsiveModalTrigger>
+            <ResponsiveModalContent className="sm:max-w-md">
               <form
                 onSubmit={(event) => {
                   event.preventDefault()
                   submitForm()
                 }}
               >
-                <DialogHeader>
-                  <DialogTitle>
+                <ResponsiveModalHeader>
+                  <ResponsiveModalTitle>
                     {editing ? 'Edit transaction' : 'Add transaction'}
-                  </DialogTitle>
-                  <DialogDescription>
-                    Saved on this device. Press Enter to save.
-                  </DialogDescription>
-                </DialogHeader>
+                  </ResponsiveModalTitle>
+                  <ResponsiveModalDescription>
+                    Saved on this device.
+                  </ResponsiveModalDescription>
+                </ResponsiveModalHeader>
                 <div className="grid gap-4 py-2">
                   <div
                     className="grid grid-cols-2 gap-1 rounded-lg border bg-muted/40 p-1"
@@ -629,11 +741,14 @@ function LedgerPage() {
                     </p>
                   ) : null}
                 </div>
-                <DialogFooter>
+                <ResponsiveModalFooter>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setComposerOpen(false)}
+                    onClick={() => {
+                      reset()
+                      saveMutation.reset()
+                    }}
                     disabled={saveMutation.isPending}
                   >
                     Cancel
@@ -641,10 +756,10 @@ function LedgerPage() {
                   <Button type="submit" disabled={saveMutation.isPending}>
                     {saveMutation.isPending ? 'Saving…' : 'Save'}
                   </Button>
-                </DialogFooter>
+                </ResponsiveModalFooter>
               </form>
-            </DialogContent>
-          </Dialog>
+            </ResponsiveModalContent>
+          </ResponsiveModal>
         }
       />
 
@@ -693,7 +808,116 @@ function LedgerPage() {
             </div>
           </div>
 
-          <TableScroll>
+          {urlFiltersActive || filter !== 'all' || query.trim() ? (
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {viewingMonth ? (
+                <Badge variant="secondary">{formatYearMonth(viewingMonth)}</Badge>
+              ) : null}
+              {monthFilter === 'all' ? (
+                <Badge variant="secondary">All months</Badge>
+              ) : null}
+              {categoryFilterName ? (
+                <Badge variant="secondary">{categoryFilterName}</Badge>
+              ) : null}
+              {methodFilterName ? (
+                <Badge variant="secondary">{methodFilterName}</Badge>
+              ) : null}
+              {filter !== 'all' ? (
+                <Badge variant="outline" className="capitalize">
+                  {filter}
+                </Badge>
+              ) : null}
+              {query.trim() ? (
+                <Badge variant="outline">“{query.trim()}”</Badge>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={clearFilters}
+              >
+                Clear filters
+              </Button>
+            </div>
+          ) : null}
+
+          {/* Phone list */}
+          <div className="md:hidden">
+            {allCount === 0 ? (
+              <EmptyState
+                icon={<Receipt />}
+                title="Your ledger is empty"
+                description="Add a transaction to start tracking."
+                action={
+                  <Button size="sm" onClick={openCreateInContext}>
+                    <Plus data-icon="inline-start" />
+                    Add
+                  </Button>
+                }
+              />
+            ) : rows.length === 0 ? (
+              <EmptyState
+                compact
+                title="No matching transactions"
+                description="Clear filters to see more of your ledger."
+                action={
+                  <Button size="sm" variant="outline" onClick={clearFilters}>
+                    Clear filters
+                  </Button>
+                }
+              />
+            ) : (
+              <MobileList>
+                {rows.map((transaction) => (
+                  <MobileListRow
+                    key={transaction.id}
+                    title={transaction.description}
+                    meta={`${transaction.category}${transaction.paymentMethod ? ` · ${transaction.paymentMethod}` : ''} · ${formatIsoDate(transaction.date)}`}
+                    trailing={
+                      <span className={amountToneClass(transaction.type)}>
+                        {signedAmountPrefix(transaction.type)}
+                        {money(transaction.amount, currency)}
+                      </span>
+                    }
+                    onClick={() => openEdit(transaction)}
+                    actions={
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="min-h-11 min-w-11"
+                            aria-label={`Actions for ${transaction.description}`}
+                          >
+                            <MoreHorizontal />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => openEdit(transaction)}
+                          >
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => {
+                              deleteMutation.reset()
+                              setDeleting(transaction)
+                            }}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    }
+                  />
+                ))}
+              </MobileList>
+            )}
+          </div>
+
+          <TableScroll className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -717,9 +941,9 @@ function LedgerPage() {
                       <EmptyState
                         icon={<Receipt />}
                         title="Your ledger is empty"
-                        description="Add a transaction to start tracking. Press N anytime."
+                        description="Add a transaction to start tracking."
                         action={
-                          <Button size="sm" onClick={openCreate}>
+                          <Button size="sm" onClick={openCreateInContext}>
                             <Plus data-icon="inline-start" />
                             Add
                             <kbd className="app-kbd app-kbd-on-primary ml-1.5 hidden sm:inline-flex">
@@ -736,7 +960,16 @@ function LedgerPage() {
                       <EmptyState
                         compact
                         title="No matching transactions"
-                        description="Try clearing search or switching the type filter."
+                        description="Clear filters to see more of your ledger."
+                        action={
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={clearFilters}
+                          >
+                            Clear filters
+                          </Button>
+                        }
                       />
                     </TableCell>
                   </TableRow>
@@ -752,7 +985,20 @@ function LedgerPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden text-muted-foreground md:table-cell">
-                        {transaction.paymentMethod ?? '—'}
+                        {transaction.paymentMethodId &&
+                        transaction.paymentMethod ? (
+                          <button
+                            type="button"
+                            className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            onClick={() =>
+                              filterByMethod(transaction.paymentMethodId!)
+                            }
+                          >
+                            {transaction.paymentMethod}
+                          </button>
+                        ) : (
+                          '—'
+                        )}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {formatIsoDate(transaction.date)}
@@ -825,7 +1071,7 @@ function LedgerPage() {
           }
         }}
         title={`Delete “${deleting?.description ?? 'transaction'}”?`}
-        description="This transaction will be removed from your local ledger. This cannot be undone."
+        description="This transaction will be removed. This cannot be undone."
         pending={deleteMutation.isPending}
         error={deleteMutation.error?.message ?? null}
         onConfirm={() => {

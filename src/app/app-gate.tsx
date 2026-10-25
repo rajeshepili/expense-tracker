@@ -1,6 +1,8 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState  } from 'react'
+import type {ReactNode} from 'react';
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '#/components/ui/button'
+import { Spinner } from '#/components/ui/spinner'
 import { queryKeys } from '#/lib/query/keys'
 
 const OnboardingScreen = lazy(() =>
@@ -14,7 +16,9 @@ type GateState =
   | { status: 'ready' }
 
 function messageOf(error: unknown) {
-  return error instanceof Error ? error.message : 'Failed to open local database'
+  return error instanceof Error
+    ? error.message
+    : 'Failed to open local database'
 }
 
 export function AppGate({ children }: { children: ReactNode }) {
@@ -24,7 +28,7 @@ export function AppGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false
 
-    void (async () => {
+    const init = async () => {
       try {
         const { bootstrapApp, getOverview } = await import('#/data/repository')
         const { needsOnboarding } = await bootstrapApp()
@@ -32,10 +36,12 @@ export function AppGate({ children }: { children: ReactNode }) {
 
         queryClient.setQueryData(queryKeys.onboarding, needsOnboarding)
         if (!needsOnboarding) {
+          const { currentYearMonth } = await import('#/lib/finance')
+          const yearMonth = currentYearMonth()
           void queryClient.query({
-            queryKey: queryKeys.overview,
+            queryKey: queryKeys.overviewMonth(yearMonth),
             queryFn: async () => {
-              const overview = await getOverview()
+              const overview = await getOverview(yearMonth)
               queryClient.setQueryData(queryKeys.settings, overview.settings)
               return overview
             },
@@ -49,7 +55,9 @@ export function AppGate({ children }: { children: ReactNode }) {
           setState({ status: 'error', message: messageOf(error) })
         }
       }
-    })()
+    }
+
+    init()
 
     return () => {
       cancelled = true
@@ -58,7 +66,8 @@ export function AppGate({ children }: { children: ReactNode }) {
 
   if (state.status === 'loading') {
     return (
-      <div className="mx-auto flex h-dvh w-full max-w-6xl items-center justify-center p-6">
+      <div className="mx-auto flex h-dvh w-full max-w-6xl flex-col items-center justify-center gap-3 p-6">
+        <Spinner className="size-5 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">Opening local database…</p>
       </div>
     )

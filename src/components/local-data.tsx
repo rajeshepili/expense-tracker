@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { Download, Upload } from 'lucide-react'
+import { ChevronDown, Download, HardDrive, Upload } from 'lucide-react'
+import { toast } from 'sonner'
 import { ConfirmDeleteDialog } from '#/components/confirm-delete-dialog'
+import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '#/components/ui/collapsible'
 import { downloadBackup, restoreBackup } from '#/data/backup'
 import {
   dismissBackupReminder,
@@ -12,46 +19,96 @@ import {
 } from '#/lib/backup'
 import { cn } from 'cn'
 
-/** Static note: ledger data lives only in this browser. */
-export function LocalDataCallout({ className }: { className?: string }) {
+const calloutBody = (
+  <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+    <li>
+      Prefer{' '}
+      <span className="font-medium text-foreground">Chrome on Android</span> or
+      Chrome / Edge / Brave on desktop — avoid private / incognito if you want
+      the ledger to stick.
+    </li>
+    <li>
+      On Android Chrome, use{' '}
+      <span className="font-medium text-foreground">
+        Install app / Add to Home Screen
+      </span>{' '}
+      for an app-like shortcut. Desktop and phone are separate local copies
+      unless you export and restore.
+    </li>
+    <li>
+      Clearing site data, switching browsers, or closing a private window can
+      erase the ledger.
+    </li>
+    <li>
+      Use{' '}
+      <span className="font-medium text-foreground">
+        Budget → Export backup
+      </span>{' '}
+      for a recoverable <code className="text-[0.7rem]">.sqlite3</code> file.
+    </li>
+  </ul>
+)
+
+export function LocalDataCallout({
+  className,
+  compact = false,
+}: {
+  className?: string
+  compact?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+
+  if (!compact) {
+    return (
+      <Alert className={cn('bg-muted/40', className)}>
+        <HardDrive />
+        <AlertTitle>Data stays in this browser</AlertTitle>
+        <AlertDescription>{calloutBody}</AlertDescription>
+      </Alert>
+    )
+  }
+
   return (
-    <aside
-      className={cn(
-        'rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm',
-        className,
-      )}
-    >
-      <p className="font-medium">Data stays in this browser</p>
-      <ul className="mt-1.5 list-disc space-y-1 pl-4 text-xs text-muted-foreground">
-        <li>
-          Best in{' '}
-          <span className="font-medium text-foreground">
-            Chrome, Edge, or Brave
-          </span>{' '}
-          — not private/incognito if you want it to stick.
-        </li>
-        <li>
-          Clearing site data, switching browsers, or closing a private window
-          can erase the ledger.
-        </li>
-        <li>
-          Use{' '}
-          <span className="font-medium text-foreground">
-            Budget → Export backup
-          </span>{' '}
-          for a recoverable <code className="text-[0.7rem]">.sqlite3</code>{' '}
-          file.
-        </li>
-      </ul>
-    </aside>
+    <Collapsible open={open} onOpenChange={setOpen} className={className}>
+      <Alert className="bg-muted/40 py-2">
+        <HardDrive />
+        <AlertTitle className="flex items-center justify-between gap-2">
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="flex min-h-11 flex-1 touch-manipulation items-center justify-between gap-2 text-left transition-transform duration-150 ease-out active:scale-[0.98]"
+            >
+              <span className="min-w-0">
+                <span className="block font-medium">
+                  Data stays in this browser
+                </span>
+                {!open ? (
+                  <span className="mt-0.5 block truncate text-xs font-normal text-muted-foreground">
+                    Local only · export backups · Chrome recommended
+                  </span>
+                ) : null}
+              </span>
+              <ChevronDown
+                aria-hidden
+                className={cn(
+                  'size-4 shrink-0 text-muted-foreground transition-transform duration-150 ease-out',
+                  open && 'rotate-180',
+                )}
+              />
+            </button>
+          </CollapsibleTrigger>
+        </AlertTitle>
+        <CollapsibleContent>
+          <AlertDescription className="pt-1">{calloutBody}</AlertDescription>
+        </CollapsibleContent>
+      </Alert>
+    </Collapsible>
   )
 }
 
-/** Nudge to export when no recent backup exists. */
 export function BackupReminder({ className }: { className?: string }) {
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [lastLabel, setLastLabel] = useState(() =>
     formatLastExportLabel(getLastExportAt()),
   )
@@ -63,28 +120,16 @@ export function BackupReminder({ className }: { className?: string }) {
   if (!open) return null
 
   return (
-    <div
-      role="status"
-      className={cn(
-        'rounded-lg border border-border bg-card px-3 py-2.5 shadow-sm',
-        className,
-      )}
-    >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-sm font-medium">Download a backup</p>
-          <p className="text-xs text-muted-foreground">
-            Data lives only in this browser. {lastLabel}. Export a{' '}
-            <code className="text-[0.7rem]">.sqlite3</code> file you can restore
-            later.
-          </p>
-          {error ? (
-            <p className="mt-1 text-xs text-destructive" role="alert">
-              {error}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+    <Alert className={cn(className)}>
+      <Download />
+      <AlertTitle>Download a backup</AlertTitle>
+      <AlertDescription>
+        <p>
+          Data lives only in this browser. {lastLabel}. Export a{' '}
+          <code className="text-[0.7rem]">.sqlite3</code> file you can restore
+          later.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
           <Button
             type="button"
             variant="outline"
@@ -103,14 +148,14 @@ export function BackupReminder({ className }: { className?: string }) {
             disabled={pending}
             onClick={() => {
               setPending(true)
-              setError(null)
               void downloadBackup()
                 .then(() => {
                   setLastLabel(formatLastExportLabel(getLastExportAt()))
                   setOpen(false)
+                  toast.success('Backup exported')
                 })
                 .catch((err: unknown) => {
-                  setError(errorMessage(err, 'Could not create backup'))
+                  toast.error(errorMessage(err, 'Could not create backup'))
                 })
                 .finally(() => setPending(false))
             }}
@@ -119,18 +164,16 @@ export function BackupReminder({ className }: { className?: string }) {
             {pending ? 'Exporting…' : 'Export'}
           </Button>
         </div>
-      </div>
-    </div>
+      </AlertDescription>
+    </Alert>
   )
 }
 
-/** Export / restore controls for the local SQLite file. */
 export function BackupPanel() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [exporting, setExporting] = useState(false)
   const [restoring, setRestoring] = useState(false)
   const [file, setFile] = useState<File | null>(null)
-  const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [lastLabel, setLastLabel] = useState(() =>
     formatLastExportLabel(getLastExportAt()),
@@ -155,14 +198,15 @@ export function BackupPanel() {
           onClick={() => {
             setExporting(true)
             setError(null)
-            setStatus(null)
             void downloadBackup()
               .then(({ filename }) => {
                 setLastLabel(formatLastExportLabel(getLastExportAt()))
-                setStatus(`Saved ${filename}`)
+                toast.success(`Saved ${filename}`)
               })
               .catch((err: unknown) => {
-                setError(errorMessage(err, 'Could not export backup'))
+                const message = errorMessage(err, 'Could not export backup')
+                setError(message)
+                toast.error(message)
               })
               .finally(() => setExporting(false))
           }}
@@ -191,15 +235,9 @@ export function BackupPanel() {
             if (!next) return
             setFile(next)
             setError(null)
-            setStatus(null)
           }}
         />
       </div>
-      {status ? (
-        <p className="text-xs text-muted-foreground" role="status">
-          {status}
-        </p>
-      ) : null}
       {error ? (
         <p className="text-xs text-destructive" role="alert">
           {error}
@@ -226,7 +264,9 @@ export function BackupPanel() {
           setError(null)
           void restoreBackup(file).catch((err: unknown) => {
             setRestoring(false)
-            setError(errorMessage(err, 'Could not restore backup'))
+            const message = errorMessage(err, 'Could not restore backup')
+            setError(message)
+            toast.error(message)
           })
         }}
       />
