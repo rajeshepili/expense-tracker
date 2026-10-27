@@ -14,6 +14,15 @@ export type LedgerTransaction = {
   type: TransactionType
 }
 
+export type LedgerSearch = {
+  new?: boolean
+  edit?: string
+  month?: string
+  category?: string
+  method?: string
+  q?: string
+}
+
 export type RecurringExpenseRow = {
   id: string
   name: string
@@ -58,3 +67,29 @@ export type PaymentMethodRow = {
   transactionCount: number
   recurringCount: number
 }
+
+export type SavingsGoalRow = {
+  id: string
+  name: string
+  targetAmount: number
+  currentAmount: number
+  targetDate: string | null
+  categoryId: string | null
+  category: string | null
+}
+
+export type SavingsGoalInput = {
+  name: string
+  targetAmount: number
+  currentAmount?: number
+  targetDate?: string | null
+  categoryId?: string | null
+}
+
+export type SavingsGoalUpdate = Partial<{
+  name: string
+  targetAmount: number
+  currentAmount: number
+  targetDate: string | null
+  categoryId: string | null
+}>

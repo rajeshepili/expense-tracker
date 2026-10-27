@@ -33,7 +33,8 @@ Personal, local-only money tracker. Not tax software, payroll, banking, or multi
 | `src/components/ui/` | shadcn primitives |
 | `src/components/layout/` | Page chrome (shell, header, empty/loading) |
 | `src/components/` | Shared product widgets (charts, dialogs, stats) |
-| `src/data/` | Repository, seed, sample ledger |
+| `src/data/` | Public `repository.ts` barrel, seed, sample ledger |
+| `src/data/repo/` | Entity modules (settings, transactions, recurring, …) |
 | `src/db/` | Drizzle schema + SQLocal client + migrator |
 | `drizzle/` | Kit-generated SQL + `migrations.js` (commit these) |
 | `src/lib/` | Domain helpers (`finance`, `types`, `transaction-defaults`, `backup`) |

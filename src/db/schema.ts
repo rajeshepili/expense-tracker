@@ -116,3 +116,22 @@ export const recurringExpenses = sqliteTable(
     index('idx_recurring_active_next').on(t.active, t.nextDate),
   ],
 )
+
+/** Savings goals */
+export const savingsGoals = sqliteTable(
+  'savings_goals',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: text('name').notNull(),
+    targetAmount: real('target_amount').notNull(),
+    currentAmount: real('current_amount').notNull().default(0),
+    targetDate: text('target_date'),
+    categoryId: text('category_id').references(() => categories.id),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (t) => [index('idx_savings_category').on(t.categoryId)],
+)

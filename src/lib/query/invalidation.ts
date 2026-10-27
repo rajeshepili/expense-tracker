@@ -7,6 +7,7 @@ export type InvalidateScope =
   | 'categories'
   | 'settings'
   | 'paymentMethods'
+  | 'savingsGoals'
   | 'overview'
 
 export async function invalidateAfter(
@@ -40,6 +41,9 @@ export async function invalidateAfter(
         queryKey: queryKeys.paymentMethodsUsage,
       }),
     )
+  }
+  if (set.has('savingsGoals')) {
+    tasks.push(queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals }))
   }
   if (
     set.has('overview') ||
