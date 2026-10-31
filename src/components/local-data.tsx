@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Download, HardDrive, Upload } from 'lucide-react'
+import { ChevronDown, Download, HardDrive, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmDeleteDialog } from '#/components/confirm-delete-dialog'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -12,11 +12,14 @@ import {
 import { downloadBackup, restoreBackup } from '#/data/backup'
 import {
   dismissBackupReminder,
-  errorMessage,
   formatLastExportLabel,
   getLastExportAt,
+  hideBackupReminderForever,
+  hideLocalDataCalloutForever,
+  isLocalDataCalloutHidden,
   shouldShowBackupReminder,
 } from '#/lib/backup'
+import { getErrorMessage } from '#/lib/errors'
 import { cn } from 'cn'
 
 const calloutBody = (
@@ -42,63 +45,75 @@ const calloutBody = (
     <li>
       Use{' '}
       <span className="font-medium text-foreground">
-        Budget → Export backup
+        Backup → Export backup
       </span>{' '}
       for a recoverable <code className="text-[0.7rem]">.sqlite3</code> file.
     </li>
   </ul>
 )
 
+const calloutSummary = (
+  <span className="text-xs text-muted-foreground">
+    Data lives in this browser only.{' '}
+    <span className="font-medium text-foreground underline underline-offset-1 cursor-pointer">
+      Tap to learn more
+    </span>
+  </span>
+)
+
 export function LocalDataCallout({
   className,
-  compact = false,
 }: {
   className?: string
-  compact?: boolean
 }) {
   const [open, setOpen] = useState(false)
+  const [hidden, setHidden] = useState(() => isLocalDataCalloutHidden())
 
-  if (!compact) {
-    return (
-      <Alert className={cn('bg-muted/40', className)}>
-        <HardDrive />
-        <AlertTitle>Data stays in this browser</AlertTitle>
-        <AlertDescription>{calloutBody}</AlertDescription>
-      </Alert>
-    )
-  }
+  if (hidden) return null
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className={className}>
-      <Alert className="bg-muted/40 py-2">
+    <Collapsible open={open} onOpenChange={setOpen} className={cn('bg-muted/40', className)}>
+      <Alert className="bg-transparent py-2 pr-2">
         <HardDrive />
-        <AlertTitle className="flex items-center justify-between gap-2">
+        <AlertTitle className="flex min-w-0 flex-1 items-center gap-1">
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="flex min-h-11 flex-1 touch-manipulation items-center justify-between gap-2 text-left transition-transform duration-150 ease-out active:scale-[0.98]"
+              className="flex min-h-11 min-w-0 flex-1 touch-manipulation items-center justify-between gap-2 text-left transition-transform duration-settle ease-settle hover-lift active:scale-[0.97]"
             >
-              <span className="min-w-0">
-                <span className="block font-medium">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium">
                   Data stays in this browser
                 </span>
                 {!open ? (
-                  <span className="mt-0.5 block truncate text-xs font-normal text-muted-foreground">
-                    Local only · export backups · Chrome recommended
-                  </span>
+                  calloutSummary
                 ) : null}
               </span>
               <ChevronDown
                 aria-hidden
                 className={cn(
-                  'size-4 shrink-0 text-muted-foreground transition-transform duration-150 ease-out',
+                  'size-4 shrink-0 text-muted-foreground transition-transform duration-settle ease-settle',
                   open && 'rotate-180',
                 )}
               />
             </button>
           </CollapsibleTrigger>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Don't show this again"
+            title="Don't show this again"
+            className="-mr-1 shrink-0 text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              hideLocalDataCalloutForever()
+              setHidden(true)
+            }}
+          >
+            <X aria-hidden="true" />
+          </Button>
         </AlertTitle>
-        <CollapsibleContent>
+        <CollapsibleContent className="col-span-2 min-w-0">
           <AlertDescription className="pt-1">{calloutBody}</AlertDescription>
         </CollapsibleContent>
       </Alert>
@@ -135,6 +150,7 @@ export function BackupReminder({ className }: { className?: string }) {
             variant="outline"
             size="sm"
             disabled={pending}
+            className="hover-lift"
             onClick={() => {
               dismissBackupReminder()
               setOpen(false)
@@ -144,8 +160,22 @@ export function BackupReminder({ className }: { className?: string }) {
           </Button>
           <Button
             type="button"
+            variant="ghost"
             size="sm"
             disabled={pending}
+            className="hover-lift text-muted-foreground"
+            onClick={() => {
+              hideBackupReminderForever()
+              setOpen(false)
+            }}
+          >
+            Don&apos;t show again
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            disabled={pending}
+            className="hover-lift"
             onClick={() => {
               setPending(true)
               void downloadBackup()
@@ -155,7 +185,7 @@ export function BackupReminder({ className }: { className?: string }) {
                   toast.success('Backup exported')
                 })
                 .catch((err: unknown) => {
-                  toast.error(errorMessage(err, 'Could not create backup'))
+                  toast.error(getErrorMessage(err, 'Could not create backup'))
                 })
                 .finally(() => setPending(false))
             }}
@@ -195,6 +225,7 @@ export function BackupPanel() {
           variant="outline"
           size="sm"
           disabled={busy}
+          className="hover-lift"
           onClick={() => {
             setExporting(true)
             setError(null)
@@ -204,7 +235,7 @@ export function BackupPanel() {
                 toast.success(`Saved ${filename}`)
               })
               .catch((err: unknown) => {
-                const message = errorMessage(err, 'Could not export backup')
+                const message = getErrorMessage(err, 'Could not export backup')
                 setError(message)
                 toast.error(message)
               })
@@ -219,6 +250,7 @@ export function BackupPanel() {
           variant="outline"
           size="sm"
           disabled={busy}
+          className="hover-lift"
           onClick={() => inputRef.current?.click()}
         >
           <Upload data-icon="inline-start" />
@@ -264,7 +296,7 @@ export function BackupPanel() {
           setError(null)
           void restoreBackup(file).catch((err: unknown) => {
             setRestoring(false)
-            const message = errorMessage(err, 'Could not restore backup')
+            const message = getErrorMessage(err, 'Could not restore backup')
             setError(message)
             toast.error(message)
           })

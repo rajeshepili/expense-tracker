@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { CreditCard, MoreHorizontal, Plus } from 'lucide-react'
+import { CreditCard, Plus } from 'lucide-react'
 import { ConfirmDeleteDialog } from '#/components/confirm-delete-dialog'
 import { EmptyState } from '#/components/layout/empty-state'
-import { MobileList, MobileListRow } from '#/components/layout/mobile-list'
+import { TableEmptyRow } from '#/components/layout/page-shell'
+import { MobileListRow } from '#/components/layout/mobile-list'
+import { RowActionsMenu } from '#/components/row-actions-menu'
 import { Button } from '#/components/ui/button'
 import {
   Card,
@@ -13,42 +15,23 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '#/components/ui/dropdown-menu'
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from '#/components/ui/field'
+import { Field, FieldGroup, FieldLabel } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
+import { ComposerFormModal } from '#/components/composer-form-modal'
 import {
-  ResponsiveModal,
-  ResponsiveModalContent,
-  ResponsiveModalDescription,
-  ResponsiveModalFooter,
-  ResponsiveModalHeader,
-  ResponsiveModalTitle,
-  ResponsiveModalTrigger,
-} from '#/components/ui/responsive-modal'
-import {
-  Table,
-  TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '#/components/ui/table'
+import { VirtualizedDataList } from '#/components/ui/virtualized-data-list'
 import {
   createPaymentMethod,
   deletePaymentMethod,
   listPaymentMethodsWithUsage,
   updatePaymentMethod,
 } from '#/data/repository'
+import { makeMutationErrorHandler } from '#/lib/errors'
 import { useComposer } from '#/hooks/use-composer'
 import { invalidateAfter } from '#/lib/query/invalidation'
 import { queryKeys } from '#/lib/query/keys'
@@ -61,15 +44,16 @@ const emptyForm = (): FormState => ({ name: '' })
 export function PaymentMethodsPanel() {
   const queryClient = useQueryClient()
   const [deleting, setDeleting] = useState<PaymentMethodRow | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const {
     editing,
     form,
     composerOpen,
     setForm,
-    setComposerOpen,
     openCreate,
     openEdit,
     reset,
+    bindOpenChange,
   } = useComposer<FormState, PaymentMethodRow>({
     emptyForm,
     formFromRow: (row) => ({ name: row.name }),
@@ -93,6 +77,10 @@ export function PaymentMethodsPanel() {
       await invalidateAfter(queryClient, ['paymentMethods', 'transactions'])
       reset()
     },
+    onError: makeMutationErrorHandler(
+      setSaveError,
+      'Could not save',
+    ),
   })
 
   const deleteMutation = useMutation({
@@ -107,6 +95,14 @@ export function PaymentMethodsPanel() {
   })
 
   const rows = methodsQuery.data ?? []
+  const emptyMethods = (
+    <EmptyState
+      compact
+      icon={<CreditCard />}
+      title="No payment methods"
+      description="Optional — bills work without them."
+    />
+  )
 
   function handleOpenCreate() {
     saveMutation.reset()
@@ -127,159 +123,57 @@ export function PaymentMethodsPanel() {
             Labels for ledger and bill payments.
           </CardDescription>
           <div className="pt-1">
-            <ResponsiveModal
+            <ComposerFormModal
               open={composerOpen}
-              onOpenChange={(open) => {
-                if (!open) {
-                  reset()
-                  saveMutation.reset()
-                } else {
-                  setComposerOpen(true)
-                }
-              }}
-            >
-              <ResponsiveModalTrigger asChild>
+              onOpenChange={bindOpenChange(() => saveMutation.reset())}
+              trigger={
                 <Button size="sm" onClick={handleOpenCreate}>
                   <Plus data-icon="inline-start" />
                   Add method
                 </Button>
-              </ResponsiveModalTrigger>
-              <ResponsiveModalContent className="sm:max-w-md">
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault()
-                    saveMutation.mutate()
-                  }}
-                >
-                  <ResponsiveModalHeader>
-                    <ResponsiveModalTitle>
-                      {editing ? 'Edit method' : 'Add method'}
-                    </ResponsiveModalTitle>
-                    <ResponsiveModalDescription>
-                      Cash, card, or similar.
-                    </ResponsiveModalDescription>
-                  </ResponsiveModalHeader>
-                  <FieldGroup className="gap-4 py-2">
-                    <Field>
-                      <FieldLabel htmlFor="method-name">Name</FieldLabel>
-                      <Input
-                        id="method-name"
-                        name="name"
-                        autoComplete="off"
-                        spellCheck={false}
-                        placeholder="Debit card…"
-                        value={form.name}
-                        onChange={(event) =>
-                          setForm((current) => ({
-                            ...current,
-                            name: event.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                    {saveMutation.isError ? (
-                      <FieldError>{saveMutation.error.message}</FieldError>
-                    ) : null}
-                  </FieldGroup>
-                  <ResponsiveModalFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        reset()
-                        saveMutation.reset()
-                      }}
-                      disabled={saveMutation.isPending}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={saveMutation.isPending}>
-                      {saveMutation.isPending ? 'Saving…' : 'Save'}
-                    </Button>
-                  </ResponsiveModalFooter>
-                </form>
-              </ResponsiveModalContent>
-            </ResponsiveModal>
+              }
+              title={editing ? 'Edit method' : 'Add method'}
+              description="Cash, card, or similar."
+              pending={saveMutation.isPending}
+              error={saveError}
+              onSubmit={() => saveMutation.mutate()}
+            >
+              <FieldGroup className="gap-4 py-2">
+                <Field>
+                  <FieldLabel htmlFor="method-name">Name</FieldLabel>
+                  <Input
+                    id="method-name"
+                    name="name"
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder="Debit card…"
+                    value={form.name}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        name: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+              </FieldGroup>
+            </ComposerFormModal>
           </div>
         </CardHeader>
         <CardContent className="px-0 pb-1">
-          <div className="px-3 py-2 md:hidden">
-            {rows.length === 0 ? (
-              <EmptyState
-                compact
-                icon={<CreditCard />}
-                title="No payment methods"
-                description="Optional — bills work without them."
-              />
-            ) : (
-              <MobileList>
-                {rows.map((method) => (
-                  <MobileListRow
-                    key={method.id}
-                    title={method.name}
-                    meta={
-                      <>
-                        {method.transactionCount > 0 ? (
-                          <Link
-                            to="/ledger"
-                            search={{ method: method.id }}
-                            className="underline-offset-2 hover:underline"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            {method.transactionCount} transaction
-                            {method.transactionCount === 1 ? '' : 's'}
-                          </Link>
-                        ) : (
-                          <>0 transactions</>
-                        )}
-                        {method.recurringCount ? (
-                          <>
-                            {' '}
-                            · {method.recurringCount} bill
-                            {method.recurringCount === 1 ? '' : 's'}
-                          </>
-                        ) : null}
-                      </>
-                    }
-                    onClick={() => handleOpenEdit(method)}
-                    actions={
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="min-h-11 min-w-11"
-                            aria-label={`Actions for ${method.name}`}
-                          >
-                            <MoreHorizontal />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => handleOpenEdit(method)}
-                          >
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => {
-                              deleteMutation.reset()
-                              setDeleting(method)
-                            }}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    }
-                  />
-                ))}
-              </MobileList>
-            )}
-          </div>
-
-          <div className="hidden md:block">
-            <Table>
+          <VirtualizedDataList
+            layout="flow"
+            items={rows}
+            getItemKey={(row) => row.id}
+            mobileEstimateSize={72}
+            desktopEstimateSize={48}
+            colSpan={4}
+            mobileClassName="px-3 py-2"
+            empty={emptyMethods}
+            desktopEmpty={
+              <TableEmptyRow colSpan={4}>{emptyMethods}</TableEmptyRow>
+            }
+            header={
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
@@ -290,75 +184,81 @@ export function PaymentMethodsPanel() {
                   </TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                {rows.length === 0 ? (
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={4} className="p-0">
-                      <EmptyState
-                        compact
-                        icon={<CreditCard />}
-                        title="No payment methods"
-                        description="Optional — bills work without them."
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  rows.map((method) => (
-                    <TableRow key={method.id}>
-                      <TableCell className="font-medium">
-                        {method.name}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
-                        {method.transactionCount > 0 ? (
-                          <Link
-                            to="/ledger"
-                            search={{ method: method.id }}
-                            className="underline-offset-2 hover:underline"
-                          >
-                            {method.transactionCount}
-                          </Link>
-                        ) : (
-                          method.transactionCount
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
-                        {method.recurringCount}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={`Actions for ${method.name}`}
-                            >
-                              <MoreHorizontal />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => handleOpenEdit(method)}
-                            >
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onClick={() => {
-                                deleteMutation.reset()
-                                setDeleting(method)
-                              }}
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+            }
+            renderMobile={(method) => (
+              <MobileListRow
+                key={method.id}
+                title={method.name}
+                meta={
+                  <>
+                    {method.transactionCount > 0 ? (
+                      <Link
+                        to="/ledger"
+                        search={{ method: method.id }}
+                        className="underline-offset-2 hover:underline"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        {method.transactionCount} transaction
+                        {method.transactionCount === 1 ? '' : 's'}
+                      </Link>
+                    ) : (
+                      <>0 transactions</>
+                    )}
+                    {method.recurringCount ? (
+                      <>
+                        {' '}
+                        · {method.recurringCount} bill
+                        {method.recurringCount === 1 ? '' : 's'}
+                      </>
+                    ) : null}
+                  </>
+                }
+                onClick={() => handleOpenEdit(method)}
+                actions={
+                  <RowActionsMenu
+                    label={method.name}
+                    size="touch"
+                    onEdit={() => handleOpenEdit(method)}
+                    onDelete={() => {
+                      deleteMutation.reset()
+                      setDeleting(method)
+                    }}
+                  />
+                }
+              />
+            )}
+            renderDesktop={(method) => (
+              <TableRow key={method.id}>
+                <TableCell className="font-medium">{method.name}</TableCell>
+                <TableCell className="text-right tabular-nums text-muted-foreground">
+                  {method.transactionCount > 0 ? (
+                    <Link
+                      to="/ledger"
+                      search={{ method: method.id }}
+                      className="underline-offset-2 hover:underline"
+                    >
+                      {method.transactionCount}
+                    </Link>
+                  ) : (
+                    method.transactionCount
+                  )}
+                </TableCell>
+                <TableCell className="text-right tabular-nums text-muted-foreground">
+                  {method.recurringCount}
+                </TableCell>
+                <TableCell>
+                  <RowActionsMenu
+                    label={method.name}
+                    onEdit={() => handleOpenEdit(method)}
+                    onDelete={() => {
+                      deleteMutation.reset()
+                      setDeleting(method)
+                    }}
+                  />
+                </TableCell>
+              </TableRow>
+            )}
+          />
         </CardContent>
       </Card>
 

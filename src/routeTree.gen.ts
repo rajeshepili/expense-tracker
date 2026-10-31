@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as LedgerRouteImport } from './routes/ledger'
 import { Route as RecurringRouteImport } from './routes/recurring'
+import { Route as SavingsRouteImport } from './routes/savings'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,25 @@ const RecurringRoute = RecurringRouteImport.update({
   path: '/recurring',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SavingsRoute = SavingsRouteImport.update({
+  id: '/savings',
+  path: '/savings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/categories': typeof CategoriesRoute
   '/ledger': typeof LedgerRoute
   '/recurring': typeof RecurringRoute
+  '/savings': typeof SavingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/categories': typeof CategoriesRoute
   '/ledger': typeof LedgerRoute
   '/recurring': typeof RecurringRoute
+  '/savings': typeof SavingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/categories': typeof CategoriesRoute
   '/ledger': typeof LedgerRoute
   '/recurring': typeof RecurringRoute
+  '/savings': typeof SavingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/categories' | '/ledger' | '/recurring'
+  fullPaths: '/' | '/categories' | '/ledger' | '/recurring' | '/savings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/categories' | '/ledger' | '/recurring'
-  id: '__root__' | '/' | '/categories' | '/ledger' | '/recurring'
+  to: '/' | '/categories' | '/ledger' | '/recurring' | '/savings'
+  id: '__root__' | '/' | '/categories' | '/ledger' | '/recurring' | '/savings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +76,7 @@ export interface RootRouteChildren {
   CategoriesRoute: typeof CategoriesRoute
   LedgerRoute: typeof LedgerRoute
   RecurringRoute: typeof RecurringRoute
+  SavingsRoute: typeof SavingsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecurringRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/savings': {
+      id: '/savings'
+      path: '/savings'
+      fullPath: '/savings'
+      preLoaderRoute: typeof SavingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   CategoriesRoute: CategoriesRoute,
   LedgerRoute: LedgerRoute,
   RecurringRoute: RecurringRoute,
+  SavingsRoute: SavingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

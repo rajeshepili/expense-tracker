@@ -44,14 +44,23 @@ export function MobileListRow({
   actions,
   className,
   onClick,
-}: MobileListRowProps) {
+  flip,
+}: MobileListRowProps & { flip?: { key: string; state?: 'enter' | 'exit'; index?: number } }) {
   return (
     <Item
       variant="default"
       size="sm"
+      data-flip-key={flip?.key}
+      data-flip-enter={flip?.state === 'enter' ? '' : undefined}
+      data-flip-exit={flip?.state === 'exit' ? '' : undefined}
+      style={
+        flip?.state === 'enter'
+          ? { ['--flip-enter-delay' as string]: `${Math.min(flip.index ?? 0, 8) * 40}ms` }
+          : undefined
+      }
       className={cn(
-        'min-h-14 touch-manipulation rounded-none border-0 border-b border-border last:border-b-0',
-        'transition-[transform,background-color] duration-150 ease-out',
+        'min-h-[3.75rem] touch-manipulation rounded-none border-0 border-b border-border/60 last:border-b-0',
+        'transition-[transform,background-color] duration-settle ease-settle',
         onClick && 'cursor-pointer active:scale-[0.98] hover:bg-muted/50',
         className,
       )}
@@ -78,7 +87,7 @@ export function MobileListRow({
         ) : null}
       </ItemContent>
       {trailing ? (
-        <div className="shrink-0 text-right tabular-nums text-sm font-medium">
+        <div className="shrink-0 text-right tabular-nums text-[0.95rem] font-medium">
           {trailing}
         </div>
       ) : null}

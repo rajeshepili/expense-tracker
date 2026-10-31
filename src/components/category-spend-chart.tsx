@@ -123,7 +123,6 @@ export function CategorySpendChart({
     const start = angle
     const end = angle + sweep
     angle = end
-    // Full circle edge case
     const path =
       sweep >= 359.999
         ? `M ${cx} ${cy - radius} A ${radius} ${radius} 0 1 1 ${cx - 0.01} ${cy - radius}`
@@ -163,7 +162,7 @@ export function CategorySpendChart({
                     stroke={slice.color}
                     strokeWidth={active === slice.name ? 16 : 14}
                     strokeLinecap="butt"
-                    className="transition-[stroke-width] duration-150 ease-out"
+                    className="transition-[stroke-width] duration-settle ease-settle"
                     opacity={
                       active && active !== slice.name
                         ? 0.45
@@ -212,7 +211,7 @@ export function CategorySpendChart({
               <button
                 type="button"
                 className={cn(
-                  'flex w-full cursor-pointer items-baseline justify-between gap-3 rounded-md px-1.5 py-1 text-left transition-colors duration-150 ease-out',
+                  'flex w-full cursor-pointer items-baseline justify-between gap-3 rounded-md px-1.5 py-1 text-left transition-colors duration-settle ease-settle',
                   active === slice.name ? 'bg-muted' : 'hover:bg-muted/70',
                 )}
                 onMouseEnter={() => setActive(slice.name)}

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -13,12 +14,14 @@ type ConfirmDeleteDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   title: string
-  description: string
+  description: ReactNode
   confirmLabel?: string
   pendingLabel?: string
   pending?: boolean
+  confirmDisabled?: boolean
   error?: string | null
   onConfirm: () => void
+  children?: ReactNode
 }
 
 export function ConfirmDeleteDialog({
@@ -29,8 +32,10 @@ export function ConfirmDeleteDialog({
   confirmLabel = 'Delete',
   pendingLabel = 'Deleting…',
   pending = false,
+  confirmDisabled = false,
   error = null,
   onConfirm,
+  children,
 }: ConfirmDeleteDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -39,6 +44,7 @@ export function ConfirmDeleteDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
+        {children}
         {error ? (
           <p className="text-sm text-destructive" role="alert">
             {error}
@@ -46,7 +52,11 @@ export function ConfirmDeleteDialog({
         ) : null}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
-          <Button variant="destructive" disabled={pending} onClick={onConfirm}>
+          <Button
+            variant="destructive"
+            disabled={pending || confirmDisabled}
+            onClick={onConfirm}
+          >
             {pending ? pendingLabel : confirmLabel}
           </Button>
         </AlertDialogFooter>

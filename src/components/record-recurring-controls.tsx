@@ -1,27 +1,12 @@
 import { useState } from 'react'
-import { Button } from '#/components/ui/button'
+import { ComposerFormModal } from '#/components/composer-form-modal'
+import { PaymentMethodSelect } from '#/components/entity-selects'
 import {
   Field,
   FieldGroup,
   FieldLabel,
   FieldError,
 } from '#/components/ui/field'
-import {
-  ResponsiveModal,
-  ResponsiveModalContent,
-  ResponsiveModalDescription,
-  ResponsiveModalFooter,
-  ResponsiveModalHeader,
-  ResponsiveModalTitle,
-} from '#/components/ui/responsive-modal'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '#/components/ui/select'
 import { Input } from '#/components/ui/input'
 import {
   AlertDialog,
@@ -56,7 +41,6 @@ export function RecordRecurringControls({
 }: RecordRecurringControlsProps) {
   const {
     adjusting,
-    setAdjusting,
     adjustDraft,
     setAdjustDraft,
     submitAdjust,
@@ -94,126 +78,97 @@ export function RecordRecurringControls({
     }
   }
 
+  const payEarly = adjusting ? !canOneTapRecord(adjusting.nextDate) : false
+  const title = adjusting
+    ? payEarly
+      ? `Pay early · ${adjusting.name}`
+      : `Adjust ${adjusting.name}`
+    : 'Adjust payment'
+  const description = adjusting
+    ? payEarly
+      ? `Due ${formatIsoDate(adjusting.nextDate, true)}.`
+      : adjusting.remainingAmount !== null
+        ? `${money(amountDue(adjusting))} of ${money(adjusting.amount)} left.`
+        : 'Change amount, date, or method.'
+    : undefined
+
   return (
     <>
-      <ResponsiveModal
+      <ComposerFormModal
         open={Boolean(adjusting)}
         onOpenChange={(open) => {
-          if (!open) setAdjusting(null)
+          if (!open) cancelAdjust()
         }}
+        title={title}
+        description={description}
+        pending={recording}
+        submitLabel="Record"
+        pendingLabel="Recording…"
+        onSubmit={handleSubmitAdjust}
       >
-        <ResponsiveModalContent className="sm:max-w-md">
-          <ResponsiveModalHeader>
-            <ResponsiveModalTitle>
-              {adjusting && !canOneTapRecord(adjusting.nextDate)
-                ? `Pay early · ${adjusting.name}`
-                : `Adjust ${adjusting?.name ?? 'payment'}`}
-            </ResponsiveModalTitle>
-            <ResponsiveModalDescription>
-              {adjusting && !canOneTapRecord(adjusting.nextDate)
-                ? `Due ${formatIsoDate(adjusting.nextDate, true)}.`
-                : adjusting && adjusting.remainingAmount !== null
-                  ? `${money(amountDue(adjusting))} of ${money(adjusting.amount)} left.`
-                  : 'Change amount, date, or method.'}
-            </ResponsiveModalDescription>
-          </ResponsiveModalHeader>
-          <FieldGroup className="gap-4 py-2">
-            <Field>
-              <FieldLabel htmlFor="record-amount">
-                Amount{currencyHint ? ` (${currencyHint})` : ''}
-              </FieldLabel>
-              <Input
-                id="record-amount"
-                name="amount"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="0.01"
-                autoComplete="off"
-                value={adjustDraft.amount}
-                onChange={(event) => {
-                  setAmountError('')
-                  setAdjustDraft((current) => ({
-                    ...current,
-                    amount: event.target.value,
-                  }))
-                }}
-                aria-invalid={Boolean(amountError)}
-                aria-describedby={amountError ? 'amount-error' : undefined}
-              />
-              {amountError ? (
-                <FieldError id="amount-error">{amountError}</FieldError>
-              ) : null}
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="record-date">Date</FieldLabel>
-              <Input
-                id="record-date"
-                name="date"
-                type="date"
-                autoComplete="off"
-                value={adjustDraft.date}
-                onChange={(event) => {
-                  setDateError('')
-                  setAdjustDraft((current) => ({
-                    ...current,
-                    date: event.target.value,
-                  }))
-                }}
-                aria-invalid={Boolean(dateError)}
-                aria-describedby={dateError ? 'date-error' : undefined}
-              />
-              {dateError ? (
-                <FieldError id="date-error">{dateError}</FieldError>
-              ) : null}
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="record-method">Payment method</FieldLabel>
-              <Select
-                value={adjustDraft.paymentMethodId || '__none__'}
-                onValueChange={(value) =>
-                  setAdjustDraft((current) => ({
-                    ...current,
-                    paymentMethodId: value === '__none__' ? '' : value,
-                  }))
-                }
-              >
-                <SelectTrigger id="record-method" className="w-full">
-                  <SelectValue placeholder="Optional" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="__none__">None</SelectItem>
-                    {paymentMethods.map((method) => (
-                      <SelectItem key={method.id} value={method.id}>
-                        {method.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-          </FieldGroup>
-          <ResponsiveModalFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={cancelAdjust}
-              disabled={recording}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSubmitAdjust}
-              disabled={recording}
-              className="active:scale-[0.97]"
-            >
-              {recording ? 'Recording…' : 'Record'}
-            </Button>
-          </ResponsiveModalFooter>
-        </ResponsiveModalContent>
-      </ResponsiveModal>
+        <FieldGroup className="gap-4 py-2">
+          <Field>
+            <FieldLabel htmlFor="record-amount">
+              Amount{currencyHint ? ` (${currencyHint})` : ''}
+            </FieldLabel>
+            <Input
+              id="record-amount"
+              name="amount"
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              autoComplete="off"
+              value={adjustDraft.amount}
+              onChange={(event) => {
+                setAmountError('')
+                setAdjustDraft((current) => ({
+                  ...current,
+                  amount: event.target.value,
+                }))
+              }}
+              aria-invalid={Boolean(amountError)}
+              aria-describedby={amountError ? 'amount-error' : undefined}
+            />
+            {amountError ? (
+              <FieldError id="amount-error">{amountError}</FieldError>
+            ) : null}
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="record-date">Date</FieldLabel>
+            <Input
+              id="record-date"
+              name="date"
+              type="date"
+              autoComplete="off"
+              value={adjustDraft.date}
+              onChange={(event) => {
+                setDateError('')
+                setAdjustDraft((current) => ({
+                  ...current,
+                  date: event.target.value,
+                }))
+              }}
+              aria-invalid={Boolean(dateError)}
+              aria-describedby={dateError ? 'date-error' : undefined}
+            />
+            {dateError ? (
+              <FieldError id="date-error">{dateError}</FieldError>
+            ) : null}
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="record-method">Payment method</FieldLabel>
+            <PaymentMethodSelect
+              id="record-method"
+              value={adjustDraft.paymentMethodId}
+              options={paymentMethods}
+              onValueChange={(paymentMethodId) =>
+                setAdjustDraft((current) => ({ ...current, paymentMethodId }))
+              }
+            />
+          </Field>
+        </FieldGroup>
+      </ComposerFormModal>
 
       <AlertDialog
         open={Boolean(pendingForce)}
@@ -230,13 +185,14 @@ export function RecordRecurringControls({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={recording}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={recording} className="hover-lift">Cancel</AlertDialogCancel>
             <AlertDialogAction
+              disabled={recording}
+              className="hover-lift"
               onClick={(event) => {
                 event.preventDefault()
                 confirmForceRecord()
               }}
-              disabled={recording}
             >
               {recording ? 'Recording…' : 'Record anyway'}
             </AlertDialogAction>

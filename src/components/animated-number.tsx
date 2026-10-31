@@ -1,5 +1,7 @@
-import { useEffect, useRef, type HTMLAttributes } from 'react'
+import { useEffect, useRef } from 'react'
+import type { HTMLAttributes } from 'react'
 import { money, percent } from '#/lib/finance'
+import { motion } from '#/lib/motion'
 import { cn } from 'cn'
 
 const EASE_OUT = (t: number) => 1 - Math.pow(1 - t, 4)
@@ -88,7 +90,7 @@ export function AnimatedNumber({
 
     const delta = to - from
 
-    if (prefersReducedMotion()) {
+    if (prefersReducedMotion() || !motion.can('dataTween')) {
       currentRef.current = to
       valueNode.textContent = format(to)
       if (persistKey !== undefined) remembered.set(persistKey, to)
@@ -131,7 +133,6 @@ export function AnimatedNumber({
       deltaNode.textContent = formatSignedDelta(delta, format)
       deltaNode.dataset.show = 'true'
       deltaNode.dataset.tone = deltaTone(delta, goodWhen)
-      // retrigger CSS animation
       deltaNode.style.animation = 'none'
       void deltaNode.offsetWidth
       deltaNode.style.animation = ''

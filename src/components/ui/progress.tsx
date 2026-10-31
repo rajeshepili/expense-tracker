@@ -3,12 +3,20 @@
 import * as React from 'react'
 import { cn } from 'cn'
 import { Progress as ProgressPrimitive } from 'radix-ui'
+import { motion } from '#/lib/motion'
 
 function Progress({
   className,
   value,
   ...props
 }: React.ComponentProps<typeof ProgressPrimitive.Root>) {
+  const [snap, setSnap] = React.useState(false)
+  React.useEffect(() => {
+    if (motion.reduced()) return
+    const update = () => setSnap(!motion.can('dataTween'))
+    update()
+    return motion.subscribe(update)
+  }, [])
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
@@ -20,8 +28,14 @@ function Progress({
     >
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
-        className="h-full w-full flex-1 bg-primary transition-transform duration-[280ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+        className={cn(
+          'h-full w-full flex-1 bg-primary motion-reduce:transition-none',
+          snap && 'transition-none',
+        )}
+        style={{
+          transform: `translateX(-${100 - (value || 0)}%)`,
+          transition: snap ? 'none' : `transform var(--duration-data) var(--ease-data)`,
+        }}
       />
     </ProgressPrimitive.Root>
   )

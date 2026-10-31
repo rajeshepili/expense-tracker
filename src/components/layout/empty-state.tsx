@@ -11,7 +11,7 @@ import {
 
 type EmptyStateProps = {
   title: string
-  description?: string
+  description?: ReactNode
   action?: ReactNode
   icon?: ReactNode
   className?: string
@@ -30,7 +30,7 @@ export function EmptyState({
     <Empty
       className={cn(
         'border-0',
-        compact ? 'gap-3 p-4 md:p-6' : 'gap-4 p-6 md:p-10',
+        compact ? 'gap-3 p-5 md:p-6' : 'gap-4 p-6 md:p-10',
         className,
       )}
     >
