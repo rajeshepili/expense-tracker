@@ -12,6 +12,8 @@
     "preview": "node .output/server/index.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test --grep @smoke",
     "lint": "eslint",
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check .",
@@ -19,6 +21,8 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@base-ui/react": "^1.9.0",
+    "@floating-ui/react-dom": "^2.1.9",
     "@fontsource/ibm-plex-sans": "^5.3.0",
     "@sqlite.org/sqlite-wasm": "3.51.2-build9",
     "@tailwindcss/vite": "^4.1.18",
@@ -29,6 +33,7 @@
     "@tanstack/react-router-devtools": "1.167.2",
     "@tanstack/react-router-ssr-query": "1.167.3",
     "@tanstack/react-start": "1.169.4",
+    "@tanstack/react-virtual": "^3.14.24",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.0",
     "drizzle-kit": "^0.31.9",
@@ -45,6 +50,7 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@rolldown/plugin-babel": "^0.2.3",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/devtools-vite": "0.8.5",

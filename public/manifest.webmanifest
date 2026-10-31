@@ -27,5 +27,19 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "theme_colors": [
+    { "color": "#f4f6f8", "media": "(prefers-color-scheme: light)" },
+    { "color": "#1c2330", "media": "(prefers-color-scheme: dark)" }
+  ],
+  "categories": ["finance", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Add transaction",
+      "short_name": "Add",
+      "description": "Record a new expense or income",
+      "url": "/ledger?new=true",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }

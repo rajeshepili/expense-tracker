@@ -1,4 +1,4 @@
-//  @ts-check
+// @ts-check
 
 import { tanstackConfig } from '@tanstack/eslint-config'
 
@@ -16,6 +16,20 @@ export default [
     },
   },
   {
-    ignores: ['eslint.config.js', 'prettier.config.js', '.output', 'node_modules', 'dist', 'build', '*.config.js', '*.config.ts', '.cta.json', 'components.json', 'package-lock.json', 'pnpm-lock.yaml'],
+    ignores: [
+      'eslint.config.js',
+      'prettier.config.js',
+      '.output',
+      'node_modules',
+      'dist',
+      'build',
+      '*.config.js',
+      '*.config.ts',
+      '.cta.json',
+      'components.json',
+      'package-lock.json',
+      'pnpm-lock.yaml',
+      'public/sw.js',
+    ],
   },
 ]
