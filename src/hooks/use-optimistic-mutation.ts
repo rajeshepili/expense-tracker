@@ -1,12 +1,7 @@
-import {
-  useMutation,
-  type QueryClient,
-  type QueryKey,
-} from '@tanstack/react-query'
-import {
-  invalidateAfter,
-  type InvalidateScope,
-} from '#/lib/query/invalidation'
+import { useMutation } from '@tanstack/react-query'
+import type { QueryClient, QueryKey } from '@tanstack/react-query'
+import { invalidateAfter } from '#/lib/query/invalidation'
+import type { InvalidateScope } from '#/lib/query/invalidation'
 
 type MutateContext<TData> = {
   previous?: TData
@@ -55,7 +50,7 @@ export function useOptimisticMutation<TData, TVars, TResult = unknown>({
       if (context?.previous !== undefined) {
         queryClient.setQueryData(queryKey, context.previous)
       }
-      onError?.(error as Error, vars, context)
+      onError?.(error, vars, context)
     },
     onSettled: () => {
       void invalidateAfter(queryClient, invalidateKeys)

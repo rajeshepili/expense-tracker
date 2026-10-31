@@ -4,6 +4,9 @@ import {
   dismissBackupReminder,
   formatLastExportLabel,
   getLastExportAt,
+  hideBackupReminderForever,
+  hideLocalDataCalloutForever,
+  isLocalDataCalloutHidden,
   markBackupExported,
   shouldShowBackupReminder,
 } from '#/lib/backup'
@@ -41,5 +44,18 @@ describe('backup prefs', () => {
     dismissBackupReminder(now + 60_000)
     expect(shouldShowBackupReminder(now)).toBe(false)
     expect(shouldShowBackupReminder(now + 120_000)).toBe(true)
+  })
+
+  it('stays hidden forever once the user opts out of the reminder', () => {
+    hideBackupReminderForever()
+    expect(shouldShowBackupReminder(now)).toBe(false)
+    // even with no export and no snooze, and far in the future
+    expect(shouldShowBackupReminder(now + 365 * 24 * 60 * 60 * 1000)).toBe(false)
+  })
+
+  it('tracks the local-data callout opt-out', () => {
+    expect(isLocalDataCalloutHidden()).toBe(false)
+    hideLocalDataCalloutForever()
+    expect(isLocalDataCalloutHidden()).toBe(true)
   })
 })

@@ -1,0 +1,61 @@
+export function formatIsoDate(iso: string, withYear = false) {
+  if (!iso) return '—'
+  const date = new Date(`${iso}T12:00:00`)
+  if (isNaN(date.getTime())) return '—'
+  return new Intl.DateTimeFormat('en', {
+    month: 'short',
+    day: 'numeric',
+    ...(withYear ? { year: 'numeric' as const } : {}),
+  }).format(date)
+}
+
+export function todayIso() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+/** YYYY-MM */
+export function currentYearMonth(date = new Date()) {
+  return date.toISOString().slice(0, 7)
+}
+
+export function isYearMonth(value: string) {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value)
+}
+
+export function shiftYearMonth(yearMonth: string, deltaMonths: number) {
+  if (!isYearMonth(yearMonth)) return yearMonth
+  const [year, month] = yearMonth.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1 + deltaMonths, 1))
+  return currentYearMonth(date)
+}
+
+export function formatYearMonth(yearMonth: string) {
+  const [year, month] = yearMonth.split('-').map(Number)
+  if (!year || !month) return yearMonth
+  return new Intl.DateTimeFormat('en', {
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(Date.UTC(year, month - 1, 1)))
+}
+
+/** Negative if a < b (YYYY-MM-DD). */
+export function compareIsoDate(a: string, b: string) {
+  if (a === b) return 0
+  return a < b ? -1 : 1
+}
+
+/** Current month → today; other months → last day. */
+export function defaultDateForMonth(
+  yearMonth: string | undefined,
+  today = todayIso(),
+) {
+  if (!yearMonth || yearMonth === 'all' || !isYearMonth(yearMonth)) {
+    return today
+  }
+  if (yearMonth === currentYearMonth(new Date(`${today}T12:00:00`))) {
+    return today
+  }
+  const [year, month] = yearMonth.split('-').map(Number)
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate()
+  return `${yearMonth}-${String(lastDay).padStart(2, '0')}`
+}

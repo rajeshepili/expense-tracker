@@ -1,0 +1,67 @@
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { queryKeys } from '#/lib/query/keys'
+import { listRecurring, getSettings, getMonthBudget, listCategories, listPaymentMethods } from '#/data/repository'
+import { sortRecurring } from '#/lib/recurring-form'
+import { formatQueryError } from '#/lib/errors'
+
+export function useRecurringList() {
+  const recurringQuery = useQuery({
+    queryKey: queryKeys.recurring,
+    queryFn: listRecurring,
+  })
+
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.settings,
+    queryFn: getSettings,
+  })
+
+  const monthBudgetQuery = useQuery({
+    queryKey: [...queryKeys.settings, 'month-budget'] as const,
+    queryFn: () => getMonthBudget(),
+  })
+
+  const categoriesQuery = useQuery({
+    queryKey: queryKeys.categories,
+    queryFn: listCategories,
+  })
+
+  const methodsQuery = useQuery({
+    queryKey: queryKeys.paymentMethods,
+    queryFn: listPaymentMethods,
+  })
+
+  const items = useMemo(
+    () => sortRecurring(recurringQuery.data ?? []),
+    [recurringQuery.data],
+  )
+
+  const monthlyBudget = monthBudgetQuery.data?.budget ?? settingsQuery.data?.budget ?? 0
+  const currency = settingsQuery.data?.currency ?? 'USD'
+  const expenseCategories = (categoriesQuery.data ?? []).filter(
+    (c) => c.type === 'expense',
+  )
+  const paymentMethods = methodsQuery.data ?? []
+
+  const isLoading = recurringQuery.isPending || settingsQuery.isPending || monthBudgetQuery.isPending
+  const isError = recurringQuery.isError || settingsQuery.isError || monthBudgetQuery.isError
+  const errorMessage = isError
+    ? formatQueryError(recurringQuery.error ?? settingsQuery.error ?? monthBudgetQuery.error)
+    : null
+
+  return {
+    items,
+    currency,
+    monthlyBudget,
+    expenseCategories,
+    paymentMethods,
+    isLoading,
+    isError,
+    errorMessage,
+    retry: () => {
+      void recurringQuery.refetch()
+      void settingsQuery.refetch()
+      void monthBudgetQuery.refetch()
+    },
+  }
+}

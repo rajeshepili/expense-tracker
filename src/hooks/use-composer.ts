@@ -1,4 +1,5 @@
-import { useState, type Dispatch, type SetStateAction } from 'react'
+import { useState } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
 
 export type ComposerState<TForm, TEditing> = {
   editing: TEditing | null
@@ -12,6 +13,8 @@ export type ComposerState<TForm, TEditing> = {
   openCreate: () => void
   openEdit: (row: TEditing) => void
   reset: () => void
+  /** Wire to ComposerFormModal; pass `() => saveMutation.reset()` as onClose. */
+  bindOpenChange: (onClose?: () => void) => (open: boolean) => void
 }
 
 export function useComposer<TForm, TEditing = TForm>({
@@ -47,6 +50,17 @@ export function useComposer<TForm, TEditing = TForm>({
     setComposerOpen(false)
   }
 
+  function bindOpenChange(onClose?: () => void) {
+    return (open: boolean) => {
+      if (!open) {
+        reset()
+        onClose?.()
+      } else {
+        setComposerOpen(true)
+      }
+    }
+  }
+
   return {
     editing,
     form,
@@ -59,5 +73,6 @@ export function useComposer<TForm, TEditing = TForm>({
     openCreate,
     openEdit,
     reset,
+    bindOpenChange,
   }
 }

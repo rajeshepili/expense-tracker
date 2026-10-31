@@ -1,5 +1,7 @@
 const LAST_EXPORT_KEY = 'expense-tracker-last-export-at'
 const REMINDER_DISMISS_KEY = 'expense-tracker-backup-reminder-dismissed-until'
+const REMINDER_HIDDEN_KEY = 'expense-tracker-backup-reminder-hidden'
+const LOCAL_DATA_HIDDEN_KEY = 'expense-tracker-local-data-callout-hidden'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -23,7 +25,7 @@ function writeNumber(key: string, value: number) {
   try {
     globalThis.localStorage.setItem(key, String(value))
   } catch {
-    // ignore quota / private mode
+    // private mode / quota
   }
 }
 
@@ -41,7 +43,37 @@ export function dismissBackupReminder(
   writeNumber(REMINDER_DISMISS_KEY, until)
 }
 
+export function hideBackupReminderForever() {
+  try {
+    globalThis.localStorage.setItem(REMINDER_HIDDEN_KEY, '1')
+  } catch {
+    // private mode / quota
+  }
+}
+
+export function hideLocalDataCalloutForever() {
+  try {
+    globalThis.localStorage.setItem(LOCAL_DATA_HIDDEN_KEY, '1')
+  } catch {
+    // private mode / quota
+  }
+}
+
+export function isLocalDataCalloutHidden(): boolean {
+  try {
+    return globalThis.localStorage.getItem(LOCAL_DATA_HIDDEN_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 export function shouldShowBackupReminder(now = Date.now()): boolean {
+  try {
+    if (globalThis.localStorage.getItem(REMINDER_HIDDEN_KEY) === '1') return false
+  } catch {
+    // private mode / quota
+  }
+
   const dismissedUntil = readNumber(REMINDER_DISMISS_KEY)
   if (dismissedUntil !== null && now < dismissedUntil) return false
 
@@ -69,8 +101,4 @@ export function downloadBlob(file: Blob, filename: string) {
   anchor.click()
   anchor.remove()
   URL.revokeObjectURL(url)
-}
-
-export function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback
 }
