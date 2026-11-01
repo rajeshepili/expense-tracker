@@ -8,8 +8,9 @@ alwaysApply: false
 
 - Bootstrap via `bootstrapDatabase()` / app gate before queries
 - Prefer repository functions over raw Drizzle in routes
+- Implementation lives in `src/data/repo/*`; keep importing from `src/data/repository.ts`
 - Default budget / currency live in `settings` row `id = 'default'`
 - Optional month overrides live in `monthly_budgets` (`year_month` = `YYYY-MM`)
-- Category delete must reassign dependent transactions / recurring rows
+- Category delete must reassign dependent transactions / recurring / savings rows
 - Do not introduce a server database or `DATABASE_URL` for the app UI
 - Query keys / invalidation / prefetch live under `src/lib/query/`

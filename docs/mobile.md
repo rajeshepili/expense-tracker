@@ -25,17 +25,18 @@ Expense Tracker is a **local-only** web app. On Android, use **Chrome** and inst
 
 ## Layout: phone vs desktop
 
-The UI splits at the `md` (768px) breakpoint:
+The UI splits at the `md` (768px) breakpoint (`useIsMobile` / Tailwind `md:`):
 
-|            | Phone                                          | Desktop                |
-| ---------- | ---------------------------------------------- | ---------------------- |
-| Navigation | Bottom tabs (Overview / Ledger / Bills / Categories) | Top bar                |
-| Lists      | Card rows (no horizontal table pan)            | Dense tables           |
-| Forms      | Vaul drawer (sheet)                            | Centered dialog        |
-| Lists      | shadcn Item rows                               | Dense tables           |
-| Overview   | Page scroll, collapsible callout               | Multi-column dashboard |
+|            | Phone                                                              | Desktop                |
+| ---------- | ------------------------------------------------------------------ | ---------------------- |
+| Navigation | Bottom tabs (Overview / Ledger / Bills / Goals / Categories)       | Top bar                |
+| Lists      | Card rows (no horizontal table pan)                                | Dense tables           |
+| Forms      | Vaul drawer (sheet), sticky footer actions                         | Centered dialog        |
+| Overview   | Page scroll; month stats in a 2×2 grid                             | Multi-column dashboard |
 
-Same local SQLite database either way. Composers use `ResponsiveModal` (Drawer below `md`, Dialog from `md` up).
+Same local SQLite database either way. Composers use `ResponsiveModal` (Drawer below `md`, Dialog from `md` up). Drawers set `repositionInputs={false}` so the keyboard does not shove the sheet off-screen; Save/Cancel stay in a sticky footer.
+
+The root viewport uses `viewport-fit=cover`. Safe-area insets feed `--safe-*` and `--tab-bar-h` in `src/styles/10-tokens.css` so content and the install nudge clear the home indicator and tab bar.
 
 ## Headers & OPFS
 

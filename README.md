@@ -7,10 +7,11 @@ A personal, local-only expense tracker. Everything runs in the browser and is st
 - **Overview** — this month’s income and expenses, budget left / used, category breakdown, upcoming recurring
 - **Ledger** — add, edit, delete, filter, and search transactions
 - **Recurring** — weekly / monthly / yearly bills with active toggle and budget impact
+- **Savings** — goals with progress, funding from income, optional target dates
 - **Categories** — manage income and expense categories; deletes reassign related items
 - **Budget & currency** — set monthly budget and display currency from Overview
 - **Onboarding** — first visit: currency, budget, start empty or load sample data
-- **Theme** — light, dark, or system
+- **Theme** — light, dark, or system (circular bloom on toggle where View Transitions allow)
 - **Phone (Android)** — installable PWA in Chrome; bottom tab navigation on small screens
 
 ## Requirements
@@ -58,24 +59,28 @@ pnpm preview   # Nitro Node server (applies COEP to HTML + /assets)
 
 ## Project layout
 
-| Path                            | Role                                             |
-| ------------------------------- | ------------------------------------------------ |
-| `src/app/`                      | App shell: gate, nav, theme, onboarding          |
-| `src/routes/`                   | Screens: Overview, Ledger, Recurring, Categories |
-| `src/components/ui/`            | shadcn primitives                                |
-| `src/components/layout/`        | Page shell, header, empty / loading states       |
-| `src/components/`               | Shared widgets (charts, stats, dialogs)          |
-| `src/data/`                     | Repository, seed, sample ledger                  |
-| `src/db/`                       | Schema + browser SQLite client                   |
-| `src/lib/`                      | Domain helpers (`finance`, types, preferences)   |
-| `src/lib/query/`                | Query keys, invalidation, route prefetch         |
-| `src/components/local-data.tsx` | Persistence callout + backup UI                  |
-| `src/data/backup.ts`            | Export / restore SQLite file                     |
-| `server/plugins/`               | Nitro plugins (cross-origin isolation headers)   |
-| `public/`                       | PWA manifest + icons                             |
-| `vercel.json`                   | Vercel COEP/security headers                     |
-| `docs/`                         | Operator notes (OPFS / COEP, mobile)             |
-| `tests/unit/`                   | Vitest unit tests                                |
+| Path                     | Role                                                  |
+| ------------------------ | ----------------------------------------------------- |
+| `src/app/`               | App shell: gate, nav, theme, onboarding               |
+| `src/routes/`            | Screens: Overview, Ledger, Recurring, Savings, Categories |
+| `src/components/ui/`     | shadcn primitives                                     |
+| `src/components/layout/` | Page shell, header, month nav, empty / loading        |
+| `src/components/`        | Shared widgets (charts, stats, dialogs, tour)         |
+| `src/data/`              | Public `repository.ts` barrel, seed, sample ledger    |
+| `src/data/repo/`         | Entity modules (settings, transactions, savings, …)   |
+| `src/db/`                | Drizzle schema + browser SQLite client + migrator     |
+| `drizzle/`               | Kit-generated SQL + `migrations.js` (commit these)    |
+| `src/lib/`               | Domain helpers (`finance/`, forms, savings, motion)   |
+| `src/lib/query/`         | Query keys, invalidation, route prefetch              |
+| `src/styles/`            | Ordered CSS modules (`00`–`70`); entry is `styles.css`|
+| `src/components/local-data.tsx` | Persistence callout + backup UI                |
+| `src/data/backup.ts`     | Export / restore SQLite file                          |
+| `server/plugins/`        | Nitro plugins (cross-origin isolation headers)        |
+| `public/`                | PWA manifest + icons                                  |
+| `vercel.json`            | Vercel COEP/security headers                          |
+| `docs/`                  | Operator notes (OPFS / COEP, mobile)                  |
+| `tests/unit/`            | Vitest unit tests                                     |
+| `e2e/`                   | Playwright critical-path specs                        |
 
 ## Data model
 
@@ -87,6 +92,7 @@ pnpm preview   # Nitro Node server (applies COEP to HTML + /assets)
 | `payment_methods`    | How a transaction was paid                        |
 | `transactions`       | Ledger entries                                    |
 | `recurring_expenses` | Recurring bills                                   |
+| `savings_goals`      | Savings goals (target, current, optional date)    |
 
 ## Scripts
 
@@ -97,6 +103,7 @@ pnpm preview   # Nitro Node server (applies COEP to HTML + /assets)
 | `pnpm preview`             | Preview production build                              |
 | `pnpm test`                | Run unit tests                                        |
 | `pnpm lint` / `pnpm check` | ESLint / Prettier                                     |
+| `pnpm db:generate`         | Generate Drizzle migrations from `schema.ts`          |
 | `pnpm db:studio`           | Drizzle Studio (CLI SQLite; app UI uses browser OPFS) |
 
 ## Stack
