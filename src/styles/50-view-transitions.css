@@ -1,0 +1,168 @@
+/* ===== ROUTE TRANSITIONS (View Transitions, types set by router) =====
+   Only the page content region slides; the nav shell stays pixel-stable.
+   forward: old exits left, new enters from right. back: mirrored. */
+.page-content {
+  view-transition-name: page-content;
+  /* Opaque surface: transform-only slide, never fades through the frozen
+     root snapshot (which still contains the previous page). */
+  background-color: var(--background);
+}
+
+::view-transition-old(root) {
+  animation: none;
+}
+
+/* Direction is passed via custom props on <html> (set by router.tsx types
+   callback): --route-vt-out / --route-vt-in. VT pseudos inherit custom props
+   from the root — selecting on :active-view-transition-type does NOT match
+   :root reliably, so we don't use it here. */
+::view-transition-old(page-content) {
+  animation: var(--route-vt-out, route-out-left) var(--duration-page) var(--ease-page) both;
+}
+::view-transition-new(page-content) {
+  animation: var(--route-vt-in, route-in-right) var(--duration-page) var(--ease-page) both;
+}
+
+/* Transform-only: no opacity, so the old page never shows through mid-slide. */
+@keyframes route-out-left {
+  to {
+    transform: translateX(-6%);
+  }
+}
+@keyframes route-in-right {
+  from {
+    transform: translateX(6%);
+  }
+}
+@keyframes route-out-right {
+  to {
+    transform: translateX(6%);
+  }
+}
+@keyframes route-in-left {
+  from {
+    transform: translateX(-6%);
+  }
+}
+
+/* ===== MONTH SWITCH (Overview) — vertical directional slide =====
+   month-forward = going to a later month: old slides up, new comes from below. */
+.month-view {
+  view-transition-name: month-view;
+}
+
+::view-transition-old(month-view) {
+  animation: var(--month-vt-out, month-out-up) var(--duration-page) var(--ease-page) both;
+}
+::view-transition-new(month-view) {
+  animation: var(--month-vt-in, month-in-down) var(--duration-page) var(--ease-page) both;
+}
+
+@keyframes month-out-up {
+  to {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
+@keyframes month-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes month-out-down {
+  to {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes month-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
+
+.scroll-panel::-webkit-scrollbar {
+  display: none;
+}
+
+/* Theme switch: circular bloom / iris from the toggle (View Transitions).
+   Night expands from the control; day irises into a point (not a leftover disc).
+   Animation names are set as custom props on <html> so VT pseudos inherit them
+   (attribute/class selectors on html often fail to match these pseudos). */
+::view-transition-old(root) {
+  mix-blend-mode: normal;
+  height: 100%;
+  width: 100%;
+  z-index: var(--theme-vt-old-z, 1);
+  animation: var(--theme-vt-old, none) var(--duration-theme) var(--ease-theme)
+    both;
+}
+
+::view-transition-new(root) {
+  mix-blend-mode: normal;
+  height: 100%;
+  width: 100%;
+  z-index: var(--theme-vt-new-z, 2);
+  animation: var(--theme-vt-new, none) var(--duration-theme) var(--ease-theme)
+    both;
+  /* Subtle color wash at bloom edge — only for night (dark) expand. */
+  background: var(--theme-wash, none);
+}
+
+@keyframes theme-bloom-expand {
+  from {
+    clip-path: circle(
+      var(--theme-r0, 24px) at var(--theme-x, 50%) var(--theme-y, 0px)
+    );
+  }
+  to {
+    clip-path: circle(
+      var(--theme-r1, 100vmax) at var(--theme-x, 50%) var(--theme-y, 0px)
+    );
+  }
+}
+
+@keyframes theme-bloom-contract {
+  from {
+    clip-path: circle(
+      var(--theme-r1, 100vmax) at var(--theme-x, 50%) var(--theme-y, 0px)
+    );
+  }
+  to {
+    /* Collapse to a point so the outgoing layer doesn’t snap off a disc. */
+    clip-path: circle(0px at var(--theme-x, 50%) var(--theme-y, 0px));
+  }
+}
+
+/* Radial color wash — animated ring at the bloom frontier (night only). */
+@keyframes theme-wash-ring {
+  0% {
+    background: radial-gradient(
+      circle at var(--theme-x, 50%) var(--theme-y, 0px),
+      transparent calc(var(--theme-r0, 24px) - 2px),
+      var(--background) calc(var(--theme-r0, 24px) - 1px),
+      transparent calc(var(--theme-r0, 24px) + 1px)
+    );
+    background-size: 100% 100%;
+  }
+  100% {
+    background: radial-gradient(
+      circle at var(--theme-x, 50%) var(--theme-y, 0px),
+      transparent calc(var(--theme-r1, 100vmax) - 2px),
+      var(--background) calc(var(--theme-r1, 100vmax) - 1px),
+      transparent calc(var(--theme-r1, 100vmax) + 1px)
+    );
+    background-size: 100% 100%;
+  }
+}
+
+/* Fallback when View Transitions are unavailable */
+html.theme-transition,
+html.theme-transition body {
+  transition:
+    background-color var(--duration-theme) var(--ease-theme),
+    color var(--duration-theme) var(--ease-theme);
+}
+

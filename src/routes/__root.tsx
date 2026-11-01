@@ -8,6 +8,8 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
+import { InstallNudge } from '#/components/install-nudge'
+import { AppTour } from '#/components/app-tour'
 import { AppGate } from '#/app/app-gate'
 import { AppNav } from '#/app/app-nav'
 import { ThemeProvider } from '#/app/theme-provider'
@@ -18,9 +20,20 @@ import appCss from '../styles.css?url'
 import sqliteWasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url'
 
 import type { QueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 
 interface MyRouterContext {
   queryClient: QueryClient
+}
+
+function SWRegister() {
+  useEffect(() => {
+    if (import.meta.env.DEV) return
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    }
+  }, [])
+  return null
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
@@ -29,7 +42,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { charSet: 'utf-8' },
       {
         name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
+        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
       },
       {
         name: 'description',
@@ -50,6 +63,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-title', content: 'Expense Tracker' },
+      { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
@@ -65,7 +79,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         href: '/icons/apple-touch-icon.png',
         sizes: '180x180',
       },
-      // Start the ~840KB SQLite WASM download in parallel with JS (COEP needs CORS).
       {
         rel: 'preload',
         href: sqliteWasmUrl,
@@ -81,6 +94,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 function RootComponent() {
   return (
     <>
+      <SWRegister />
       <a href="#main" className="skip-link">
         Skip to content
       </a>
@@ -89,11 +103,13 @@ function RootComponent() {
           <AppNav />
           <main
             id="main"
-            className="min-h-0 flex-1 overflow-hidden pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0"
+            className="page-content min-h-0 flex-1 overflow-hidden pb-[var(--tab-bar-h)] md:pb-0"
           >
             <Outlet />
           </main>
         </div>
+        <InstallNudge />
+        <AppTour />
       </AppGate>
     </>
   )

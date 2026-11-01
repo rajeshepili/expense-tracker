@@ -1,0 +1,36 @@
+/* ===== NAMED MOTION UTILITIES =====
+   Composable component-level motion. Prefer these over raw transition-*
+   strings so hover/focus/motion variants work and tokens stay DRY. */
+
+@utility pressable {
+  transition: transform var(--duration-press) linear;
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+@utility pressable-row {
+  /* table rows can't scale (layout) — press = brief background dip */
+  transition: background-color var(--duration-press) linear;
+  &:active {
+    background-color: var(--muted);
+  }
+}
+
+@utility nav-pill {
+  transition:
+    transform var(--duration-settle) var(--ease-settle),
+    width var(--duration-settle) var(--ease-settle),
+    height var(--duration-settle) var(--ease-settle),
+    opacity var(--duration-enter) var(--ease-enter);
+}
+
+@utility hover-lift {
+  transition: box-shadow var(--duration-settle) var(--ease-settle);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      box-shadow: var(--shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.1));
+    }
+  }
+}
+

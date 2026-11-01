@@ -1,0 +1,40 @@
+/* ===== REDUCED MOTION — single global kill-switch =====
+   Every animation/transition degrades automatically: transforms and
+   positional motion are dropped, only opacity/color at reduced speed remain.
+   View-transition pseudos are not matched by *, so they get animation:none. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--duration-reduced) !important;
+    transition-property: opacity, color, background-color, border-color, fill, stroke !important;
+    scroll-behavior: auto !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+
+  html.theme-transition,
+  html.theme-transition body {
+    transition: none;
+  }
+
+  .skeleton-shimmer {
+    opacity: 0.7;
+  }
+
+  .animated-number-delta[data-show='true'] {
+    animation: none;
+    opacity: 0;
+  }
+
+  .animated-number-value {
+    will-change: auto;
+  }
+}
+

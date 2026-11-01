@@ -1,0 +1,122 @@
+@theme inline {
+  /* ===== MOTION TOKENS — single source of truth (Calm Luxury) =====
+     Each curve is purpose-built for an interaction pattern. These live in
+     @theme so Tailwind generates matching utilities: ease-enter, duration-enter,
+     animate-slide-up, … Use those utilities in components; never write
+     duration-150/ease-out/ease-in-out by hand. Raw CSS can use var(--ease-enter)
+     because @theme emits the tokens on :root. */
+  /* ENTERING — popovers, dropdowns, toasts, modals */
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-enter: 220ms;
+  /* EXITING — dismiss, close, hide (faster than enter) */
+  --ease-exit: cubic-bezier(0.33, 0, 0.67, 1);
+  --duration-exit: 160ms;
+  /* SETTLE — hover, focus, active, toggles */
+  --ease-settle: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --duration-settle: 180ms;
+  /* DATA — progress bars, charts */
+  --ease-data: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  --duration-data: 500ms;
+  /* PAGE — month nav, route changes */
+  --ease-page: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-page: 300ms;
+  /* PRESS — buttons, cards, rows (no easing, instant) */
+  --duration-press: 100ms;
+  /* REDUCED MOTION — opacity/color only */
+  --duration-reduced: 80ms;
+  /* THEME bloom / iris + icon swap */
+  --ease-theme: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-theme: 460ms;
+  --duration-icon-swap: 280ms;
+
+  /* Named animations (legacy classes migrated here) */
+  --animate-slide-up: slide-up var(--duration-enter) var(--ease-enter);
+  --animate-icon-swap: icon-swap var(--duration-icon-swap) var(--ease-theme) both;
+  --animate-delta-pop: delta-pop 2.2s cubic-bezier(0.23, 1, 0.32, 1) both;
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes icon-swap {
+    from {
+      transform: rotate(-12deg) scale(0.94);
+      opacity: 0;
+    }
+    to {
+      transform: rotate(0deg) scale(1);
+      opacity: 1;
+    }
+  }
+  @keyframes delta-pop {
+    0% {
+      opacity: 0;
+      transform: translate(-4px, -40%) scale(0.92);
+      filter: blur(2px);
+    }
+    12% {
+      opacity: 1;
+      transform: translate(0, -50%) scale(1.04);
+      filter: blur(0);
+    }
+    22% {
+      transform: translate(0, -50%) scale(0.99);
+    }
+    30%,
+    82% {
+      opacity: 1;
+      transform: translate(0, -50%) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(4px, -60%) scale(0.95);
+    }
+  }
+
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
