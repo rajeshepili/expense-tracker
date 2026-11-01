@@ -7,7 +7,6 @@ type Theme = 'dark' | 'light' | 'system'
 type ResolvedTheme = 'dark' | 'light'
 type ThemeMotion = 'night' | 'day' | 'same'
 
-/** Toggle bounds — bloom / iris is centered on this control. */
 export type ThemeOrigin = {
   left: number
   top: number
@@ -45,7 +44,6 @@ function resolveTheme(theme: Theme): ResolvedTheme {
     : theme
 }
 
-/** Idempotent — avoid remove/add flash mid View Transition. */
 function applyTheme(theme: Theme) {
   const root = document.documentElement
   const resolved = resolveTheme(theme)

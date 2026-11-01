@@ -12,7 +12,6 @@ import {
 import { rememberTransactionDefaults } from '#/lib/transaction-defaults'
 import { shouldPromptFundGoal } from '#/lib/savings'
 
-/** Ledger form state shared between composer and mutations. */
 export type LedgerFormState = {
   description: string
   amount: string
@@ -22,7 +21,6 @@ export type LedgerFormState = {
   date: string
 }
 
-/** Variables passed to save mutation. */
 export type LedgerSaveVars = {
   editingId: string | null
   description: string
@@ -35,7 +33,6 @@ export type LedgerSaveVars = {
   paymentMethodName: string | null
 }
 
-/** Default empty form for creating a new transaction. */
 export function emptyLedgerForm(): LedgerFormState {
   return {
     description: '',
@@ -47,7 +44,6 @@ export function emptyLedgerForm(): LedgerFormState {
   }
 }
 
-/** Transform a transaction row into form state for editing. */
 export function formFromTransaction(tx: LedgerTransaction): LedgerFormState {
   return {
     description: tx.description,
@@ -256,7 +252,6 @@ export function useLedgerForm({
   }
 }
 
-/** Format transaction metadata for mobile list display. */
 export function transactionMeta(tx: LedgerTransaction): string {
   const parts: string[] = []
   if (tx.category) parts.push(tx.category)

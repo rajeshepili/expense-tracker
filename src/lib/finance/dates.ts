@@ -13,7 +13,6 @@ export function todayIso() {
   return new Date().toISOString().slice(0, 10)
 }
 
-/** YYYY-MM */
 export function currentYearMonth(date = new Date()) {
   return date.toISOString().slice(0, 7)
 }
@@ -38,13 +37,11 @@ export function formatYearMonth(yearMonth: string) {
   }).format(new Date(Date.UTC(year, month - 1, 1)))
 }
 
-/** Negative if a < b (YYYY-MM-DD). */
 export function compareIsoDate(a: string, b: string) {
   if (a === b) return 0
   return a < b ? -1 : 1
 }
 
-/** Current month → today; other months → last day. */
 export function defaultDateForMonth(
   yearMonth: string | undefined,
   today = todayIso(),

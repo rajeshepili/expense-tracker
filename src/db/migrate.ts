@@ -1,11 +1,6 @@
 import type { SQLocalDrizzle } from 'sqlocal/drizzle'
 import migrations from '../../drizzle/migrations.js'
 
-/**
- * Schema changes: edit `src/db/schema.ts`, then `pnpm db:generate`.
- * Do not hand-edit SQL except the frozen legacy bridge below.
- */
-
 type SqlClient = Pick<SQLocalDrizzle, 'sql'>
 
 type JournalEntry = {
@@ -46,11 +41,6 @@ async function stamp(client: SqlClient, entry: JournalEntry) {
   `
 }
 
-/**
- * One-time bridge for OPFS DBs created before Drizzle Kit migrations.
- * Brings them to the 0000_init shape, then stamps only that migration.
- * Do not extend this — new columns go through `pnpm db:generate`.
- */
 async function legacyBridgeToInit(client: SqlClient) {
   const ensureColumn = async (
     table: 'transactions' | 'recurring_expenses',
@@ -94,7 +84,6 @@ async function applyEntry(client: SqlClient, entry: JournalEntry) {
   await stamp(client, entry)
 }
 
-/** Apply pending Drizzle Kit migrations (bundled journal). */
 export async function migrateSchema(client: SqlClient) {
   await client.sql`
     CREATE TABLE IF NOT EXISTS __drizzle_migrations (

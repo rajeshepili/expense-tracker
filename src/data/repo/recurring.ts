@@ -216,5 +216,4 @@ export async function skipRecurringOccurrence(id: string) {
   })
 }
 
-/** Used by overview for active bills query. */
 export { recurringQuery }

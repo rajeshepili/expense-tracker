@@ -23,10 +23,6 @@ type VirtualizedDataListProps<T> = {
   desktopEmpty?: ReactNode
   className?: string
   mobileClassName?: string
-  /**
-   * `fill` — flex panel with internal scroll + virtualization (ledger/recurring).
-   * `flow` — document/page scroll, single tree, no virtualization (categories).
-   */
   layout?: 'fill' | 'flow'
 }
 

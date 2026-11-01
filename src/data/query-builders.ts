@@ -1,7 +1,3 @@
-/**
- * Small query builder utilities to reduce repetition in repository.
- * No ORM abstraction — just DRY helpers for common Drizzle patterns.
- */
 
 import type { Db } from './repository'
 import { and, eq, like, desc, sql } from 'drizzle-orm'
@@ -17,7 +13,6 @@ import {
 import { isYearMonth } from '#/lib/finance'
 import { transactionSelect, recurringSelect, savingsGoalSelect } from './selectors'
 
-/** Build WHERE conditions for transaction list filters. */
 export function buildTransactionFilters(
   filters: {
     month?: string
@@ -51,7 +46,6 @@ export function buildTransactionFilters(
   return conditions
 }
 
-/** Base transaction query with joins and ordering. */
 export function baseTransactionQuery(db: Db) {
   return db
     .select(transactionSelect)
@@ -61,7 +55,6 @@ export function baseTransactionQuery(db: Db) {
     .orderBy(desc(transactions.transactionDate), desc(transactions.createdAt))
 }
 
-/** Apply filters to base transaction query. */
 export function applyTransactionFilters(
   query: ReturnType<typeof baseTransactionQuery>,
   filters: { month?: string; categoryId?: string; paymentMethodId?: string; type?: 'income' | 'expense'; q?: string } = {},
@@ -70,7 +63,6 @@ export function applyTransactionFilters(
   return conditions.length > 0 ? query.where(and(...conditions)) : query
 }
 
-/** Base recurring query with joins. */
 export function baseRecurringQuery(db: Db) {
   return db
     .select(recurringSelect)
@@ -79,7 +71,6 @@ export function baseRecurringQuery(db: Db) {
     .leftJoin(paymentMethods, eq(recurringExpenses.paymentMethodId, paymentMethods.id))
 }
 
-/** Base savings goal query with optional category join. */
 export function baseSavingsGoalQuery(db: Db) {
   return db
     .select(savingsGoalSelect)
@@ -87,7 +78,6 @@ export function baseSavingsGoalQuery(db: Db) {
     .leftJoin(categories, eq(savingsGoals.categoryId, categories.id))
 }
 
-/** Month budget query by year-month. */
 export function monthBudgetQuery(db: Db, yearMonth: string) {
   return db
     .select()
@@ -95,7 +85,6 @@ export function monthBudgetQuery(db: Db, yearMonth: string) {
     .where(eq(monthlyBudgets.yearMonth, yearMonth))
 }
 
-/** Build conditions for text search across multiple columns. */
 export function buildTextSearch(
   needle: string,
   columns: { table: any; column: any }[],

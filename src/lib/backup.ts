@@ -5,9 +5,7 @@ const LOCAL_DATA_HIDDEN_KEY = 'expense-tracker-local-data-callout-hidden'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-/** Remind if never exported, or last export older than this */
 export const BACKUP_REMINDER_AFTER_MS = 14 * DAY_MS
-/** After dismiss, hide the reminder for this long */
 export const BACKUP_REMINDER_SNOOZE_MS = 7 * DAY_MS
 
 function readNumber(key: string): number | null {

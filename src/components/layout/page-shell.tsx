@@ -46,7 +46,6 @@ export function TableScroll({
   )
 }
 
-/** Empty / filtered placeholder inside a data table body. */
 export function TableEmptyRow({
   colSpan,
   children,

@@ -9,7 +9,6 @@ type MonthNavProps = {
   onGoMonth: (month: string) => void
 }
 
-/** Previous/next month chevrons + label + This month / All months toggles. */
 export function MonthNav({ monthFilter, viewingMonth, onGoMonth }: MonthNavProps) {
   const isCurrentMonth = viewingMonth !== null && viewingMonth === currentYearMonth()
   return (

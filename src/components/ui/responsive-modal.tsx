@@ -30,7 +30,6 @@ function useModalMode() {
   return React.useContext(ModalModeContext)
 }
 
-/** Pick one of two primitives by mode, so callers write each slot once. */
 function pick<T>(drawer: T, dialog: T) {
   const mode = useModalMode()
   return mode === 'drawer' ? drawer : dialog

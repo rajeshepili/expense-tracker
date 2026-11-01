@@ -6,14 +6,12 @@ export type SavingsGoalAmounts = Pick<
   'targetAmount' | 'currentAmount'
 >
 
-/** Goal with remaining precomputed once for ranking / UI. */
 export type RankedSavingsGoal = {
   goal: SavingsGoalRow
   remaining: number
   categoryMatch: boolean
 }
 
-/** Float slack for money comparisons (UI + validation). */
 export const MONEY_EPSILON = 1e-4
 
 export function savingsRemaining(goal: SavingsGoalAmounts): number {
@@ -34,20 +32,17 @@ export function hasOpenSavingsGoal(
   return false
 }
 
-/** Offer fund prompt unless cache already proves every goal is complete. */
 export function shouldPromptFundGoal(
   goals: readonly SavingsGoalAmounts[] | undefined,
 ): boolean {
   return goals === undefined || hasOpenSavingsGoal(goals)
 }
 
-/** 0–100 for progress bars. */
 export function savingsProgressPercent(goal: SavingsGoalAmounts): number {
   if (goal.targetAmount <= 0) return 100
   return Math.min((goal.currentAmount / goal.targetAmount) * 100, 100)
 }
 
-/** Single pass — avoids two `.filter` walks over the same list. */
 export function partitionSavingsGoals(goals: readonly SavingsGoalRow[]): {
   open: SavingsGoalRow[]
   complete: SavingsGoalRow[]
@@ -61,10 +56,6 @@ export function partitionSavingsGoals(goals: readonly SavingsGoalRow[]): {
   return { open, complete }
 }
 
-/**
- * Rank incomplete goals: matching category first, then soonest-to-finish,
- * then stable name/id. Remaining is computed once per goal.
- */
 export function rankOpenSavingsGoals(
   goals: readonly SavingsGoalRow[],
   categoryId: string,
@@ -120,7 +111,6 @@ export function exceedsRemaining(amount: number, remaining: number): boolean {
   return amount > remaining + MONEY_EPSILON
 }
 
-/** Whole days from `today` (noon) to target date; null if no date. */
 export function daysUntilTargetDate(
   targetDate: string | null,
   today: string = todayIso(),
@@ -138,9 +128,6 @@ export function formatDaysUntilLabel(days: number): string {
   return `${Math.abs(days)} days overdue`
 }
 
-/**
- * Normalize amounts for create. Throws on invalid input; clamps current ≤ target.
- */
 export function normalizeSavingsGoalCreate(input: SavingsGoalInput): {
   name: string
   targetAmount: number
@@ -166,9 +153,6 @@ export function normalizeSavingsGoalCreate(input: SavingsGoalInput): {
   }
 }
 
-/**
- * Build a partial update with validation. Returns null when nothing changes.
- */
 export function normalizeSavingsGoalUpdate(
   input: SavingsGoalUpdate,
   existing: SavingsGoalAmounts,
@@ -209,10 +193,6 @@ export function normalizeSavingsGoalUpdate(
   return updates
 }
 
-/**
- * Clamp a contribution so current never exceeds target.
- * Rejects non-positive amounts. Overshoot past remaining is clamped (safe write).
- */
 export function applyContribution(
   goal: SavingsGoalAmounts,
   amount: number,

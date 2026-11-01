@@ -2,9 +2,7 @@ import { cn } from 'cn'
 import type { ComponentPropsWithoutRef, HTMLAttributes } from 'react'
 
 type KbdProps = ComponentPropsWithoutRef<'kbd'> & {
-  /** Hide on mobile, show from md breakpoint. Default true. */
   responsive?: boolean
-  /** Style for use on primary button backgrounds. */
   primary?: boolean
 }
 

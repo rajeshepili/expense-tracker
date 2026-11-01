@@ -17,7 +17,6 @@ export async function downloadBackup() {
 
 const SQLITE_MAGIC = 'SQLite format 3\0'
 
-/** Validate SQLite file header before restore. */
 function validateSqliteHeader(file: File): Promise<void> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -35,7 +34,6 @@ function validateSqliteHeader(file: File): Promise<void> {
   })
 }
 
-/** Overwrite local DB, then reload. */
 export async function restoreBackup(file: File) {
   if (!file.size) throw new Error('Choose a backup file to restore')
   await validateSqliteHeader(file)

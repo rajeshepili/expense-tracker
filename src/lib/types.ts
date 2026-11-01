@@ -39,7 +39,6 @@ export type RecurringExpenseRow = {
 }
 
 export type AppSettings = {
-  /** Default monthly budget when no month override exists */
   budget: number
   currency: string
   seeded: boolean
@@ -47,7 +46,6 @@ export type AppSettings = {
 
 export type MonthBudget = {
   yearMonth: string
-  /** Effective budget for the month (override or default) */
   budget: number
   defaultBudget: number
   isCustom: boolean

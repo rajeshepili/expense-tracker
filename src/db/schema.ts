@@ -14,7 +14,7 @@ export const settings = sqliteTable('settings', {
   seededAt: integer('seeded_at', { mode: 'timestamp' }),
 })
 
-/** Optional budget for a calendar month (YYYY-MM). Falls back to settings.budget */
+/** Per-month override; falls back to settings.budget. Key is YYYY-MM. */
 export const monthlyBudgets = sqliteTable('monthly_budgets', {
   yearMonth: text('year_month').primaryKey(),
   budget: real('budget').notNull(),
@@ -91,7 +91,6 @@ export const recurringExpenses = sqliteTable(
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
     name: text('name').notNull(),
-    /** Cycle amount; restored after full settle. */
     amount: real('amount').notNull(),
     /** Still owed this cycle; null = due equals amount. */
     remainingAmount: real('remaining_amount'),
@@ -117,7 +116,6 @@ export const recurringExpenses = sqliteTable(
   ],
 )
 
-/** Savings goals */
 export const savingsGoals = sqliteTable(
   'savings_goals',
   {

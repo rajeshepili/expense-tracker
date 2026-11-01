@@ -2,10 +2,6 @@ import Database from 'better-sqlite3'
 import { afterEach, describe, expect, it } from 'vitest'
 import { listMigrationTags, migrateSchema } from '#/db/migrate'
 
-/**
- * Pre-Drizzle OPFS shape: tables exist without later columns.
- * Opens through the legacy bridge, then stamps 0000_init.
- */
 const V0_SCHEMA = `
 CREATE TABLE settings (
   id TEXT PRIMARY KEY DEFAULT 'default',

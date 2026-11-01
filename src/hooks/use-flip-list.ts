@@ -9,7 +9,6 @@ function prefersReducedMotion() {
   )
 }
 
-/** FLIP + enter/exit tracking for keyed list children. */
 export function useFlipList<T>(
   containerRef: React.RefObject<HTMLElement | null>,
   items: T[],

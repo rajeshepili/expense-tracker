@@ -11,7 +11,6 @@ export function createTestQueryClient() {
   })
 }
 
-/** Stable QueryClient for the life of the wrapper (not recreated each render). */
 export function withQueryClient() {
   const client = createTestQueryClient()
   return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -21,7 +20,6 @@ export function withQueryClient() {
   }
 }
 
-/** Fresh in-memory localStorage for prefs tests (backup, transaction defaults). */
 export function installMemoryLocalStorage() {
   const store = new Map<string, string>()
   const localStorage = {

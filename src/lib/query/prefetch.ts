@@ -7,15 +7,9 @@ async function repo() {
 }
 
 export type PrefetchRouteOptions = {
-  /** Ledger deep-links can target a specific month (e.g. edit-from-overview). */
   month?: string
 }
 
-/**
- * Builds the awaitable query promises for a destination route. Shared by
- * `prefetchRoute` (fire-and-forget hover/intent) and `prefetchRouteAsync`
- * (click-time correctness layer before a view transition).
- */
 async function routeQueryPromises(
   queryClient: QueryClient,
   to: string,
@@ -102,17 +96,10 @@ async function routeQueryPromises(
   return []
 }
 
-/** Fire-and-forget prefetch for hover/focus intent. */
 export function prefetchRoute(queryClient: QueryClient, to: string, opts?: PrefetchRouteOptions) {
   void routeQueryPromises(queryClient, to, opts)
 }
 
-/**
- * Awaitable prefetch used right before a navigation. Awaiting it while the
- * page is still interactive (before the router's view transition starts)
- * guarantees the target route's queries are cached, so the VT snapshots
- * contentful UI instead of a skeleton.
- */
 export async function prefetchRouteAsync(
   queryClient: QueryClient,
   to: string,

@@ -1,7 +1,4 @@
-/* ===== REDUCED MOTION — single global kill-switch =====
-   Every animation/transition degrades automatically: transforms and
-   positional motion are dropped, only opacity/color at reduced speed remain.
-   View-transition pseudos are not matched by *, so they get animation:none. */
+/* View-transition pseudos are not matched by *, so they get animation:none. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

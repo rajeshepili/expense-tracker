@@ -1,6 +1,5 @@
 import { cn } from 'cn'
 
-/** Shimmering placeholder block — GPU-only transform sweep on ::after. */
 function Skel({ className }: { className: string }) {
   return <div className={cn('skeleton-shimmer', className)} />
 }

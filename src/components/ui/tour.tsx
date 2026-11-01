@@ -24,22 +24,14 @@ interface TourStepContext {
 }
 
 interface TourStep {
-  /**
-   * The element to highlight: a CSS selector, a ref, or a function returning
-   * the element. Omit it to show a centered step with a fully dimmed page.
-   */
   target?: string | React.RefObject<Element | null> | (() => Element | null)
   title?: React.ReactNode
   content?: React.ReactNode
   side?: TourSide
   align?: TourAlign
-  /** Space between the target and the spotlight edge. */
   padding?: number
-  /** Corner radius of the spotlight. */
   radius?: number
-  /** Allow clicking the highlighted element through the overlay. */
   interactive?: boolean
-  /** Replace the default popover body for this step. */
   render?: (ctx: TourStepContext) => React.ReactNode
   onEnter?: (ctx: { index: number }) => void
 }
@@ -90,19 +82,12 @@ function padRect(rect: DOMRect, padding: number) {
 
 interface TourProviderProps {
   children: React.ReactNode
-  /** Default steps used when `start()` is called without arguments. */
   steps?: TourStep[]
-  /** Default spotlight padding. @default 8 */
   padding?: number
-  /** Default spotlight corner radius. @default 10 */
   radius?: number
-  /** Highlighted elements stay clickable by default. @default true */
   interactive?: boolean
-  /** How the target is scrolled into view, or `false` to disable. */
   scrollIntoView?: ScrollIntoViewOptions | false
-  /** Arrow-key and Escape navigation. @default true */
   keyboard?: boolean
-  /** What clicking the dimmed overlay does. @default "stop" */
   overlayClick?: "stop" | "next" | "none"
   labels?: { back?: string; next?: string; done?: string }
   onStepChange?: (index: number, step: TourStep) => void
@@ -277,12 +262,6 @@ function TourProvider({
   )
 }
 
-/**
- * Dims the page and cuts a spotlight around the target. The spotlight is a
- * fixed element that draws the dim as a huge box-shadow; a separate
- * transparent blocker intercepts clicks outside the target. Both track the
- * target directly through Floating UI's `autoUpdate`.
- */
 function TourOverlay({
   step,
   targetEl,

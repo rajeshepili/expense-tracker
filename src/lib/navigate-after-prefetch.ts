@@ -4,9 +4,7 @@ import { motion } from '#/lib/motion'
 import { prefetchRouteAsync } from '#/lib/query/prefetch'
 
 type NavigateAfterPrefetchOptions = NavigateOptions & {
-  /** `false` suppresses the router's default view transition. */
   animate?: boolean
-  /** Ledger deep-links pass the target month so the right list is warmed. */
   month?: string
 }
 

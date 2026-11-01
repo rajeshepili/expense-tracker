@@ -14,7 +14,6 @@ type SharedProps<T> = {
   children: VirtualRowRender<T>
 }
 
-/** Div-based virtualized scroll list (mobile cards, plain lists). */
 export function VirtualizedList<T>({
   items,
   estimateSize = 56,
@@ -63,11 +62,6 @@ export function VirtualizedList<T>({
   )
 }
 
-/**
- * Scroll parent + virtualized `<tbody>` (spacer rows). Owns its own overflow
- * container so the virtualizer always has a real scroll element — Radix
- * ScrollArea viewports are unreliable as `getScrollElement` targets.
- */
 export function VirtualizedTable<T>({
   items,
   estimateSize = 48,
@@ -82,7 +76,6 @@ export function VirtualizedTable<T>({
   colSpan: number
   header: ReactNode
   className?: string
-  /** When set, skip virtualization and render this body instead. */
   empty?: ReactNode
 }) {
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)

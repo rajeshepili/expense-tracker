@@ -11,7 +11,6 @@ type StatTileProps = {
   icon?: ReactNode
   tone?: StatTone
   className?: string
-  /** Render an "opens something" affordance (shown on hover/focus of a wrapping link). */
   linked?: boolean
 }
 

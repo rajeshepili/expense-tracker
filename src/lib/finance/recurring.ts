@@ -11,7 +11,6 @@ export function dueStatus(nextDate: string, today = todayIso()): DueStatus {
   return 'upcoming'
 }
 
-/** Record one-tap only when due/overdue. */
 export function canOneTapRecord(nextDate: string, today = todayIso()) {
   return dueStatus(nextDate, today) !== 'upcoming'
 }
@@ -23,7 +22,6 @@ export function amountDue(bill: {
   return bill.remainingAmount ?? bill.amount
 }
 
-/** Underpay keeps remaining; full/over settles. */
 export function settleRecurringPayment(
   due: number,
   paid: number,
@@ -41,7 +39,6 @@ export function defaultRecordDate(nextDate: string, today = todayIso()) {
   return compareIsoDate(nextDate, today) < 0 ? today : nextDate
 }
 
-/** Advance past this cycle and drop any partial remaining balance. */
 export function skipRecurringPatch(bill: {
   nextDate: string
   cadence: RecurrenceCadence

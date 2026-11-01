@@ -1,18 +1,3 @@
-/**
- * Motion Gate — single source of truth for "what motion / navigation /
- * overlay may happen now?". Replaces scattered timers, per-feature locks,
- * and raw `document.activeViewTransition` awaits.
- *
- * Phases are mutually exclusive for primary motion:
- *
- *   idle → page (route/month VT) → settle (staggered content entrance)
- *      → idle
- *   idle → theme (theme VT) → idle
- *   idle → overlay (modal/drawer/alert/tour) → idle
- *
- * `data-motion` on <html> mirrors the phase so CSS can suppress or
- * stagger entrance animations (see styles/40-base.css).
- */
 
 export type MotionPhase = 'idle' | 'page' | 'theme' | 'settle' | 'overlay'
 export type MotionBlocker = 'modal' | 'drawer' | 'alert' | 'tour' | 'busy'
@@ -113,7 +98,6 @@ export const motion = {
     return () => state.listeners.delete(listener)
   },
 
-  /** Whether a kind of motion/action is allowed right now. */
   can(kind: MotionKind): boolean {
     const b = state.blockers
     switch (kind) {
@@ -222,7 +206,6 @@ export const motion = {
     }, SAFETY_MS)
   },
 
-  /** Register an overlay/tour/busy blocker; awaits page/theme motion first. */
   async openOverlay(kind: MotionBlocker): Promise<void> {
     await motion.awaitIdle()
     state.blockers.add(kind)
@@ -236,7 +219,6 @@ export const motion = {
     notify()
   },
 
-  /** Latest-wins coalescing for rapid repeat actions (month chevrons, tabs). */
   coalesceNavigate(key: string, run: () => Promise<void>): Promise<void> {
     const token = (state.navTokens.get(key) ?? 0) + 1
     state.navTokens.set(key, token)
@@ -245,7 +227,6 @@ export const motion = {
     })
   },
 
-  /** True when reduced motion — callers should snap, not animate. */
   reduced(): boolean {
     return prefersReducedMotion()
   },

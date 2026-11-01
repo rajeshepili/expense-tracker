@@ -13,13 +13,11 @@ import {
   ResponsiveModalTrigger,
 } from '#/components/ui/responsive-modal'
 
-/** Trigger element that can receive a ref to HTMLButtonElement (e.g., Button with asChild). */
 type TriggerElement = React.ReactElement<{ ref?: ForwardedRef<HTMLButtonElement> }>
 
 type ComposerFormModalProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** Omit when the modal is opened from outside (budget, record adjust). */
   trigger?: TriggerElement
   title: string
   description?: string

@@ -40,7 +40,6 @@ const desktopLinkClass = cn(
 
 type Pill = { left: number; width: number; height: number; top: number; visible: boolean }
 
-/** Measure the active nav item and slide a shared pill underneath it. */
 function useNavPill<T extends HTMLElement>(activeIndex: number, visible: boolean) {
   const containerRef = useRef<T | null>(null)
   const itemRefs = useRef<(HTMLElement | null)[]>([])

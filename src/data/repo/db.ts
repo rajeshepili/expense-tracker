@@ -23,7 +23,6 @@ export async function bootstrapDatabase() {
   await bootstrapApp()
 }
 
-/** Mark onboarding complete so subsequent boots skip the gate. */
 export function markOnboardingComplete() {
   bootstrapped = Promise.resolve({ needsOnboarding: false })
 }

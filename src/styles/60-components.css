@@ -1,8 +1,3 @@
-/* ===== @starting-style ENTRY ANIMATIONS =====
-   Modern CSS entry animations — no JS mount required.
-   Works in Chrome 117+, Edge 117+, Safari 17+, Firefox 130+. */
-
-/* Modal / Dialog entry — scale(0.95) + opacity */
 @starting-style {
   [data-radix-dialog-content][data-state='open'],
   [data-radix-alert-dialog-content][data-state='open'],
@@ -19,7 +14,6 @@
               transform var(--duration-enter) var(--ease-enter);
 }
 
-/* Popover / Dropdown / Select / Tooltip entry — scale from origin */
 @starting-style {
   [data-radix-popper-content-wrapper][data-state='open'],
   [data-radix-select-content][data-state='open'],
@@ -48,8 +42,6 @@
   transform-origin: var(--transform-origin);
 }
 
-/* Toast — slide from bottom (BackupReminder uses [data-slot='toast'] too,
-   so the .backup-reminder-enter alias is no longer needed) */
 @starting-style {
   [data-radix-toast-viewport][data-state='open'],
   [data-slot='toast'][data-state='open'] {
@@ -64,14 +56,12 @@
               transform var(--duration-enter) var(--ease-enter);
 }
 
-/* Toast exit — faster */
 [data-radix-toast-viewport][data-state='closed'],
 [data-slot='toast'][data-state='closed'] {
   transition: opacity var(--duration-exit) var(--ease-exit),
               transform var(--duration-exit) var(--ease-exit);
 }
 
-/* Toast swipe-out */
 [data-radix-toast-viewport][data-swipe='move'],
 [data-radix-toast-viewport][data-swipe='cancel'] {
   transition: transform var(--duration-settle) var(--ease-settle);
@@ -176,11 +166,6 @@
   border-color: color-mix(in oklch, var(--border) 90%, transparent);
 }
 
-/* Nav active pill = @utility nav-pill (defined next to @theme). */
-
-/* ===== SKELETON SHIMMER =====
-   Base block + an oversized gradient bar on ::after swept with transform
-   only (GPU). Reduced-motion: static. */
 .skeleton-shimmer {
   position: relative;
   overflow: hidden;
@@ -207,12 +192,6 @@
   }
 }
 
-/* ===== LIST FLIP enter/exit =====
-   New rows cascade in with a keyframe animation + per-row delay var
-   (--flip-enter-delay, set inline by the caller as index*40ms, capped).
-   Keyframes (not transitions) so the delay only affects the entrance —
-   FLIP moves keep using the base transition with no delay.
-   Removed rows (data-flip-exit) collapse + fade out. */
 [data-flip-key] {
   transition:
     transform var(--duration-settle) var(--ease-settle),
@@ -234,7 +213,6 @@
 [data-flip-key][data-flip-exit] {
   opacity: 0;
   transform: scale(0.96);
-  /* collapse height so siblings slide up smoothly */
   max-height: 0;
   overflow: hidden;
   padding-top: 0 !important;
@@ -247,8 +225,6 @@
     padding var(--duration-exit) var(--ease-exit);
 }
 
-/* Linked stat tiles: unmistakable affordance — pointer cursor, stronger
-   border + background lift, and an "open" arrow that fades in on hover/focus. */
 a:has(> .stat-tile) {
   cursor: pointer;
 }

@@ -37,7 +37,6 @@ type AnimatedNumberProps = {
   format: (value: number) => string
   persistKey?: string
   showDelta?: boolean
-  /** Income / remaining → `up`. Expenses / used → `down`. */
   goodWhen?: DeltaGoodWhen
   className?: string
 } & Omit<HTMLAttributes<HTMLSpanElement>, 'children'>

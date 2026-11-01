@@ -1,7 +1,3 @@
-/**
- * Centralized error utilities — no new behavior, just organized helpers.
- */
-
 export class AppError extends Error {
   constructor(
     message: string,
@@ -17,7 +13,6 @@ export class AppError extends Error {
   }
 }
 
-/** Validation errors from user input. */
 export class ValidationError extends AppError {
   constructor(message: string, cause?: unknown) {
     super(message, 'VALIDATION', cause)
@@ -25,7 +20,6 @@ export class ValidationError extends AppError {
   }
 }
 
-/** Entity not found (category, recurring bill, savings goal, etc.). */
 export class NotFoundError extends AppError {
   constructor(entity: string, cause?: unknown) {
     super(`${entity} not found`, 'NOT_FOUND', cause)
@@ -33,7 +27,6 @@ export class NotFoundError extends AppError {
   }
 }
 
-/** Business rule violated (duplicate name, insufficient remaining, etc.). */
 export class ConflictError extends AppError {
   constructor(message: string, cause?: unknown) {
     super(message, 'CONFLICT', cause)
@@ -41,7 +34,6 @@ export class ConflictError extends AppError {
   }
 }
 
-/** Database / storage layer failure. */
 export class StorageError extends AppError {
   constructor(message: string, cause?: unknown) {
     super(message, 'STORAGE', cause)
@@ -49,27 +41,16 @@ export class StorageError extends AppError {
   }
 }
 
-/**
- * Extract a user-facing message from any error.
- * Falls back to a generic message if the error is unknown.
- */
 export function getErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof AppError) return err.message
   if (err instanceof Error) return err.message
   return fallback
 }
 
-/**
- * Check if an error is a specific AppError code.
- */
 export function isErrorCode(err: unknown, code: AppError['code']): boolean {
   return AppError.isAppError(err) && err.code === code
 }
 
-/**
- * Wrap an async function to convert thrown errors into AppError subclasses.
- * Keeps call sites clean: `await safe(createCategory)({ name: 'Food', type: 'expense' })`
- */
 export function safe<T extends (...args: Parameters<T>) => Promise<ReturnType<T>>>(
   fn: T,
 ): T {
@@ -93,10 +74,6 @@ export function safe<T extends (...args: Parameters<T>) => Promise<ReturnType<T>
   }) as T
 }
 
-/**
- * Create a mutation onError handler that sets local error state
- * and optionally re-opens a dialog.
- */
 export function makeMutationErrorHandler<
   TContext extends { reopenDialog?: () => void },
 >(
@@ -110,16 +87,10 @@ export function makeMutationErrorHandler<
   }
 }
 
-/**
- * Format a query error for PageError component.
- */
 export function formatQueryError(err: unknown): string {
   return getErrorMessage(err, 'Failed to load data')
 }
 
-/**
- * Toast error helper — uses sonner via dynamic import to avoid circular deps.
- */
 let toastPromise: Promise<{ error: (msg: string) => void }> | null = null
 
 export function toastError(message: string) {

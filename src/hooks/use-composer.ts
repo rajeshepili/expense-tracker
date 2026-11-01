@@ -13,7 +13,6 @@ export type ComposerState<TForm, TEditing> = {
   openCreate: () => void
   openEdit: (row: TEditing) => void
   reset: () => void
-  /** Wire to ComposerFormModal; pass `() => saveMutation.reset()` as onClose. */
   bindOpenChange: (onClose?: () => void) => (open: boolean) => void
 }
 

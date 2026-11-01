@@ -12,7 +12,6 @@ import { invalidateAfter } from '#/lib/query/invalidation'
 import { makeMutationErrorHandler } from '#/lib/errors'
 import { rememberTransactionDefaults } from '#/lib/transaction-defaults'
 
-/** Recurring expense form state shared between composer and mutations. */
 export type RecurringFormState = {
   name: string
   amount: string
@@ -23,7 +22,6 @@ export type RecurringFormState = {
   active: boolean
 }
 
-/** Variables passed to save mutation. */
 export type RecurringSaveVars = {
   name: string
   amount: number
@@ -34,7 +32,6 @@ export type RecurringSaveVars = {
   active: boolean
 }
 
-/** Default empty form for creating a new recurring expense. */
 export function emptyRecurringForm(): RecurringFormState {
   return {
     name: '',
@@ -47,7 +44,6 @@ export function emptyRecurringForm(): RecurringFormState {
   }
 }
 
-/** Transform a recurring row into form state for editing. */
 export function formFromRecurringRow(row: RecurringExpenseRow): RecurringFormState {
   return {
     name: row.name,
@@ -60,7 +56,6 @@ export function formFromRecurringRow(row: RecurringExpenseRow): RecurringFormSta
   }
 }
 
-/** Sort recurring items: active first, then by next date. */
 export function sortRecurring(items: RecurringExpenseRow[]): RecurringExpenseRow[] {
   return [...items].sort((a, b) => {
     if (a.active !== b.active) return a.active ? -1 : 1
@@ -77,7 +72,6 @@ interface UseRecurringFormArgs {
   reset: () => void
   setSaveError: (error: string | null) => void
   setDeleting: (item: RecurringExpenseRow | null) => void
-  /** Row currently targeted by the delete-confirm dialog. */
   deleting: RecurringExpenseRow | null
 }
 

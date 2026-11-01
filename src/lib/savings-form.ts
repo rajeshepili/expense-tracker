@@ -8,7 +8,6 @@ import {
 import { invalidateAfter } from '#/lib/query/invalidation'
 import { savingsRemaining } from '#/lib/savings'
 
-/** Savings goal form state. */
 export type SavingsFormState = {
   name: string
   targetAmount: string
@@ -17,7 +16,6 @@ export type SavingsFormState = {
   categoryId: string
 }
 
-/** Default empty form for creating a new goal. */
 export function emptySavingsForm(): SavingsFormState {
   return {
     name: '',
@@ -28,7 +26,6 @@ export function emptySavingsForm(): SavingsFormState {
   }
 }
 
-/** Transform a goal row into form state for editing. */
 export function formFromGoal(goal: SavingsGoalRow): SavingsFormState {
   return {
     name: goal.name,

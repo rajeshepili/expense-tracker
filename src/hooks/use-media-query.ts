@@ -14,7 +14,6 @@ export function useMediaQuery(query: string) {
   )
 }
 
-/** Tailwind `md` (768px). */
 export function useIsMobile() {
   return useMediaQuery('(max-width: 767px)')
 }

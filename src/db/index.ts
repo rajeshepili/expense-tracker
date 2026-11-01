@@ -37,7 +37,6 @@ async function openDatabase() {
   return db
 }
 
-/** Start WASM/worker immediately (safe to call multiple times) */
 export function warmDatabase() {
   if (typeof window === 'undefined') return
   if (!ready) {
@@ -67,7 +66,6 @@ export async function exportDatabaseFile() {
   return (await requireClient()).getDatabaseFile()
 }
 
-/** Replace the on-device DB. Caller should reload afterward */
 export async function importDatabaseFile(file: File) {
   await (await requireClient()).overwriteDatabaseFile(file)
   reset()

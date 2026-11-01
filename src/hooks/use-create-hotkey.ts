@@ -11,7 +11,6 @@ function isTypingTarget(target: EventTarget | null) {
   )
 }
 
-/** Press `n` to create, unless typing or `blocked`. */
 export function useCreateHotkey(onCreate: () => void, blocked = false) {
   const onCreateRef = useRef(onCreate)
   onCreateRef.current = onCreate

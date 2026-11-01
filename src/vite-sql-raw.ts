@@ -1,6 +1,5 @@
 import type { Plugin } from 'vite'
 
-/** Treat `.sql` imports as raw strings (drizzle-kit migrations.js). */
 export function sqlRaw(): Plugin {
   return {
     name: 'sql-raw',

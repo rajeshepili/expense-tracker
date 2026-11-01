@@ -8,7 +8,6 @@ function ScrollArea({
   viewportRef,
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
-  /** Ref to the scrolling viewport (for virtualizers). */
   viewportRef?: React.Ref<HTMLDivElement>
 }) {
   return (

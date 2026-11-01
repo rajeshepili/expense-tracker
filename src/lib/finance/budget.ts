@@ -4,7 +4,6 @@ export function roundMoney(amount: number) {
   return Math.round(amount * 100) / 100
 }
 
-/** null when prior is 0 */
 export function priorDeltaRatio(current: number, prior: number) {
   if (prior === 0) return current === 0 ? 0 : null
   return (current - prior) / prior

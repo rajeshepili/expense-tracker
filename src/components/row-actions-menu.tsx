@@ -12,14 +12,10 @@ import { cn } from 'cn'
 type RowActionsMenuProps = {
   label: string
   onDelete: () => void
-  /** Plain edit action. Ignored when `editAsChild` is set. */
   onEdit?: () => void
   editLabel?: string
-  /** e.g. `<Link to="…">Edit in ledger</Link>` */
   editAsChild?: ReactElement
-  /** Optional duplicate action (e.g. pre-fill form with same values) */
   onDuplicate?: () => void
-  /** `touch` = large hit target (mobile lists); `compact` = table rows */
   size?: 'touch' | 'compact'
 }
 

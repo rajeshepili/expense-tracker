@@ -1,7 +1,3 @@
-/**
- * Public data API. Implementation lives in `src/data/repo/*` by entity;
- * keep importing from this module so call sites stay stable.
- */
 
 export type { Db } from '#/data/repo/db'
 export { bootstrapApp, bootstrapDatabase } from '#/data/repo/db'

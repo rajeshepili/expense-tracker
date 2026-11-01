@@ -9,7 +9,6 @@ import {
 } from '#/lib/savings'
 import type { SavingsGoalRow } from '#/lib/types'
 
-/** Active-goal row: name, amounts, progress bar, optional target date. `actions` slot on the right. */
 export function SavingsGoalCard({
   goal,
   currency,
@@ -50,7 +49,6 @@ export function SavingsGoalCard({
   )
 }
 
-/** Compact completed-goal chip. */
 export function CompletedGoalRow({
   goal,
   action,

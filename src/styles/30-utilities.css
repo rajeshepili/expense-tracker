@@ -1,7 +1,3 @@
-/* ===== NAMED MOTION UTILITIES =====
-   Composable component-level motion. Prefer these over raw transition-*
-   strings so hover/focus/motion variants work and tokens stay DRY. */
-
 @utility pressable {
   transition: transform var(--duration-press) linear;
   &:active {
@@ -10,7 +6,6 @@
 }
 
 @utility pressable-row {
-  /* table rows can't scale (layout) — press = brief background dip */
   transition: background-color var(--duration-press) linear;
   &:active {
     background-color: var(--muted);
