@@ -17,9 +17,6 @@ importers:
       '@fontsource/ibm-plex-sans':
         specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource/ibm-plex-serif':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@sqlite.org/sqlite-wasm':
         specifier: 3.51.2-build9
         version: 3.51.2-build9
@@ -848,9 +845,6 @@ packages:
 
   '@fontsource/ibm-plex-sans@5.3.0':
     resolution: {integrity: sha512-CbE4CbbEEZJX860XyUiRpsksXIQR8Rp2XDva2VO53NJox9tVNtusrysd2x5YkUEY3ErQ66W1IiiQL8/wihhw5w==}
-
-  '@fontsource/ibm-plex-serif@5.3.0':
-    resolution: {integrity: sha512-zwPfHB7EJbS5B8qnitPigJYzNdnt6PUeaoOA1gAAt//1pjpTVZN5sOU14NIAZ+C1xypL6GWsUG2VMYJW9bhJqQ==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -4728,8 +4722,6 @@ snapshots:
   '@floating-ui/utils@0.2.12': {}
 
   '@fontsource/ibm-plex-sans@5.3.0': {}
-
-  '@fontsource/ibm-plex-serif@5.3.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

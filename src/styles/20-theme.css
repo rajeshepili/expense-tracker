@@ -1,6 +1,8 @@
 @theme inline {
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'IBM Plex Serif', 'IBM Plex Sans', ui-serif, Georgia, serif;
+  /* One type family across the app; the wordmark is weight + tracking, not a
+     second face. Display face kept only for the big hero headline. */
+  --font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

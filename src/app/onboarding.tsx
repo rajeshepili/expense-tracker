@@ -143,9 +143,9 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                 className="landing-cta min-h-11 w-full max-w-xs sm:w-auto"
                 onClick={goToSetup}
               >
-                Get started
+                Set up this device
               </Button>
-              <p className="landing-scroll-cue">Scroll for setup</p>
+              <p className="landing-scroll-cue">Takes about a minute</p>
             </div>
           </div>
           <div className="landing-hero-mock">
@@ -160,25 +160,23 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
         aria-labelledby="setup-heading"
       >
         <div className="landing-setup-inner">
-          <div className="space-y-2">
+          <div className="landing-setup-copy">
             <h2
               id="setup-heading"
               ref={setupHeadingRef}
               tabIndex={-1}
-              className="text-pretty text-xl font-semibold tracking-tight outline-none md:text-2xl"
+              className="brand-wordmark text-pretty text-2xl font-semibold tracking-tight text-foreground outline-none md:text-3xl"
             >
               Set up this device
             </h2>
-            <p className="text-pretty text-sm text-muted-foreground">
-              Choose a currency and budget, then how you want to start. Works
-              best in Chrome on Android (or Chrome / Edge on desktop)—avoid
-              private browsing if you want data to stick.
+            <p className="text-pretty text-sm text-muted-foreground md:text-[0.95rem]">
+              Two choices, then your ledger is ready — everything stays on this
+              device.
             </p>
+            <LocalDataCallout />
           </div>
 
-          <LocalDataCallout />
-
-          <FieldGroup className="landing-setup-fields gap-5 rounded-xl border bg-card/80 p-5 shadow-sm backdrop-blur-sm md:p-6">
+          <FieldGroup className="landing-setup-fields landing-mock-chrome gap-5 p-5 md:p-6">
             <Field>
               <FieldLabel htmlFor="onboarding-currency">Currency</FieldLabel>
               <Select value={currency} onValueChange={setCurrency}>
@@ -249,7 +247,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                       'pressable min-h-11 rounded-lg border px-4 py-3 text-left transition-colors',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                       mode === option.id
-                        ? 'border-foreground bg-secondary'
+                        ? 'border-ring/60 bg-secondary ring-2 ring-ring/30'
                         : 'hover:bg-muted',
                     )}
                     aria-pressed={mode === option.id}

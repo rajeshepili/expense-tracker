@@ -1,13 +1,28 @@
 /* —— Pocketbook first-run landing —— */
 .brand-wordmark {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  /* Same family as the app UI (IBM Plex Sans) — the wordmark is a weight and
+     tracking change, not a second typeface. */
+  font-family: var(--font-sans);
+  font-weight: 650;
+  letter-spacing: -0.035em;
 }
 
 .landing-page {
   position: relative;
   width: 100%;
+  /* One continuous backdrop from hero into setup — no page seam. */
+  background:
+    radial-gradient(
+      110% 60% at 88% 0%,
+      color-mix(in oklch, var(--ring) 14%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--background) 70%, var(--card)) 0%,
+      var(--background) 38%,
+      var(--background) 100%
+    );
 }
 
 .landing-topbar {
@@ -272,10 +287,9 @@
 }
 
 .landing-mock-title {
-  font-family: var(--font-display);
   font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 650;
+  letter-spacing: -0.035em;
   color: var(--foreground);
 }
 
@@ -387,15 +401,14 @@
 
 .landing-setup {
   scroll-margin-top: calc(3.25rem + var(--safe-top));
-  padding: 1.75rem 1rem calc(1.25rem + var(--safe-bottom));
-  border-top: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
-  background: color-mix(in oklch, var(--background) 92%, var(--card));
+  padding: 2.5rem 1rem calc(2rem + var(--safe-bottom));
+  /* Transparent — the .landing-page gradient continues behind it. */
 }
 
 @media (min-width: 768px) {
   .landing-setup {
     padding-inline: 2rem;
-    padding-bottom: 3rem;
+    padding-block: 3.5rem 4.5rem;
   }
 }
 
@@ -408,17 +421,40 @@
 .landing-setup-inner {
   display: flex;
   width: 100%;
-  max-width: 32rem;
+  max-width: 72rem;
   margin-inline: auto;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .landing-setup-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(20rem, 1.15fr);
+    align-items: start;
+    gap: clamp(1.75rem, 4vw, 3.75rem);
+  }
+}
+
+.landing-setup-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  max-width: 26rem;
 }
 
 .landing-setup-fields {
   margin-bottom: 0.25rem;
-  border-color: color-mix(in oklch, var(--border) 85%, var(--ring));
-  background: color-mix(in oklch, var(--card) 88%, var(--background));
-  box-shadow: none;
+  /* Shares .landing-mock-chrome: same border mix, radius, shadow — the form
+     reads as the product itself. */
+  border: 1px solid color-mix(in oklch, var(--border) 80%, var(--ring));
+  border-radius: 1.1rem;
+  background: color-mix(in oklch, var(--card) 92%, var(--background));
+  box-shadow:
+    0 1px 0 color-mix(in oklch, var(--foreground) 6%, transparent),
+    0 24px 48px -28px color-mix(in oklch, var(--foreground) 35%, transparent);
+  overflow: visible;
 }
 
 .landing-setup-actions {
@@ -427,11 +463,13 @@
   z-index: 10;
   margin-inline: -1rem;
   padding: 0.75rem 1rem calc(0.75rem + var(--safe-bottom));
+  /* Fade into the continuous page backdrop instead of a hard band. */
   background: linear-gradient(
     to top,
-    var(--background) 70%,
-    color-mix(in oklch, var(--background) 70%, transparent)
+    color-mix(in oklch, var(--background) 96%, transparent) 65%,
+    transparent
   );
+  backdrop-filter: blur(8px);
 }
 
 @media (min-width: 768px) {

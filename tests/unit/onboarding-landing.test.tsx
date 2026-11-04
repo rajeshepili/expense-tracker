@@ -37,7 +37,7 @@ describe('Pocketbook landing + setup', () => {
     expect(screen.getAllByText(APP_NAME).length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText(APP_TAGLINE)).toBeTruthy()
     expect(
-      screen.getByRole('button', { name: 'Get started' }),
+      screen.getByRole('button', { name: 'Set up this device' }),
     ).toBeTruthy()
     expect(
       screen.getByRole('heading', { name: 'Set up this device' }),
@@ -53,7 +53,7 @@ describe('Pocketbook landing + setup', () => {
     expect(setup).toBeTruthy()
     if (setup) setup.scrollIntoView = scrollIntoView
 
-    fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Set up this device' }))
     expect(scrollIntoView).toHaveBeenCalled()
     expect(window.location.hash).toBe('')
     expect(
