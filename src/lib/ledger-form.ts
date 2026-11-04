@@ -16,11 +16,11 @@ import {
   deleteTransaction,
 } from '#/data/repository'
 import { useOptimisticMutation } from '#/hooks/use-optimistic-mutation'
-import { makeMutationErrorHandler } from '#/lib/errors'
-import {
+import { findPossibleDuplicate } from '#/lib/duplicate'
+import { formatIsoDate,
   defaultDateForMonth,
-  todayIso,
-} from '#/lib/finance'
+  todayIso } from '#/lib/finance'
+import { makeMutationErrorHandler } from '#/lib/errors'
 import { rememberTransactionDefaults } from '#/lib/transaction-defaults'
 import { shouldPromptFundGoal } from '#/lib/savings'
 
@@ -231,6 +231,24 @@ export function useLedgerForm({
             categoryId: vars.categoryId,
             currency: settingsCurrency,
             description: vars.description,
+          })
+        }
+      }
+      if (result.mode === 'create') {
+        const cached = queryClient.getQueryData<LedgerTransaction[]>(listQueryKey)
+        const dupe = cached
+          ? findPossibleDuplicate(cached, {
+              description: vars.description,
+              amount: vars.amount,
+              date: vars.date,
+              type: vars.type,
+            })
+          : null
+        if (dupe) {
+          void import('sonner').then(({ toast }) => {
+            toast.info(
+              `Looks like a duplicate of “${dupe.description}” from ${formatIsoDate(dupe.date)}`,
+            )
           })
         }
       }

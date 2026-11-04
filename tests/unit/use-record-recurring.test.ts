@@ -33,6 +33,7 @@ vi.mock('sonner', () => ({
 const bill: RecurringExpenseRow = {
   id: 'bill-1',
   name: 'Rent',
+  kind: 'expense',
   amount: 1200,
   remainingAmount: null,
   categoryId: 'cat-1',

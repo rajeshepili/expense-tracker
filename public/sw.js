@@ -27,6 +27,24 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
+// Notifications: tapping a bill reminder opens (or focuses) the app on Bills.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  event.waitUntil(
+    clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((windowClients) => {
+        for (const client of windowClients) {
+          if ('focus' in client) {
+            client.navigate('/recurring')
+            return client.focus()
+          }
+        }
+        return clients.openWindow('/recurring')
+      })
+  )
+})
+
 // Fetch: network-first for navigation, cache-first for static assets
 self.addEventListener('fetch', (event) => {
   const { request } = event

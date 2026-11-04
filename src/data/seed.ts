@@ -4,6 +4,7 @@ import {
   accounts,
   categories,
   recurringExpenses,
+  savingsGoals,
   settings,
   transactions,
 } from '#/db/schema'
@@ -12,6 +13,7 @@ import {
   ledgerTransactions,
   paymentMethods as samplePaymentMethods,
   recurringExpenses as sampleRecurring,
+  sampleSavingsGoal,
   sampleTransfers,
 } from '#/data/sample-ledger'
 import { inferAccountTypeFromName } from '#/lib/finance'
@@ -159,6 +161,7 @@ async function insertSampleActivity(
     sampleRecurring.map((row) => ({
       id: crypto.randomUUID(),
       name: row.name,
+      kind: row.kind ?? 'expense',
       amount: row.amount,
       cadence: row.cadence,
       nextDate: row.nextDate,
@@ -167,6 +170,15 @@ async function insertSampleActivity(
       accountId: methodByName[row.paymentMethod] ?? null,
     })),
   )
+
+  await db.insert(savingsGoals).values({
+    id: crypto.randomUUID(),
+    name: sampleSavingsGoal.name,
+    targetAmount: sampleSavingsGoal.targetAmount,
+    currentAmount: sampleSavingsGoal.currentAmount,
+    targetDate: sampleSavingsGoal.targetDate,
+    categoryId: categoryByName[sampleSavingsGoal.category] ?? null,
+  })
 }
 
 export async function completeOnboarding(input: OnboardingInput) {

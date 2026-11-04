@@ -1,0 +1,1 @@
+ALTER TABLE `recurring_expenses` ADD `kind` text DEFAULT 'expense' NOT NULL;

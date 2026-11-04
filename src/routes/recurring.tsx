@@ -61,6 +61,7 @@ function RecurringPage() {
     currency,
     monthlyBudget,
     expenseCategories,
+    incomeCategories,
     paymentMethods,
     isLoading,
     isError,
@@ -89,7 +90,7 @@ function RecurringPage() {
   const monthlyTotal = useMemo(
     () =>
       items
-        .filter((item) => item.active)
+        .filter((item) => item.active && item.kind === 'expense')
         .reduce(
           (sum, item) => sum + monthlyEquivalent(item.amount, item.cadence),
           0,
@@ -160,6 +161,7 @@ function RecurringPage() {
               form={form}
               setForm={setForm}
               categories={expenseCategories}
+              incomeCategories={incomeCategories}
               paymentMethods={paymentMethods}
             />
           </ComposerFormModal>

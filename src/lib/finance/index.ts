@@ -1,6 +1,7 @@
 export * from './currency'
 export * from './dates'
 export * from './recurring'
+export * from './projection'
 export * from './budget'
 export * from './accounts'
 export * from './transfers'

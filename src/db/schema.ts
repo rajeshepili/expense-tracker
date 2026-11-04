@@ -100,6 +100,9 @@ export const recurringExpenses = sqliteTable(
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
     name: text('name').notNull(),
+    kind: text('kind', { enum: ['expense', 'income'] })
+      .notNull()
+      .default('expense'),
     amount: real('amount').notNull(),
     /** Still owed this cycle; null = due equals amount. */
     remainingAmount: real('remaining_amount'),

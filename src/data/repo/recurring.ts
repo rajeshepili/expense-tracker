@@ -35,6 +35,7 @@ export type RecordRecurringResult =
 
 type RecurringInput = {
   name: string
+  kind: 'expense' | 'income'
   amount: number
   cadence: RecurrenceCadence
   nextDate: string
@@ -46,6 +47,7 @@ type RecurringInput = {
 function recurringValues(input: RecurringInput) {
   return {
     name: input.name.trim(),
+    kind: input.kind,
     amount: input.amount,
     cadence: input.cadence,
     nextDate: input.nextDate,
@@ -154,7 +156,7 @@ export async function recordRecurringPayment(
         transactionValues({
           description: bill.name,
           amount,
-          type: 'expense',
+          type: bill.kind,
           date: recordDate,
           categoryId: bill.categoryId,
           accountId:

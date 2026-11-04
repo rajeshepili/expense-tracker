@@ -188,6 +188,8 @@ function Home() {
     upcomingRecurring,
     settings,
     monthBudget,
+    projectedRemaining,
+    projection,
     accounts: overviewAccounts,
     netWorth,
   } = overviewQuery.data
@@ -291,6 +293,8 @@ function Home() {
           remaining={remaining}
           budgetUsed={budgetUsed}
           monthBudget={monthBudget}
+          projectedRemaining={projectedRemaining}
+          projectionNet={projection.net}
         />
 
       <section className="grid shrink-0 gap-3 md:gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(16rem,1fr)]">

@@ -70,6 +70,27 @@ export function AppGate({ children }: { children: ReactNode }) {
     }
   }, [queryClient])
 
+  // Local bill reminders: once on ready, then on each return to the tab.
+  useEffect(() => {
+    if (state.status !== 'ready') return
+    let cancelled = false
+    const run = () => {
+      if (cancelled) return
+      import('#/lib/notifications').then((m) => {
+        void m.scheduleBillReminders().catch(() => {})
+      })
+    }
+    run()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') run()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [state.status])
+
   if (state.status === 'loading') {
     return (
       <main

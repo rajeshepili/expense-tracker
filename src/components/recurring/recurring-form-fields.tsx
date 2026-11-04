@@ -23,6 +23,7 @@ type RecurringFormFieldsProps = {
   form: RecurringFormState
   setForm: Dispatch<SetStateAction<RecurringFormState>>
   categories: NamedOption[]
+  incomeCategories: NamedOption[]
   paymentMethods: NamedOption[]
 }
 
@@ -30,10 +31,35 @@ export function RecurringFormFields({
   form,
   setForm,
   categories,
+  incomeCategories,
   paymentMethods,
 }: RecurringFormFieldsProps) {
+  const kindCategories = form.kind === 'income' ? incomeCategories : categories
   return (
     <FieldGroup className="gap-4 py-2">
+      <Field>
+        <FieldLabel htmlFor="recurring-kind">Type</FieldLabel>
+        <Select
+          value={form.kind}
+          onValueChange={(value) =>
+            setForm((current) => ({
+              ...current,
+              kind: value as 'expense' | 'income',
+              categoryId: '',
+            }))
+          }
+        >
+          <SelectTrigger id="recurring-kind" className="w-full">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="expense">Expense / bill</SelectItem>
+              <SelectItem value="income">Income</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </Field>
       <Field>
         <FieldLabel htmlFor="recurring-name">Name</FieldLabel>
         <Input
@@ -76,7 +102,7 @@ export function RecurringFormFields({
         <CategorySelect
           id="recurring-category"
           value={form.categoryId}
-          options={categories}
+          options={kindCategories}
           onValueChange={(categoryId) =>
             setForm((current) => ({ ...current, categoryId }))
           }

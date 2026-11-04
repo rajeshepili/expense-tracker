@@ -20,6 +20,7 @@ export const transactionSelect = {
 export const recurringSelect = {
   id: recurringExpenses.id,
   name: recurringExpenses.name,
+  kind: recurringExpenses.kind,
   amount: recurringExpenses.amount,
   remainingAmount: recurringExpenses.remainingAmount,
   cadence: recurringExpenses.cadence,

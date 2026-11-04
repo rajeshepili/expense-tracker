@@ -84,6 +84,18 @@ export function MonthNav({
           All months
         </Button>
       ) : null}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="min-h-11 touch-manipulation px-3 md:min-h-8 md:px-2.5 md:text-xs"
+        onClick={() => {
+          const year = (viewingMonth ?? currentYearMonth()).slice(0, 4)
+          window.location.assign(`/year?year=${year}`)
+        }}
+      >
+        Year {String((viewingMonth ?? currentYearMonth()).slice(0, 4))}
+      </Button>
     </span>
   )
 }

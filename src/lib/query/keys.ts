@@ -28,4 +28,5 @@ export const queryKeys = {
   savingsGoals: ['savingsGoals'] as const,
   overview: ['overview'] as const,
   overviewMonth: (yearMonth: string) => ['overview', yearMonth] as const,
+  overviewYear: (year: string) => ['overview', 'year', year] as const,
 }

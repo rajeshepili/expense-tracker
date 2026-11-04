@@ -41,6 +41,9 @@ export function useRecurringList() {
   const expenseCategories = (categoriesQuery.data ?? []).filter(
     (c) => c.type === 'expense',
   )
+  const incomeCategories = (categoriesQuery.data ?? []).filter(
+    (c) => c.type === 'income',
+  )
   const paymentMethods = (methodsQuery.data ?? [])
     .filter((account) => !account.closed)
     .map((account) => ({ id: account.id, name: account.name }))
@@ -56,6 +59,7 @@ export function useRecurringList() {
     currency,
     monthlyBudget,
     expenseCategories,
+    incomeCategories,
     paymentMethods,
     isLoading,
     isError,

@@ -40,6 +40,7 @@ export type { ListTransactionsFilters } from '#/data/repo/transactions'
 export {
   listTransactions,
   listRecentTransactions,
+  listAllTransactions,
   createTransaction,
   updateTransaction,
   deleteTransaction,
@@ -77,4 +78,5 @@ export {
   recordSavingsContribution,
 } from '#/data/repo/savings'
 
-export { getOverview } from '#/data/repo/overview'
+export { getOverview, getYearOverview } from '#/data/repo/overview'
+export type { YearOverview } from '#/data/repo/overview'

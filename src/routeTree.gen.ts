@@ -14,6 +14,7 @@ import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as LedgerRouteImport } from './routes/ledger'
 import { Route as RecurringRouteImport } from './routes/recurring'
 import { Route as SavingsRouteImport } from './routes/savings'
+import { Route as YearRouteImport } from './routes/year'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +41,11 @@ const SavingsRoute = SavingsRouteImport.update({
   path: '/savings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const YearRoute = YearRouteImport.update({
+  id: '/year',
+  path: '/year',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/ledger': typeof LedgerRoute
   '/recurring': typeof RecurringRoute
   '/savings': typeof SavingsRoute
+  '/year': typeof YearRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/ledger': typeof LedgerRoute
   '/recurring': typeof RecurringRoute
   '/savings': typeof SavingsRoute
+  '/year': typeof YearRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,22 @@ export interface FileRoutesById {
   '/ledger': typeof LedgerRoute
   '/recurring': typeof RecurringRoute
   '/savings': typeof SavingsRoute
+  '/year': typeof YearRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/categories' | '/ledger' | '/recurring' | '/savings'
+  fullPaths:
+    '/' | '/categories' | '/ledger' | '/recurring' | '/savings' | '/year'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/categories' | '/ledger' | '/recurring' | '/savings'
-  id: '__root__' | '/' | '/categories' | '/ledger' | '/recurring' | '/savings'
+  to: '/' | '/categories' | '/ledger' | '/recurring' | '/savings' | '/year'
+  id:
+    | '__root__'
+    | '/'
+    | '/categories'
+    | '/ledger'
+    | '/recurring'
+    | '/savings'
+    | '/year'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +94,7 @@ export interface RootRouteChildren {
   LedgerRoute: typeof LedgerRoute
   RecurringRoute: typeof RecurringRoute
   SavingsRoute: typeof SavingsRoute
+  YearRoute: typeof YearRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +134,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SavingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/year': {
+      id: '/year'
+      path: '/year'
+      fullPath: '/year'
+      preLoaderRoute: typeof YearRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +150,7 @@ const rootRouteChildren: RootRouteChildren = {
   LedgerRoute: LedgerRoute,
   RecurringRoute: RecurringRoute,
   SavingsRoute: SavingsRoute,
+  YearRoute: YearRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -76,6 +76,11 @@ export async function listRecentTransactions(
   return listTransactions({ limit })
 }
 
+/** All transactions, oldest first — for CSV export. */
+export async function listAllTransactions(): Promise<LedgerTransaction[]> {
+  return listTransactions({ limit: 100_000 })
+}
+
 export async function createTransaction(input: TransactionInput) {
   const values = transactionValues(input)
   if (values.accountId) await assertAccountOpen(values.accountId)

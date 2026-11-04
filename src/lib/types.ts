@@ -80,6 +80,7 @@ export type LedgerSearch = {
 export type RecurringExpenseRow = {
   id: string
   name: string
+  kind: 'expense' | 'income'
   category: string
   categoryId: string
   amount: number

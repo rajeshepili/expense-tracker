@@ -5,7 +5,7 @@ import {
   monthlyBudgets,
   recurringExpenses,
   settings,
-  transactions,
+  transactions, savingsGoals 
 } from '#/db/schema'
 import { baseTransactionQuery } from '#/data/query-builders'
 import {
@@ -21,6 +21,7 @@ import {
   isYearMonth,
   monthlyEquivalent,
   netWorth,
+  projectRestOfMonth,
   resolveMonthBudget,
   shiftYearMonth,
   todayIso,
@@ -35,6 +36,63 @@ import type {
 import { withDb } from '#/data/repo/db'
 import type { Db } from '#/data/repo/db'
 import { recurringQuery } from '#/data/repo/recurring'
+
+export type YearOverview = {
+  year: string
+  months: Array<{ yearMonth: string; income: number; expenses: number }>
+  totalIncome: number
+  totalExpenses: number
+  topCategories: Array<{ categoryId: string; name: string; amount: number }>
+  savingsSaved: number
+}
+
+/** Per-month income/expense totals + top categories for a calendar year. */
+export async function getYearOverview(year: string): Promise<YearOverview> {
+  const prefix = `${year}-`
+  return withDb(async (db) => {
+    const [monthlyRows, categoryRows, goalRows] = await Promise.all([
+      db
+        .select({
+          yearMonth: sql<string>`substr(${transactions.transactionDate}, 1, 7)`,
+          income: sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amount} else 0 end), 0)`.mapWith(Number),
+          expenses: sql<number>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amount} else 0 end), 0)`.mapWith(Number),
+        })
+        .from(transactions)
+        .where(like(transactions.transactionDate, `${prefix}%`))
+        .groupBy(sql`substr(${transactions.transactionDate}, 1, 7)`)
+        .orderBy(sql`substr(${transactions.transactionDate}, 1, 7)`),
+      db
+        .select({
+          categoryId: categories.id,
+          name: categories.name,
+          amount: sql<number>`coalesce(sum(${transactions.amount}), 0)`.mapWith(Number),
+        })
+        .from(transactions)
+        .innerJoin(categories, eq(transactions.categoryId, categories.id))
+        .where(and(eq(transactions.type, 'expense'), like(transactions.transactionDate, `${prefix}%`)))
+        .groupBy(categories.id, categories.name)
+        .orderBy(sql`sum(${transactions.amount}) desc`)
+        .limit(5),
+      db.select({ current: savingsGoals.currentAmount }).from(savingsGoals),
+    ])
+
+    const monthsByKey = new Map(monthlyRows.map((row) => [row.yearMonth, row]))
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const ym = `${year}-${String(i + 1).padStart(2, '0')}`
+      const found = monthsByKey.get(ym)
+      return { yearMonth: ym, income: found?.income ?? 0, expenses: found?.expenses ?? 0 }
+    })
+
+    return {
+      year,
+      months,
+      totalIncome: monthlyRows.reduce((sum, row) => sum + row.income, 0),
+      totalExpenses: monthlyRows.reduce((sum, row) => sum + row.expenses, 0),
+      topCategories: categoryRows,
+      savingsSaved: goalRows.reduce((sum, row) => sum + (row.current ?? 0), 0),
+    }
+  })
+}
 
 function monthSummarySelect(db: Db, monthPrefix: string) {
   return db
@@ -198,10 +256,22 @@ export async function getOverview(yearMonth = currentYearMonth()) {
         categoryId: match?.categoryId ?? '',
       }
     })
+    const remaining = budget - summary.expenses
     const recurringMonthly = activeRecurring.reduce(
-      (sum, row) => sum + monthlyEquivalent(row.amount, row.cadence),
+      (sum, row) =>
+        row.kind === 'income'
+          ? sum
+          : sum + monthlyEquivalent(row.amount, row.cadence),
       0,
     )
+    const recurringMonthlyIncome = activeRecurring.reduce(
+      (sum, row) =>
+        row.kind === 'income'
+          ? sum + monthlyEquivalent(row.amount, row.cadence)
+          : sum,
+      0,
+    )
+    const projection = projectRestOfMonth(activeRecurring)
 
     const today = todayIso()
     const recurringRows = activeRecurring as RecurringExpenseRow[]
@@ -226,9 +296,12 @@ export async function getOverview(yearMonth = currentYearMonth()) {
       categories: categoryRows,
       recentTransactions: recentRows,
       recurringMonthly,
+      recurringMonthlyIncome,
       recurringOfBudget: budget > 0 ? recurringMonthly / budget : 0,
       upcomingRecurring,
       dueRecurringCount: dueRecurring.length,
+      projection,
+      projectedRemaining: remaining + projection.net,
       accounts: overviewAccounts,
       netWorth: netWorth(overviewAccounts),
     }

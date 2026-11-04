@@ -25,6 +25,8 @@ type OverviewMonthStatsProps = {
   remaining: number
   budgetUsed: number
   monthBudget: MonthBudget
+  projectedRemaining?: number
+  projectionNet?: number
 }
 
 interface StatConfig {
@@ -47,6 +49,8 @@ export function OverviewMonthStats({
   remaining,
   budgetUsed,
   monthBudget,
+  projectedRemaining,
+  projectionNet,
 }: OverviewMonthStatsProps) {
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -84,6 +88,14 @@ export function OverviewMonthStats({
           of {money(effectiveBudget, currency)}
           {monthBudget.isCustom ? (
             <Badge variant="outline" className="h-5 px-1.5 text-[10px]">Custom</Badge>
+          ) : null}
+          {projectedRemaining !== undefined ? (
+            <span className="text-muted-foreground">
+              · ≈ {money(projectedRemaining, currency)} at month end
+              {projectionNet !== undefined && projectionNet !== 0
+                ? ` (${projectionNet > 0 ? '+' : '−'}${money(Math.abs(projectionNet), currency)} upcoming)`
+                : ''}
+            </span>
           ) : null}
         </span>
       ),

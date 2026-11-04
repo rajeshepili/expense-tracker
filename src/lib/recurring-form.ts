@@ -14,6 +14,7 @@ import { rememberTransactionDefaults } from '#/lib/transaction-defaults'
 
 export type RecurringFormState = {
   name: string
+  kind: 'expense' | 'income'
   amount: string
   cadence: 'weekly' | 'monthly' | 'yearly'
   nextDate: string
@@ -24,6 +25,7 @@ export type RecurringFormState = {
 
 export type RecurringSaveVars = {
   name: string
+  kind: 'expense' | 'income'
   amount: number
   cadence: 'weekly' | 'monthly' | 'yearly'
   nextDate: string
@@ -35,6 +37,7 @@ export type RecurringSaveVars = {
 export function emptyRecurringForm(): RecurringFormState {
   return {
     name: '',
+    kind: 'expense',
     amount: '',
     cadence: 'monthly',
     nextDate: '',
@@ -47,6 +50,7 @@ export function emptyRecurringForm(): RecurringFormState {
 export function formFromRecurringRow(row: RecurringExpenseRow): RecurringFormState {
   return {
     name: row.name,
+    kind: row.kind,
     amount: String(row.amount),
     cadence: row.cadence,
     nextDate: row.nextDate,
@@ -98,6 +102,7 @@ export function useRecurringForm({
       if (editing) {
         await updateRecurring(editing.id, {
           name: form.name,
+          kind: form.kind,
           amount,
           cadence: form.cadence,
           nextDate: form.nextDate,
@@ -108,6 +113,7 @@ export function useRecurringForm({
       } else {
         await createRecurring({
           name: form.name,
+          kind: form.kind,
           amount,
           cadence: form.cadence,
           nextDate: form.nextDate,
@@ -200,6 +206,7 @@ export function useRecurringForm({
     }
     if (editing) updateRecurring(editing.id, {
       name: form.name,
+      kind: form.kind,
       amount,
       cadence: form.cadence,
       nextDate: form.nextDate,
@@ -209,6 +216,7 @@ export function useRecurringForm({
     })
     else createRecurring({
       name: form.name,
+      kind: form.kind,
       amount,
       cadence: form.cadence,
       nextDate: form.nextDate,
