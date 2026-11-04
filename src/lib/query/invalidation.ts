@@ -7,6 +7,8 @@ export type InvalidateScope =
   | 'categories'
   | 'settings'
   | 'paymentMethods'
+  | 'accounts'
+  | 'transfers'
   | 'savingsGoals'
   | 'overview'
 
@@ -16,6 +18,12 @@ export async function invalidateAfter(
 ) {
   const tasks: Promise<unknown>[] = []
   const set = new Set(scopes)
+
+  if (set.has('transfers')) {
+    set.add('accounts')
+    set.add('transactions')
+    set.add('overview')
+  }
 
   if (set.has('transactions')) {
     tasks.push(
@@ -34,12 +42,14 @@ export async function invalidateAfter(
   if (set.has('settings')) {
     tasks.push(queryClient.invalidateQueries({ queryKey: queryKeys.settings }))
   }
-  if (set.has('paymentMethods')) {
+  if (set.has('paymentMethods') || set.has('accounts')) {
     tasks.push(
       queryClient.invalidateQueries({ queryKey: queryKeys.paymentMethods }),
       queryClient.invalidateQueries({
         queryKey: queryKeys.paymentMethodsUsage,
       }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.accountsUsage }),
     )
   }
   if (set.has('savingsGoals')) {
@@ -49,7 +59,9 @@ export async function invalidateAfter(
     set.has('overview') ||
     set.has('transactions') ||
     set.has('recurring') ||
-    set.has('settings')
+    set.has('settings') ||
+    set.has('accounts') ||
+    set.has('transfers')
   ) {
     tasks.push(queryClient.invalidateQueries({ queryKey: queryKeys.overview }))
   }

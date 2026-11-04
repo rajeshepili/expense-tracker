@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
 import { Kbd } from '#/components/ui/kbd'
 import { Progress } from '#/components/ui/progress'
 import { ComposerFormModal } from '#/components/composer-form-modal'
-import { AnimatedMoney, AnimatedPercent } from '#/components/animated-number'
 import { ConfirmDeleteDialog } from '#/components/confirm-delete-dialog'
 import { EmptyState } from '#/components/layout/empty-state'
 import { PageHeader } from '#/components/layout/page-header'
@@ -18,13 +17,16 @@ import { RecurringLists } from '#/components/recurring/recurring-lists'
 import { RecurringFormFields } from '#/components/recurring/recurring-form-fields'
 import { listTransactionsForRecurring } from '#/data/repository'
 import { useComposer } from '#/hooks/use-composer'
+import { useCreateHotkey } from '#/hooks/use-create-hotkey'
 import { useRecordRecurring } from '#/hooks/use-record-recurring'
 import {
   formatIsoDate,
   money,
   monthlyEquivalent,
+  percent,
 } from '#/lib/finance'
 import { SignedMoney } from '#/components/signed-money'
+import { motion } from '#/lib/motion'
 import { queryKeys } from '#/lib/query/keys'
 import type { RecurringFormState } from '#/lib/recurring-form'
 import type { RecurringExpenseRow } from '#/lib/types'
@@ -106,14 +108,23 @@ function RecurringPage() {
 
   const [skipConfirm, setSkipConfirm] = useState<RecurringExpenseRow | null>(null)
 
+  useCreateHotkey(
+    openCreate,
+    composerOpen ||
+      Boolean(deleting) ||
+      Boolean(viewPayments) ||
+      Boolean(skipConfirm) ||
+      !motion.can('hotkey'),
+  )
+
   if (isLoading) {
-    return <PageLoading label="Loading recurring…" />
+    return <PageLoading label="Loading recurring…" variant="recurring" />
   }
 
   if (isError) {
     return (
       <PageError
-        title="Could not load recurring expenses"
+        title="Could not load bills"
         message={errorMessage}
         onRetry={retry}
       />
@@ -123,8 +134,8 @@ function RecurringPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Recurring"
-        description="Bills and subscriptions that hit every cycle."
+        title="Bills"
+        description="Recurring expenses and subscriptions that hit every cycle."
         actions={
           <ComposerFormModal
             open={composerOpen}
@@ -160,13 +171,9 @@ function RecurringPage() {
           <p className="text-xs font-medium text-muted-foreground">
             Active monthly load
           </p>
-          <AnimatedMoney
-            persistKey="recurring:monthly-total"
-            amount={monthlyTotal}
-            currency={currency}
-            goodWhen="down"
-            className="mt-1 text-lg font-semibold tracking-tight md:text-xl"
-          />
+          <p className="mt-1 text-lg font-semibold tracking-tight tabular-nums md:text-xl">
+            {money(monthlyTotal, currency)}
+          </p>
           <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
             From weekly / monthly / yearly cadences
           </p>
@@ -175,12 +182,9 @@ function RecurringPage() {
           <p className="text-xs font-medium text-muted-foreground">
             Of this month's budget
           </p>
-          <AnimatedPercent
-            persistKey="recurring:of-budget"
-            value={ofBudget}
-            goodWhen="down"
-            className="mt-1 text-lg font-semibold tracking-tight md:text-xl"
-          />
+          <p className="mt-1 text-lg font-semibold tracking-tight tabular-nums md:text-xl">
+            {percent(ofBudget)}
+          </p>
           <Progress
             className="mt-2 h-1.5"
             value={Math.min(ofBudget * 100, 100)}
@@ -257,17 +261,35 @@ function RecurringPage() {
       {viewPayments && (
         <ComposerFormModal
           open={true}
+          mode="view"
           onOpenChange={(open) => {
             if (!open) setViewPayments(null)
           }}
           title={`Payments for ${viewPayments.name}`}
           description={`${viewPaymentsQuery.data?.length ?? 0} linked transaction${viewPaymentsQuery.data?.length === 1 ? '' : 's'}`}
-          pending={false}
-          onSubmit={() => { }}
         >
           {viewPaymentsQuery.isPending ? (
-            <div className="flex justify-center py-8 text-muted-foreground">
+            <div
+              className="flex justify-center py-8 text-sm text-muted-foreground"
+              aria-live="polite"
+            >
               Loading…
+            </div>
+          ) : viewPaymentsQuery.isError ? (
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                {viewPaymentsQuery.error instanceof Error
+                  ? viewPaymentsQuery.error.message
+                  : 'Could not load payments.'}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void viewPaymentsQuery.refetch()}
+              >
+                Retry
+              </Button>
             </div>
           ) : viewPaymentsQuery.data?.length === 0 ? (
             <EmptyState

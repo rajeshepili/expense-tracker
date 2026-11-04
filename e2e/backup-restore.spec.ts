@@ -4,6 +4,7 @@ import {
   completeOnboarding,
   exportBackupToFile,
   goToNav,
+  openRowActions,
   restoreBackupFromFile,
   tableCell,
   writeTempFile,
@@ -21,11 +22,11 @@ test.describe('backup restore smoke @smoke', () => {
 
     // Wipe the marker so restore has something to prove.
     await goToNav(page, 'Ledger')
-    await page
-      .locator('table')
-      .getByRole('button', { name: 'Actions for Restore marker' })
-      .click()
+    await openRowActions(page, 'Restore marker')
     await page.getByRole('menuitem', { name: 'Delete' }).click()
+    await expect(
+      page.getByRole('heading', { name: /Delete “Restore marker”/ }),
+    ).toBeVisible()
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
     await expect(tableCell(page, 'Restore marker')).toHaveCount(0)
 

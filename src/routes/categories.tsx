@@ -14,7 +14,7 @@ import { PageHeader } from '#/components/layout/page-header'
 import { PageError, PageLoading } from '#/components/layout/page-query-state'
 import { PageShell } from '#/components/layout/page-shell'
 import { CategoryLists } from '#/components/categories/category-lists'
-import { PaymentMethodsPanel } from '#/components/payment-methods-panel'
+import { AccountsPanel } from '#/components/accounts-panel'
 import {
   createCategory,
   deleteCategory,
@@ -25,7 +25,7 @@ import { formatQueryError } from '#/lib/errors'
 import { useComposer } from '#/hooks/use-composer'
 import { invalidateAfter } from '#/lib/query/invalidation'
 import { queryKeys } from '#/lib/query/keys'
-import type { CategoryRow, TransactionType } from '#/lib/types'
+import type { CategoryRow, CategoryType } from '#/lib/types'
 
 export const Route = createFileRoute('/categories')({
   component: CategoriesPage,
@@ -33,7 +33,7 @@ export const Route = createFileRoute('/categories')({
 
 type FormState = {
   name: string
-  type: TransactionType
+  type: CategoryType
 }
 
 const emptyForm = (): FormState => ({
@@ -47,7 +47,7 @@ function formFromRow(row: CategoryRow): FormState {
 
 function CategoriesPage() {
   const queryClient = useQueryClient()
-  const [filter, setFilter] = useState<'all' | TransactionType>('all')
+  const [filter, setFilter] = useState<'all' | CategoryType>('all')
   const [deleting, setDeleting] = useState<CategoryRow | null>(null)
   const [replacementId, setReplacementId] = useState('')
   const {
@@ -137,7 +137,7 @@ function CategoriesPage() {
   }
 
   if (categoriesQuery.isPending) {
-    return <PageLoading label="Loading categories…" />
+    return <PageLoading label="Loading categories…" variant="categories" />
   }
 
   if (categoriesQuery.isError) {
@@ -197,7 +197,7 @@ function CategoriesPage() {
                   onValueChange={(value) =>
                     setForm((current) => ({
                       ...current,
-                      type: value as TransactionType,
+                      type: value as CategoryType,
                     }))
                   }
                 >
@@ -228,7 +228,7 @@ function CategoriesPage() {
           <Tabs
             value={filter}
             onValueChange={(value) =>
-              setFilter(value as 'all' | TransactionType)
+              setFilter(value as 'all' | CategoryType)
             }
             className="shrink-0"
           >
@@ -247,6 +247,8 @@ function CategoriesPage() {
 
           <CategoryLists
             rows={rows}
+            filter={filter}
+            totalCount={(categoriesQuery.data ?? []).length}
             onCreate={openCreate}
             onEdit={openEdit}
             onDelete={openDelete}
@@ -254,7 +256,7 @@ function CategoriesPage() {
         </CardContent>
       </Card>
 
-      <PaymentMethodsPanel />
+      <AccountsPanel />
 
       <ConfirmDeleteDialog
         open={Boolean(deleting)}

@@ -30,7 +30,7 @@ export function CategorySelect({
       value={value || UNSET}
       onValueChange={(next) => onValueChange(next === UNSET ? '' : next)}
     >
-      <SelectTrigger id={id} className="w-full">
+      <SelectTrigger id={id} className="min-h-11 w-full md:min-h-9">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
@@ -49,30 +49,41 @@ export function CategorySelect({
   )
 }
 
-export function PaymentMethodSelect({
+export function AccountSelect({
   id,
   value,
   onValueChange,
   options,
   placeholder = 'Optional',
+  allowNone = true,
 }: {
   id: string
   value: string
   onValueChange: (id: string) => void
   options: NamedOption[]
   placeholder?: string
+  allowNone?: boolean
 }) {
+  const emptyValue = allowNone ? NONE : UNSET
   return (
     <Select
-      value={value || NONE}
-      onValueChange={(next) => onValueChange(next === NONE ? '' : next)}
+      value={value || emptyValue}
+      onValueChange={(next) =>
+        onValueChange(next === NONE || next === UNSET ? '' : next)
+      }
     >
-      <SelectTrigger id={id} className="w-full">
+      <SelectTrigger id={id} className="min-h-11 w-full md:min-h-9">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          <SelectItem value={NONE}>None</SelectItem>
+          {allowNone ? (
+            <SelectItem value={NONE}>None</SelectItem>
+          ) : (
+            <SelectItem value={UNSET} disabled>
+              {placeholder}
+            </SelectItem>
+          )}
           {options.map((option) => (
             <SelectItem key={option.id} value={option.id}>
               {option.name}
@@ -83,3 +94,6 @@ export function PaymentMethodSelect({
     </Select>
   )
 }
+
+/** @deprecated use AccountSelect */
+export const PaymentMethodSelect = AccountSelect

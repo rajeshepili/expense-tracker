@@ -1,6 +1,32 @@
 import type { RecurrenceCadence, TransactionType } from '#/lib/types'
+import { todayIso } from '#/lib/finance'
 
 export type { RecurrenceCadence, TransactionType }
+
+/**
+ * Past date within the current calendar month (so “this month” ledger shows
+ * sample rows). `daysAgo` is clamped so we never cross the month boundary.
+ */
+function recentInMonth(daysAgo: number, from = todayIso()) {
+  const d = new Date(`${from}T12:00:00`)
+  const day = d.getDate()
+  const offset = Math.min(Math.max(0, daysAgo), Math.max(0, day - 1))
+  d.setDate(day - offset)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
+
+/** Future (or today) ISO date — may cross months for yearly/recurring demos. */
+function offsetIso(days: number, from = todayIso()) {
+  const d = new Date(`${from}T12:00:00`)
+  d.setDate(d.getDate() + days)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
 export const ledgerTransactions = [
   {
@@ -8,7 +34,7 @@ export const ledgerTransactions = [
     description: 'Grocery run',
     category: 'Food',
     paymentMethod: 'Debit card',
-    date: '2026-10-22',
+    date: recentInMonth(0),
     amount: 64.2,
     type: 'expense' as TransactionType,
   },
@@ -17,7 +43,7 @@ export const ledgerTransactions = [
     description: 'Monthly salary',
     category: 'Income',
     paymentMethod: 'Direct deposit',
-    date: '2026-10-20',
+    date: recentInMonth(1),
     amount: 4200,
     type: 'income' as TransactionType,
   },
@@ -26,7 +52,7 @@ export const ledgerTransactions = [
     description: 'Transit pass',
     category: 'Transport',
     paymentMethod: 'Cash',
-    date: '2026-10-18',
+    date: recentInMonth(1),
     amount: 89,
     type: 'expense' as TransactionType,
   },
@@ -35,7 +61,7 @@ export const ledgerTransactions = [
     description: 'Studio rent',
     category: 'Housing',
     paymentMethod: 'Bank transfer',
-    date: '2026-10-15',
+    date: recentInMonth(2),
     amount: 1200,
     type: 'expense' as TransactionType,
   },
@@ -44,7 +70,7 @@ export const ledgerTransactions = [
     description: 'Pharmacy',
     category: 'Health',
     paymentMethod: 'Debit card',
-    date: '2026-10-12',
+    date: recentInMonth(2),
     amount: 28.5,
     type: 'expense' as TransactionType,
   },
@@ -53,7 +79,7 @@ export const ledgerTransactions = [
     description: 'Coffee shop',
     category: 'Food',
     paymentMethod: 'Debit card',
-    date: '2026-10-11',
+    date: recentInMonth(2),
     amount: 6.75,
     type: 'expense' as TransactionType,
   },
@@ -62,7 +88,7 @@ export const ledgerTransactions = [
     description: 'Freelance invoice',
     category: 'Income',
     paymentMethod: 'Bank transfer',
-    date: '2026-10-09',
+    date: recentInMonth(2),
     amount: 350,
     type: 'income' as TransactionType,
   },
@@ -71,7 +97,7 @@ export const ledgerTransactions = [
     description: 'Streaming',
     category: 'Other',
     paymentMethod: 'Credit card',
-    date: '2026-10-05',
+    date: recentInMonth(2),
     amount: 15.99,
     type: 'expense' as TransactionType,
   },
@@ -80,7 +106,7 @@ export const ledgerTransactions = [
     description: 'Gym membership',
     category: 'Health',
     paymentMethod: 'Credit card',
-    date: '2026-10-03',
+    date: recentInMonth(2),
     amount: 45,
     type: 'expense' as TransactionType,
   },
@@ -89,11 +115,22 @@ export const ledgerTransactions = [
     description: 'Weekend market',
     category: 'Food',
     paymentMethod: 'Cash',
-    date: '2026-10-01',
+    date: recentInMonth(2),
     amount: 38.4,
     type: 'expense' as TransactionType,
   },
 ]
+
+/** Asset→asset sample transfer (seeded as a linked pair, not a single ledger row). */
+export const sampleTransfers = [
+  {
+    fromAccount: 'Bank transfer',
+    toAccount: 'Debit card',
+    amount: 200,
+    date: recentInMonth(1),
+    description: 'Top up spending card',
+  },
+] as const
 
 export const recurringExpenses = [
   {
@@ -103,7 +140,7 @@ export const recurringExpenses = [
     paymentMethod: 'Bank transfer',
     amount: 1200,
     cadence: 'monthly' as RecurrenceCadence,
-    nextDate: '2026-11-01',
+    nextDate: offsetIso(0),
     active: true,
   },
   {
@@ -113,7 +150,7 @@ export const recurringExpenses = [
     paymentMethod: 'Debit card',
     amount: 89,
     cadence: 'monthly' as RecurrenceCadence,
-    nextDate: '2026-11-01',
+    nextDate: offsetIso(0),
     active: true,
   },
   {
@@ -123,7 +160,7 @@ export const recurringExpenses = [
     paymentMethod: 'Credit card',
     amount: 45,
     cadence: 'monthly' as RecurrenceCadence,
-    nextDate: '2026-11-03',
+    nextDate: offsetIso(2),
     active: true,
   },
   {
@@ -133,7 +170,7 @@ export const recurringExpenses = [
     paymentMethod: 'Credit card',
     amount: 15.99,
     cadence: 'monthly' as RecurrenceCadence,
-    nextDate: '2026-11-05',
+    nextDate: offsetIso(4),
     active: true,
   },
   {
@@ -143,7 +180,7 @@ export const recurringExpenses = [
     paymentMethod: 'Credit card',
     amount: 2.99,
     cadence: 'monthly' as RecurrenceCadence,
-    nextDate: '2026-11-08',
+    nextDate: offsetIso(7),
     active: false,
   },
   {
@@ -153,7 +190,7 @@ export const recurringExpenses = [
     paymentMethod: 'Debit card',
     amount: 14,
     cadence: 'yearly' as RecurrenceCadence,
-    nextDate: '2027-03-12',
+    nextDate: offsetIso(120),
     active: true,
   },
 ]

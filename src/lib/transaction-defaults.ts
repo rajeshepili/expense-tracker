@@ -1,10 +1,10 @@
-import type { TransactionType } from '#/lib/types'
+import type { CategoryType } from '#/lib/types'
 
 const STORAGE_KEY = 'expense-tracker-tx-defaults'
 
 export type TransactionDefaults = {
-  type: TransactionType
-  categoryIdByType: Partial<Record<TransactionType, string>>
+  type: CategoryType
+  categoryIdByType: Partial<Record<CategoryType, string>>
   paymentMethodId: string
 }
 
@@ -29,7 +29,7 @@ export function readTransactionDefaults(): TransactionDefaults {
 }
 
 export function rememberTransactionDefaults(input: {
-  type: TransactionType
+  type: CategoryType
   categoryId: string
   paymentMethodId: string
 }) {

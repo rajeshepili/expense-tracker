@@ -1,8 +1,8 @@
 import { count, eq } from 'drizzle-orm'
 import { getDb } from '#/db/index'
 import {
+  accounts,
   categories,
-  paymentMethods,
   recurringExpenses,
   settings,
   transactions,
@@ -12,7 +12,9 @@ import {
   ledgerTransactions,
   paymentMethods as samplePaymentMethods,
   recurringExpenses as sampleRecurring,
+  sampleTransfers,
 } from '#/data/sample-ledger'
+import { inferAccountTypeFromName } from '#/lib/finance'
 
 export type OnboardingInput = {
   budget: number
@@ -77,11 +79,22 @@ async function insertDefaultCatalog() {
   ]
   await db.insert(categories).values(categoryRows)
 
+  // Starting balances: demo-friendly stock so net worth is non-zero with sample data.
+  const startingByName: Record<string, number> = {
+    'Debit card': 1200,
+    'Credit card': 0,
+    Cash: 80,
+    'Bank transfer': 2400,
+    'Direct deposit': 0,
+  }
   const methodRows = samplePaymentMethods.map((name) => ({
     id: crypto.randomUUID(),
     name,
+    type: inferAccountTypeFromName(name),
+    startingBalance: startingByName[name] ?? 0,
+    closed: false,
   }))
-  await db.insert(paymentMethods).values(methodRows)
+  await db.insert(accounts).values(methodRows)
 
   return {
     categoryByName: Object.fromEntries(
@@ -106,9 +119,41 @@ async function insertSampleActivity(
       type: row.type,
       transactionDate: row.date,
       categoryId: categoryByName[row.category],
-      paymentMethodId: methodByName[row.paymentMethod] ?? null,
+      accountId: methodByName[row.paymentMethod] ?? null,
     })),
   )
+
+  for (const transfer of sampleTransfers) {
+    const fromId = methodByName[transfer.fromAccount]
+    const toId = methodByName[transfer.toAccount]
+    if (!fromId || !toId) continue
+    const outId = crypto.randomUUID()
+    const inId = crypto.randomUUID()
+    await db.insert(transactions).values([
+      {
+        id: outId,
+        description: transfer.description,
+        amount: transfer.amount,
+        type: 'transfer',
+        transactionDate: transfer.date,
+        categoryId: null,
+        accountId: fromId,
+        transferId: inId,
+        transferDirection: 'out',
+      },
+      {
+        id: inId,
+        description: transfer.description,
+        amount: transfer.amount,
+        type: 'transfer',
+        transactionDate: transfer.date,
+        categoryId: null,
+        accountId: toId,
+        transferId: outId,
+        transferDirection: 'in',
+      },
+    ])
+  }
 
   await db.insert(recurringExpenses).values(
     sampleRecurring.map((row) => ({
@@ -119,7 +164,7 @@ async function insertSampleActivity(
       nextDate: row.nextDate,
       active: row.active,
       categoryId: categoryByName[row.category],
-      paymentMethodId: methodByName[row.paymentMethod] ?? null,
+      accountId: methodByName[row.paymentMethod] ?? null,
     })),
   )
 }

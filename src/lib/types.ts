@@ -1,17 +1,69 @@
-export type TransactionType = 'expense' | 'income'
+export type TransactionType = 'expense' | 'income' | 'transfer'
+export type CategoryType = 'expense' | 'income'
+export type AccountType = 'asset' | 'liability'
+export type TransferDirection = 'out' | 'in'
 export type RecurrenceCadence = 'weekly' | 'monthly' | 'yearly'
 
 export type LedgerTransaction = {
   id: string
   description: string
-  category: string
-  categoryId: string
+  category: string | null
+  categoryId: string | null
   paymentMethod: string | null
   paymentMethodId: string | null
+  accountId: string | null
+  account: string | null
   sourceRecurringId: string | null
+  transferId: string | null
+  transferDirection: TransferDirection | null
   date: string
   amount: number
   type: TransactionType
+}
+
+export type TransferInput = {
+  fromAccountId: string
+  toAccountId: string
+  amount: number
+  date: string
+  description?: string
+}
+
+export type TransferUpdate = Partial<{
+  fromAccountId: string
+  toAccountId: string
+  amount: number
+  date: string
+  description: string
+}>
+
+export type AccountRow = {
+  id: string
+  name: string
+  type: AccountType
+  startingBalance: number
+  closed: boolean
+  transactionCount: number
+  recurringCount: number
+  balance: number
+}
+
+export type AccountInput = {
+  name: string
+  type?: AccountType
+  startingBalance?: number
+}
+
+export type AccountUpdate = Partial<{
+  name: string
+  type: AccountType
+  startingBalance: number
+  closed: boolean
+}>
+
+export type TransferPair = {
+  out: LedgerTransaction
+  in: LedgerTransaction
 }
 
 export type LedgerSearch = {
@@ -20,6 +72,8 @@ export type LedgerSearch = {
   month?: string
   category?: string
   method?: string
+  /** Ledger type tab deep-link */
+  type?: TransactionType
   q?: string
 }
 
@@ -36,6 +90,8 @@ export type RecurringExpenseRow = {
   active: boolean
   paymentMethod: string | null
   paymentMethodId: string | null
+  accountId: string | null
+  account: string | null
 }
 
 export type AppSettings = {
@@ -54,11 +110,12 @@ export type MonthBudget = {
 export type CategoryRow = {
   id: string
   name: string
-  type: TransactionType
+  type: CategoryType
   transactionCount: number
   recurringCount: number
 }
 
+/** @deprecated use AccountRow */
 export type PaymentMethodRow = {
   id: string
   name: string

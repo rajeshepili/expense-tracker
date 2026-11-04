@@ -1,5 +1,6 @@
 import { and, eq, like, sql } from 'drizzle-orm'
 import {
+  accounts,
   categories,
   monthlyBudgets,
   recurringExpenses,
@@ -13,11 +14,13 @@ import {
   UPCOMING_RECURRING_LIMIT,
 } from '#/lib/app-config'
 import {
+  accountBalance,
   categoryBudgetBreakdown,
   currentYearMonth,
   dueStatus,
   isYearMonth,
   monthlyEquivalent,
+  netWorth,
   resolveMonthBudget,
   shiftYearMonth,
   todayIso,
@@ -26,6 +29,8 @@ import type {
   AppSettings,
   MonthBudget,
   RecurringExpenseRow,
+  TransactionType,
+  TransferDirection,
 } from '#/lib/types'
 import { withDb } from '#/data/repo/db'
 import type { Db } from '#/data/repo/db'
@@ -47,6 +52,58 @@ function monthSummarySelect(db: Db, monthPrefix: string) {
     .where(like(transactions.transactionDate, monthPrefix))
 }
 
+async function openAccountsWithBalances(db: Db) {
+  const [rows, deltas] = await Promise.all([
+    db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.closed, false))
+      .orderBy(accounts.name),
+    db
+      .select({
+        accountId: transactions.accountId,
+        type: transactions.type,
+        amount: transactions.amount,
+        transferDirection: transactions.transferDirection,
+      })
+      .from(transactions)
+      .where(sql`${transactions.accountId} is not null`),
+  ])
+
+  const rowsByAccount = new Map<
+    string,
+    Array<{
+      type: TransactionType
+      amount: number
+      transferDirection: TransferDirection | null
+    }>
+  >()
+  for (const delta of deltas) {
+    if (!delta.accountId) continue
+    const list = rowsByAccount.get(delta.accountId) ?? []
+    list.push({
+      type: delta.type,
+      amount: delta.amount,
+      transferDirection: delta.transferDirection,
+    })
+    rowsByAccount.set(delta.accountId, list)
+  }
+
+  return rows.map((row) => {
+    const balance = accountBalance(
+      row.startingBalance,
+      rowsByAccount.get(row.id) ?? [],
+      row.type,
+    )
+    return {
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      balance,
+    }
+  })
+}
+
 export async function getOverview(yearMonth = currentYearMonth()) {
   return withDb(async (db) => {
     const month = isYearMonth(yearMonth) ? yearMonth : currentYearMonth()
@@ -61,6 +118,7 @@ export async function getOverview(yearMonth = currentYearMonth()) {
       categorySpend,
       recentRows,
       activeRecurring,
+      overviewAccounts,
     ] = await Promise.all([
       db
         .select({
@@ -102,6 +160,7 @@ export async function getOverview(yearMonth = currentYearMonth()) {
       recurringQuery(db)
         .where(eq(recurringExpenses.active, true))
         .orderBy(recurringExpenses.nextDate),
+      openAccountsWithBalances(db),
     ])
 
     const settingsRow = settingsRows[0]
@@ -170,6 +229,8 @@ export async function getOverview(yearMonth = currentYearMonth()) {
       recurringOfBudget: budget > 0 ? recurringMonthly / budget : 0,
       upcomingRecurring,
       dueRecurringCount: dueRecurring.length,
+      accounts: overviewAccounts,
+      netWorth: netWorth(overviewAccounts),
     }
   })
 }

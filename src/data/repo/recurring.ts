@@ -50,7 +50,7 @@ function recurringValues(input: RecurringInput) {
     cadence: input.cadence,
     nextDate: input.nextDate,
     categoryId: input.categoryId,
-    paymentMethodId: input.paymentMethodId ?? null,
+    accountId: input.paymentMethodId ?? null,
     active: input.active,
   }
 }
@@ -157,10 +157,10 @@ export async function recordRecurringPayment(
           type: 'expense',
           date: recordDate,
           categoryId: bill.categoryId,
-          paymentMethodId:
+          accountId:
             overrides.paymentMethodId !== undefined
               ? overrides.paymentMethodId
-              : bill.paymentMethodId,
+              : bill.accountId,
           sourceRecurringId: id,
         }),
       )

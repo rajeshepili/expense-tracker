@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { TransactionType } from '#/lib/types'
 import { queryKeys } from '#/lib/query/keys'
-import { listTransactions, getSettings, listCategories, listPaymentMethods } from '#/data/repository'
+import { listTransactions, getSettings, listCategories, listAccounts } from '#/data/repository'
 import { formatQueryError } from '#/lib/errors'
 import { currentYearMonth } from '#/lib/finance'
 
@@ -53,13 +53,15 @@ export function useLedgerList({ search, filter, query }: UseLedgerListArgs) {
   })
 
   const methodsQuery = useQuery({
-    queryKey: queryKeys.paymentMethods,
-    queryFn: listPaymentMethods,
+    queryKey: queryKeys.accounts,
+    queryFn: listAccounts,
   })
 
   const rows = transactionsQuery.data ?? []
   const categories = categoriesQuery.data ?? []
-  const methods = methodsQuery.data ?? []
+  const methods = (methodsQuery.data ?? [])
+    .filter((account) => !account.closed)
+    .map((account) => ({ id: account.id, name: account.name }))
 
   const isLoading =
     (transactionsQuery.isPending || settingsQuery.isPending) &&
@@ -69,6 +71,9 @@ export function useLedgerList({ search, filter, query }: UseLedgerListArgs) {
     ? formatQueryError(transactionsQuery.error ?? settingsQuery.error)
     : null
 
+  const isFetching =
+    transactionsQuery.isFetching && !transactionsQuery.isPending
+
   return {
     rows,
     categories,
@@ -76,6 +81,7 @@ export function useLedgerList({ search, filter, query }: UseLedgerListArgs) {
     viewingMonth,
     listQueryKey,
     isLoading,
+    isFetching,
     isError,
     errorMessage,
     currency: settingsQuery.data?.currency ?? 'USD',

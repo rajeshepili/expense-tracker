@@ -4,8 +4,8 @@ import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import {
+  AccountSelect,
   CategorySelect,
-  PaymentMethodSelect,
 } from '#/components/entity-selects'
 import type { LedgerFormState } from '#/lib/ledger-form'
 import type { TransactionType } from '#/lib/types'
@@ -29,51 +29,56 @@ export function LedgerFormFields({
   methods,
   descriptionRef,
 }: LedgerFormFieldsProps) {
+  const isTransfer = form.type === 'transfer'
+  const fromOptions = methods.filter((account) => account.id !== form.toAccountId)
+  const toOptions = methods.filter((account) => account.id !== form.fromAccountId)
+
   return (
     <div className="grid gap-4 py-2">
       <div
-        className="grid grid-cols-2 gap-1 rounded-lg border bg-muted/40 p-1"
+        className="grid grid-cols-3 gap-1 rounded-lg border bg-muted/40 p-1"
         role="group"
         aria-label="Transaction type"
       >
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className={cn(
-            'h-8',
-            form.type === 'expense'
-              ? 'bg-card text-expense shadow-sm ring-1 ring-expense/25 hover:bg-card hover:text-expense'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-          onClick={() => setType('expense')}
-        >
-          Expense
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className={cn(
-            'h-8',
-            form.type === 'income'
-              ? 'bg-card text-income shadow-sm ring-1 ring-income/25 hover:bg-card hover:text-income'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-          onClick={() => setType('income')}
-        >
-          Income
-        </Button>
+        {(
+          [
+            { id: 'expense' as const, label: 'Expense' },
+            { id: 'income' as const, label: 'Income' },
+            { id: 'transfer' as const, label: 'Transfer' },
+          ] as const
+        ).map((option) => (
+          <Button
+            key={option.id}
+            type="button"
+            size="sm"
+            variant="ghost"
+            className={cn(
+              'min-h-11 md:min-h-8',
+              form.type === option.id
+                ? option.id === 'expense'
+                  ? 'bg-card text-expense shadow-sm ring-1 ring-expense/25 hover:bg-card hover:text-expense'
+                  : option.id === 'income'
+                    ? 'bg-card text-income shadow-sm ring-1 ring-income/25 hover:bg-card hover:text-income'
+                    : 'bg-card text-foreground shadow-sm ring-1 ring-border hover:bg-card'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+            onClick={() => setType(option.id)}
+          >
+            {option.label}
+          </Button>
+        ))}
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="ledger-description">Description</Label>
+        <Label htmlFor="ledger-description">
+          {isTransfer ? 'Note (optional)' : 'Description'}
+        </Label>
         <Input
           ref={descriptionRef}
           id="ledger-description"
           name="description"
           autoComplete="off"
           spellCheck={false}
-          placeholder="Coffee shop…"
+          placeholder={isTransfer ? 'Optional note…' : 'Coffee shop…'}
           value={form.description}
           onChange={(event) =>
             setForm((current) => ({
@@ -121,27 +126,66 @@ export function LedgerFormFields({
           />
         </div>
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor="ledger-category">Category</Label>
-        <CategorySelect
-          id="ledger-category"
-          value={form.categoryId}
-          options={categories}
-          onValueChange={(categoryId) =>
-            setForm((current) => ({ ...current, categoryId }))
-          }
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="ledger-method">Payment method</Label>
-        <PaymentMethodSelect
-          id="ledger-method"
-          value={form.paymentMethodId}
-          options={methods}
-          onValueChange={(paymentMethodId) =>
-            setForm((current) => ({ ...current, paymentMethodId }))
-          }
-        />
+      <div
+        key={isTransfer ? 'transfer' : 'standard'}
+        className="composer-fields-pane grid gap-4"
+      >
+        {isTransfer ? (
+          <>
+            <div className="grid gap-2">
+              <Label htmlFor="ledger-from-account">From account</Label>
+              <AccountSelect
+                id="ledger-from-account"
+                value={form.fromAccountId}
+                options={fromOptions}
+                placeholder="Choose account"
+                allowNone={false}
+                onValueChange={(fromAccountId) =>
+                  setForm((current) => ({ ...current, fromAccountId }))
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="ledger-to-account">To account</Label>
+              <AccountSelect
+                id="ledger-to-account"
+                value={form.toAccountId}
+                options={toOptions}
+                placeholder="Choose account"
+                allowNone={false}
+                onValueChange={(toAccountId) =>
+                  setForm((current) => ({ ...current, toAccountId }))
+                }
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="grid gap-2">
+              <Label htmlFor="ledger-category">Category</Label>
+              <CategorySelect
+                id="ledger-category"
+                value={form.categoryId}
+                options={categories}
+                onValueChange={(categoryId) =>
+                  setForm((current) => ({ ...current, categoryId }))
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="ledger-account">Account</Label>
+              <AccountSelect
+                id="ledger-account"
+                value={form.paymentMethodId}
+                options={methods}
+                placeholder="Optional account"
+                onValueChange={(paymentMethodId) =>
+                  setForm((current) => ({ ...current, paymentMethodId }))
+                }
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

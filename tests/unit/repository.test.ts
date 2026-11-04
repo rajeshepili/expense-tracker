@@ -26,6 +26,9 @@ CREATE TABLE categories (
 CREATE TABLE payment_methods (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'asset',
+  starting_balance REAL NOT NULL DEFAULT 0,
+  closed INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 CREATE TABLE transactions (
@@ -34,9 +37,11 @@ CREATE TABLE transactions (
   amount REAL NOT NULL,
   type TEXT NOT NULL DEFAULT 'expense',
   transaction_date TEXT NOT NULL,
-  category_id TEXT NOT NULL REFERENCES categories(id),
+  category_id TEXT REFERENCES categories(id),
   payment_method_id TEXT REFERENCES payment_methods(id),
-  source_recurring_id TEXT REFERENCES recurring_expenses(id),
+  source_recurring_id TEXT,
+  transfer_id TEXT,
+  transfer_direction TEXT,
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 CREATE TABLE recurring_expenses (
@@ -61,6 +66,8 @@ CREATE TABLE savings_goals (
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 CREATE INDEX idx_savings_category ON savings_goals(category_id);
+CREATE INDEX idx_transactions_transfer ON transactions(transfer_id);
+CREATE INDEX idx_transactions_account_date ON transactions(payment_method_id, transaction_date);
 `
 
 const openDbs: InstanceType<typeof Database>[] = []
@@ -89,7 +96,9 @@ function seedBasics(db: InstanceType<typeof Database>) {
   db.prepare(`INSERT INTO categories (id, name, type) VALUES (?, ?, ?)`).run(catSalary, 'Salary', 'income')
 
   const methodId = 'method-cash'
-  db.prepare(`INSERT INTO payment_methods (id, name) VALUES (?, ?)`).run(methodId, 'Cash')
+  db.prepare(
+    `INSERT INTO payment_methods (id, name, type, starting_balance, closed) VALUES (?, ?, 'asset', 0, 0)`,
+  ).run(methodId, 'Cash')
 
   const billId = 'bill-1'
   db.prepare(`
@@ -724,5 +733,331 @@ describe('savings goals (SQL)', () => {
       .get('goal-1') as { target_amount: number; current_amount: number }
     expect(row.target_amount).toBe(300)
     expect(row.current_amount).toBe(300)
+  })
+})
+
+describe('accounts and transfers (SQL)', () => {
+  function createTransfer(
+    db: InstanceType<typeof Database>,
+    input: {
+      fromAccountId: string
+      toAccountId: string
+      amount: number
+      date: string
+    },
+  ) {
+    const outId = `tx-out-${crypto.randomUUID()}`
+    const inId = `tx-in-${crypto.randomUUID()}`
+    db.prepare(`
+      INSERT INTO transactions (
+        id, description, amount, type, transaction_date, category_id,
+        payment_method_id, transfer_id, transfer_direction, created_at
+      ) VALUES (?, ?, ?, 'transfer', ?, NULL, ?, ?, 'out', ?),
+               (?, ?, ?, 'transfer', ?, NULL, ?, ?, 'in', ?)
+    `).run(
+      outId,
+      'Transfer out',
+      input.amount,
+      input.date,
+      input.fromAccountId,
+      inId,
+      Date.now(),
+      inId,
+      'Transfer in',
+      input.amount,
+      input.date,
+      input.toAccountId,
+      outId,
+      Date.now(),
+    )
+    return { outId, inId }
+  }
+
+  function deleteTransferLeg(
+    db: InstanceType<typeof Database>,
+    legId: string,
+  ) {
+    const leg = db
+      .prepare(`SELECT id, transfer_id FROM transactions WHERE id = ?`)
+      .get(legId) as { id: string; transfer_id: string | null } | undefined
+    if (!leg) return
+    const ids = [leg.id]
+    if (leg.transfer_id) ids.push(leg.transfer_id)
+    db.prepare(
+      `DELETE FROM transactions WHERE id IN (${ids.map(() => '?').join(',')})`,
+    ).run(...ids)
+  }
+
+  function accountBalanceSql(
+    db: InstanceType<typeof Database>,
+    accountId: string,
+  ) {
+    const account = db
+      .prepare(
+        `SELECT type, starting_balance FROM payment_methods WHERE id = ?`,
+      )
+      .get(accountId) as { type: string; starting_balance: number }
+    const rows = db
+      .prepare(
+        `SELECT type, amount, transfer_direction FROM transactions WHERE payment_method_id = ?`,
+      )
+      .all(accountId) as Array<{
+      type: string
+      amount: number
+      transfer_direction: string | null
+    }>
+    let balance = account.starting_balance
+    for (const row of rows) {
+      if (row.type === 'transfer') {
+        if (account.type === 'asset') {
+          balance += row.transfer_direction === 'in' ? row.amount : -row.amount
+        } else {
+          balance += row.transfer_direction === 'out' ? row.amount : -row.amount
+        }
+      } else if (account.type === 'asset') {
+        balance += row.type === 'income' ? row.amount : -row.amount
+      } else {
+        balance += row.type === 'income' ? -row.amount : row.amount
+      }
+    }
+    return balance
+  }
+
+  it('excludes transfers from month cashflow while updating balances', () => {
+    const db = client(CURRENT_SCHEMA)
+    seedBasics(db)
+    db.prepare(
+      `INSERT INTO payment_methods (id, name, type, starting_balance, closed) VALUES (?, ?, 'asset', 500, 0)`,
+    ).run('method-checking', 'Checking')
+    db.prepare(
+      `INSERT INTO payment_methods (id, name, type, starting_balance, closed) VALUES (?, ?, 'liability', 0, 0)`,
+    ).run('method-card', 'Credit card')
+
+    db.prepare(`
+      INSERT INTO transactions (
+        id, description, amount, type, transaction_date, category_id,
+        payment_method_id, created_at
+      ) VALUES (?, ?, ?, 'expense', ?, ?, ?, ?)
+    `).run(
+      'tx-card-purchase',
+      'Groceries',
+      50,
+      '2026-03-10',
+      'cat-food',
+      'method-card',
+      Date.now(),
+    )
+
+    createTransfer(db, {
+      fromAccountId: 'method-checking',
+      toAccountId: 'method-card',
+      amount: 50,
+      date: '2026-03-12',
+    })
+
+    const overview = getOverview(db, '2026-03')
+    expect(overview.summary.expenses).toBe(50)
+    expect(overview.summary.income).toBe(0)
+    expect(accountBalanceSql(db, 'method-card')).toBe(0)
+    expect(accountBalanceSql(db, 'method-checking')).toBe(450)
+  })
+
+  it('keeps net worth unchanged for asset-to-asset transfers', () => {
+    const db = client(CURRENT_SCHEMA)
+    seedBasics(db)
+    db.prepare(
+      `INSERT INTO payment_methods (id, name, type, starting_balance, closed) VALUES (?, ?, 'asset', 200, 0)`,
+    ).run('method-checking', 'Checking')
+
+    createTransfer(db, {
+      fromAccountId: 'method-checking',
+      toAccountId: 'method-cash',
+      amount: 40,
+      date: '2026-03-01',
+    })
+
+    expect(accountBalanceSql(db, 'method-checking')).toBe(160)
+    expect(accountBalanceSql(db, 'method-cash')).toBe(40)
+  })
+
+  it('deletes both transfer legs when one leg is removed', () => {
+    const db = client(CURRENT_SCHEMA)
+    seedBasics(db)
+    db.prepare(
+      `INSERT INTO payment_methods (id, name, type, starting_balance, closed) VALUES (?, ?, 'asset', 100, 0)`,
+    ).run('method-checking', 'Checking')
+
+    const { outId } = createTransfer(db, {
+      fromAccountId: 'method-checking',
+      toAccountId: 'method-cash',
+      amount: 25,
+      date: '2026-03-01',
+    })
+
+    deleteTransferLeg(db, outId)
+
+    const count = db
+      .prepare(`SELECT COUNT(*) as c FROM transactions WHERE type = 'transfer'`)
+      .get() as { c: number }
+    expect(count.c).toBe(0)
+  })
+
+  function closeAccount(
+    db: InstanceType<typeof Database>,
+    id: string,
+  ): { ok: true } | { ok: false; reason: string } {
+    const account = db
+      .prepare(
+        `SELECT name, type, starting_balance, closed FROM payment_methods WHERE id = ?`,
+      )
+      .get(id) as
+      | {
+          name: string
+          type: string
+          starting_balance: number
+          closed: number
+        }
+      | undefined
+    if (!account) throw new Error('Account not found')
+    if (account.closed) return { ok: true }
+    const balance = accountBalanceSql(db, id)
+    if (Math.abs(balance) > 1e-4) {
+      return {
+        ok: false,
+        reason: `Account “${account.name}” still has a balance of ${balance}`,
+      }
+    }
+    db.prepare(`UPDATE payment_methods SET closed = 1 WHERE id = ?`).run(id)
+    return { ok: true }
+  }
+
+  function deleteAccount(
+    db: InstanceType<typeof Database>,
+    id: string,
+  ): { ok: true } | { ok: false; reason: string } {
+    const account = db
+      .prepare(
+        `SELECT name, starting_balance, closed FROM payment_methods WHERE id = ?`,
+      )
+      .get(id) as
+      | { name: string; starting_balance: number; closed: number }
+      | undefined
+    if (!account) throw new Error('Account not found')
+    const txCount = (
+      db
+        .prepare(
+          `SELECT COUNT(*) as c FROM transactions WHERE payment_method_id = ?`,
+        )
+        .get(id) as { c: number }
+    ).c
+    const recCount = (
+      db
+        .prepare(
+          `SELECT COUNT(*) as c FROM recurring_expenses WHERE payment_method_id = ?`,
+        )
+        .get(id) as { c: number }
+    ).c
+    if (txCount > 0 || recCount > 0) {
+      return {
+        ok: false,
+        reason: `Account “${account.name}” is still used by transactions or recurring bills`,
+      }
+    }
+    if (!account.closed && Math.abs(account.starting_balance) > 1e-4) {
+      return {
+        ok: false,
+        reason: `Account “${account.name}” still has a balance of ${account.starting_balance}`,
+      }
+    }
+    db.prepare(`DELETE FROM payment_methods WHERE id = ?`).run(id)
+    return { ok: true }
+  }
+
+  it('rejects closing an account with a non-zero balance', () => {
+    const db = client(CURRENT_SCHEMA)
+    seedBasics(db)
+    db.prepare(
+      `UPDATE payment_methods SET starting_balance = 25 WHERE id = ?`,
+    ).run('method-cash')
+
+    const result = closeAccount(db, 'method-cash')
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.reason).toMatch(/balance of 25/)
+    const row = db
+      .prepare(`SELECT closed FROM payment_methods WHERE id = ?`)
+      .get('method-cash') as { closed: number }
+    expect(row.closed).toBe(0)
+  })
+
+  it('closes a zero-balance account and rejects delete while referenced', () => {
+    const db = client(CURRENT_SCHEMA)
+    seedBasics(db)
+
+    expect(closeAccount(db, 'method-cash')).toEqual({ ok: true })
+    const closed = db
+      .prepare(`SELECT closed FROM payment_methods WHERE id = ?`)
+      .get('method-cash') as { closed: number }
+    expect(closed.closed).toBe(1)
+
+    const blocked = deleteAccount(db, 'method-cash')
+    expect(blocked.ok).toBe(false)
+    if (!blocked.ok) expect(blocked.reason).toMatch(/still used/)
+  })
+
+  it('deletes an unused zero-balance account', () => {
+    const db = client(CURRENT_SCHEMA)
+    seedBasics(db)
+    db.prepare(
+      `INSERT INTO payment_methods (id, name, type, starting_balance, closed) VALUES (?, ?, 'asset', 0, 0)`,
+    ).run('method-spare', 'Spare')
+
+    expect(deleteAccount(db, 'method-spare')).toEqual({ ok: true })
+    const gone = db
+      .prepare(`SELECT id FROM payment_methods WHERE id = ?`)
+      .get('method-spare')
+    expect(gone).toBeUndefined()
+  })
+
+  it('updates both transfer legs together', () => {
+    const db = client(CURRENT_SCHEMA)
+    seedBasics(db)
+    db.prepare(
+      `INSERT INTO payment_methods (id, name, type, starting_balance, closed) VALUES (?, ?, 'asset', 100, 0)`,
+    ).run('method-checking', 'Checking')
+    db.prepare(
+      `INSERT INTO payment_methods (id, name, type, starting_balance, closed) VALUES (?, ?, 'asset', 0, 0)`,
+    ).run('method-wallet', 'Wallet')
+
+    const { outId, inId } = createTransfer(db, {
+      fromAccountId: 'method-checking',
+      toAccountId: 'method-cash',
+      amount: 20,
+      date: '2026-03-01',
+    })
+
+    db.prepare(`
+      UPDATE transactions SET amount = ?, transaction_date = ?, payment_method_id = ?
+      WHERE id = ?
+    `).run(35, '2026-03-05', 'method-checking', outId)
+    db.prepare(`
+      UPDATE transactions SET amount = ?, transaction_date = ?, payment_method_id = ?
+      WHERE id = ?
+    `).run(35, '2026-03-05', 'method-wallet', inId)
+
+    const legs = db
+      .prepare(
+        `SELECT id, amount, transaction_date, payment_method_id FROM transactions WHERE id IN (?, ?) ORDER BY id`,
+      )
+      .all(outId, inId) as Array<{
+      id: string
+      amount: number
+      transaction_date: string
+      payment_method_id: string
+    }>
+    expect(legs).toHaveLength(2)
+    expect(legs.every((leg) => leg.amount === 35)).toBe(true)
+    expect(legs.every((leg) => leg.transaction_date === '2026-03-05')).toBe(true)
+    expect(accountBalanceSql(db, 'method-checking')).toBe(65)
+    expect(accountBalanceSql(db, 'method-wallet')).toBe(35)
   })
 })

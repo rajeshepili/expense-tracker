@@ -11,8 +11,9 @@ test.describe('sample data smoke @smoke', () => {
 
     await goToNav(page, 'Ledger')
     await expect(page.getByRole('heading', { name: 'Ledger' })).toBeVisible()
-    // At least one seeded description from sample-ledger.ts
+    // Seeded descriptions from sample-ledger.ts (relative to today → current month).
     await expect(tableCell(page, 'Grocery run')).toBeVisible()
+    await expect(tableCell(page, 'Top up spending card')).toHaveCount(2)
 
     await goToNav(page, 'Recurring')
     await expect(page.getByRole('heading', { name: 'Recurring' })).toBeVisible()

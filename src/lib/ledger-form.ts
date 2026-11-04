@@ -1,8 +1,20 @@
 import { useQueryClient } from '@tanstack/react-query'
 import type { FundGoalOffer } from '#/components/fund-goal-dialog'
-import type { LedgerTransaction, SavingsGoalRow, TransactionType } from '#/lib/types'
+import type {
+  LedgerTransaction,
+  SavingsGoalRow,
+  TransactionType,
+  TransferDirection,
+} from '#/lib/types'
 import { queryKeys } from '#/lib/query/keys'
-import { createTransaction, updateTransaction, deleteTransaction } from '#/data/repository'
+import {
+  createTransaction,
+  createTransfer,
+  getTransferPair,
+  updateTransaction,
+  updateTransfer,
+  deleteTransaction,
+} from '#/data/repository'
 import { useOptimisticMutation } from '#/hooks/use-optimistic-mutation'
 import { makeMutationErrorHandler } from '#/lib/errors'
 import {
@@ -18,6 +30,8 @@ export type LedgerFormState = {
   type: TransactionType
   categoryId: string
   paymentMethodId: string
+  fromAccountId: string
+  toAccountId: string
   date: string
 }
 
@@ -25,7 +39,7 @@ export type LedgerSaveVars = {
   editingId: string | null
   description: string
   amount: number
-  type: TransactionType
+  type: Exclude<TransactionType, 'transfer'>
   date: string
   categoryId: string
   categoryName: string
@@ -40,18 +54,65 @@ export function emptyLedgerForm(): LedgerFormState {
     type: 'expense',
     categoryId: '',
     paymentMethodId: '',
+    fromAccountId: '',
+    toAccountId: '',
     date: todayIso(),
   }
 }
 
+function isAutoTransferDescription(value: string) {
+  return (
+    value.startsWith('Transfer to ') || value.startsWith('Transfer from ')
+  )
+}
+
 export function formFromTransaction(tx: LedgerTransaction): LedgerFormState {
+  if (tx.type === 'transfer') {
+    return {
+      description: isAutoTransferDescription(tx.description)
+        ? ''
+        : tx.description,
+      amount: String(tx.amount),
+      type: 'transfer',
+      categoryId: '',
+      paymentMethodId: '',
+      fromAccountId:
+        tx.transferDirection === 'out' ? (tx.accountId ?? '') : '',
+      toAccountId: tx.transferDirection === 'in' ? (tx.accountId ?? '') : '',
+      date: tx.date,
+    }
+  }
   return {
     description: tx.description,
     amount: String(tx.amount),
     type: tx.type,
-    categoryId: tx.categoryId,
+    categoryId: tx.categoryId ?? '',
     paymentMethodId: tx.paymentMethodId ?? '',
+    fromAccountId: '',
+    toAccountId: '',
     date: tx.date,
+  }
+}
+
+export async function formFromTransferLeg(
+  tx: LedgerTransaction,
+): Promise<LedgerFormState> {
+  if (tx.type !== 'transfer' || !tx.transferId) {
+    return formFromTransaction(tx)
+  }
+  const pair = await getTransferPair(tx.id)
+  const custom =
+    !isAutoTransferDescription(pair.out.description) ||
+    !isAutoTransferDescription(pair.in.description)
+  return {
+    description: custom ? pair.out.description : '',
+    amount: String(pair.out.amount),
+    type: 'transfer',
+    categoryId: '',
+    paymentMethodId: '',
+    fromAccountId: pair.out.accountId ?? '',
+    toAccountId: pair.in.accountId ?? '',
+    date: pair.out.date,
   }
 }
 
@@ -93,7 +154,7 @@ export function useLedgerForm({
   >({
     queryClient,
     queryKey: listQueryKey,
-    invalidateKeys: ['transactions', 'categories'],
+    invalidateKeys: ['transactions', 'categories', 'accounts'],
     mutationFn: async (vars) => {
       const payload = {
         description: vars.description,
@@ -123,7 +184,11 @@ export function useLedgerForm({
         category: vars.categoryName,
         paymentMethodId: vars.paymentMethodId,
         paymentMethod: vars.paymentMethodName,
+        accountId: vars.paymentMethodId,
+        account: vars.paymentMethodName,
         sourceRecurringId: null,
+        transferId: null,
+        transferDirection: null,
       }
 
       queryClient.setQueryData<LedgerTransaction[]>(listQueryKey, (current) => {
@@ -180,15 +245,62 @@ export function useLedgerForm({
   const deleteMutation = useOptimisticMutation<LedgerTransaction[], string>({
     queryClient,
     queryKey: listQueryKey,
-    invalidateKeys: ['transactions', 'categories'],
+    invalidateKeys: ['transactions', 'categories', 'accounts', 'transfers'],
     mutationFn: async (id) => {
       await deleteTransaction(id)
     },
     onMutate: (id) => {
-      queryClient.setQueryData<LedgerTransaction[]>(listQueryKey, (current) =>
-        current?.filter((row) => row.id !== id),
-      )
+      queryClient.setQueryData<LedgerTransaction[]>(listQueryKey, (current) => {
+        const peerId = current?.find((row) => row.id === id)?.transferId
+        return current?.filter(
+          (row) => row.id !== id && row.id !== peerId,
+        )
+      })
     },
+  })
+
+  const transferMutation = useOptimisticMutation<
+    LedgerTransaction[],
+    {
+      editingId: string | null
+      fromAccountId: string
+      toAccountId: string
+      amount: number
+      date: string
+      description?: string
+    }
+  >({
+    queryClient,
+    queryKey: listQueryKey,
+    invalidateKeys: ['transfers', 'transactions', 'accounts'],
+    mutationFn: async (vars) => {
+      if (vars.editingId) {
+        await updateTransfer(vars.editingId, {
+          fromAccountId: vars.fromAccountId,
+          toAccountId: vars.toAccountId,
+          amount: vars.amount,
+          date: vars.date,
+          description: vars.description,
+        })
+        return
+      }
+      await createTransfer({
+        fromAccountId: vars.fromAccountId,
+        toAccountId: vars.toAccountId,
+        amount: vars.amount,
+        date: vars.date,
+        description: vars.description,
+      })
+    },
+    onMutate: () => {
+      setSaveError(null)
+      reset()
+    },
+    onError: makeMutationErrorHandler(
+      setSaveError,
+      'Could not save transfer',
+      { reopenDialog: () => setComposerOpen(true) },
+    ),
   })
 
   function openCreateInContext() {
@@ -202,12 +314,25 @@ export function useLedgerForm({
 
   function openDuplicate(tx: LedgerTransaction) {
     reset()
+    if (tx.type === 'transfer') {
+      void (async () => {
+        const base = await formFromTransferLeg(tx)
+        setForm(() => ({
+          ...base,
+          date: todayIso(),
+        }))
+        setComposerOpen(true)
+      })()
+      return
+    }
     setForm(() => ({
       description: tx.description,
       amount: String(tx.amount),
       type: tx.type,
-      categoryId: tx.categoryId,
+      categoryId: tx.categoryId ?? '',
       paymentMethodId: tx.paymentMethodId ?? '',
+      fromAccountId: '',
+      toAccountId: '',
       date: todayIso(),
     }))
     setComposerOpen(true)
@@ -215,7 +340,32 @@ export function useLedgerForm({
 
   function submitForm() {
     const amount = Number(form.amount)
-    if (!form.description.trim() || !Number.isFinite(amount) || amount < 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setSaveError('Enter a valid amount greater than 0')
+      return
+    }
+
+    if (form.type === 'transfer') {
+      if (!form.fromAccountId || !form.toAccountId) {
+        setSaveError('Choose from and to accounts')
+        return
+      }
+      if (form.fromAccountId === form.toAccountId) {
+        setSaveError('Choose two different accounts')
+        return
+      }
+      transferMutation.mutate({
+        editingId: editing?.id ?? null,
+        fromAccountId: form.fromAccountId,
+        toAccountId: form.toAccountId,
+        amount,
+        date: form.date || todayIso(),
+        description: form.description.trim() || undefined,
+      })
+      return
+    }
+
+    if (!form.description.trim()) {
       setSaveError('Enter a description and a valid amount')
       return
     }
@@ -240,11 +390,15 @@ export function useLedgerForm({
     })
   }
 
-  const isSubmitting = saveMutation.isPending || deleteMutation.isPending
+  const isSubmitting =
+    saveMutation.isPending ||
+    deleteMutation.isPending ||
+    transferMutation.isPending
 
   return {
     saveMutation,
     deleteMutation,
+    transferMutation,
     openCreateInContext,
     openDuplicate,
     submitForm,
@@ -254,7 +408,23 @@ export function useLedgerForm({
 
 export function transactionMeta(tx: LedgerTransaction): string {
   const parts: string[] = []
+  if (tx.type === 'transfer') {
+    parts.push('Transfer')
+    if (tx.account) parts.push(tx.account)
+    return parts.join(' · ')
+  }
   if (tx.category) parts.push(tx.category)
   if (tx.paymentMethod) parts.push(tx.paymentMethod)
   return parts.join(' · ')
+}
+
+export function transferBadgeClass(direction: TransferDirection | null) {
+  if (direction === 'in') return 'badge-income capitalize'
+  if (direction === 'out') return 'badge-expense capitalize'
+  return 'badge-transfer capitalize'
+}
+
+/** Prefetch pair and fill form when opening a transfer for edit. */
+export async function prepareTransferEdit(tx: LedgerTransaction) {
+  return formFromTransferLeg(tx)
 }

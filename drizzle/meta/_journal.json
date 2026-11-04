@@ -15,6 +15,13 @@
       "when": 1793089418505,
       "tag": "0001_violet_randall_flagg",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793628958723,
+      "tag": "0002_dry_peter_quill",
+      "breakpoints": true
     }
   ]
 }

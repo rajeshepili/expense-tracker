@@ -37,15 +37,23 @@ export const categories = sqliteTable(
   (t) => [index('idx_categories_type_name').on(t.type, t.name)],
 )
 
-export const paymentMethods = sqliteTable('payment_methods', {
+export const accounts = sqliteTable('payment_methods', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
+  type: text('type', { enum: ['asset', 'liability'] })
+    .notNull()
+    .default('asset'),
+  startingBalance: real('starting_balance').notNull().default(0),
+  closed: integer('closed', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
 })
+
+/** @deprecated use `accounts` */
+export const paymentMethods = accounts
 
 export const transactions = sqliteTable(
   'transactions',
@@ -55,19 +63,19 @@ export const transactions = sqliteTable(
       .$defaultFn(() => crypto.randomUUID()),
     description: text('description').notNull(),
     amount: real('amount').notNull(),
-    type: text('type', { enum: ['expense', 'income'] })
+    type: text('type', { enum: ['expense', 'income', 'transfer'] })
       .notNull()
       .default('expense'),
     /** ISO date YYYY-MM-DD */
     transactionDate: text('transaction_date').notNull(),
-    categoryId: text('category_id')
-      .notNull()
-      .references(() => categories.id),
-    paymentMethodId: text('payment_method_id').references(
-      () => paymentMethods.id,
-    ),
+    categoryId: text('category_id').references(() => categories.id),
+    accountId: text('payment_method_id').references(() => accounts.id),
     /** Recurring bill id if created via Record (no FK). */
     sourceRecurringId: text('source_recurring_id'),
+    /** Peer leg of a paired transfer (no FK; enforced in repo). */
+    transferId: text('transfer_id'),
+    /** `out` or `in` when type is transfer */
+    transferDirection: text('transfer_direction', { enum: ['out', 'in'] }),
     createdAt: integer('created_at', { mode: 'timestamp' })
       .notNull()
       .default(sql`(unixepoch())`),
@@ -78,9 +86,10 @@ export const transactions = sqliteTable(
     index('idx_transactions_type').on(t.type),
     index('idx_transactions_category_date').on(t.categoryId, t.transactionDate),
     index('idx_transactions_source_recurring').on(t.sourceRecurringId),
-    index('idx_transactions_method_date').on(t.paymentMethodId,
+    index('idx_transactions_account_date').on(t.accountId,
       t.transactionDate,
     ),
+    index('idx_transactions_transfer').on(t.transferId),
   ],
 )
 
@@ -103,9 +112,7 @@ export const recurringExpenses = sqliteTable(
     categoryId: text('category_id')
       .notNull()
       .references(() => categories.id),
-    paymentMethodId: text('payment_method_id').references(
-      () => paymentMethods.id,
-    ),
+    accountId: text('payment_method_id').references(() => accounts.id),
     createdAt: integer('created_at', { mode: 'timestamp' })
       .notNull()
       .default(sql`(unixepoch())`),

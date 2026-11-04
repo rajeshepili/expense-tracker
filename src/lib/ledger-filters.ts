@@ -1,13 +1,21 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { LedgerFilterChip } from '#/components/ledger/ledger-filters'
 import type { LedgerTransaction, TransactionType } from '#/lib/types'
 import { currentYearMonth } from '#/lib/finance'
+
+function typeFromSearch(
+  type: string | undefined,
+): 'all' | TransactionType {
+  if (type === 'expense' || type === 'income' || type === 'transfer') return type
+  return 'all'
+}
 
 interface UseLedgerFiltersArgs {
   search: {
     month?: string
     category?: string
     method?: string
+    type?: TransactionType
     q?: string
   }
   categories: { id: string; name: string }[]
@@ -24,8 +32,27 @@ export function useLedgerFilters({
   onNavigate,
 }: UseLedgerFiltersArgs) {
   const { category: categoryFilter, method: methodFilter, q: qParam } = search
-  const [filter, setFilter] = useState<'all' | TransactionType>('all')
+  const [filter, setFilterState] = useState<'all' | TransactionType>(() =>
+    typeFromSearch(search.type),
+  )
   const [query, setQuery] = useState(qParam ?? '')
+
+  useEffect(() => {
+    setFilterState(typeFromSearch(search.type))
+  }, [search.type])
+
+  function setFilter(next: 'all' | TransactionType) {
+    setFilterState(next)
+    onNavigate({
+      search: (prev: any) => {
+        const nextSearch = { ...prev }
+        if (next === 'all') delete nextSearch.type
+        else nextSearch.type = next
+        return nextSearch
+      },
+      replace: true,
+    })
+  }
 
   const categoryFilterName = useMemo(() => {
     if (!categoryFilter) return null
@@ -41,7 +68,7 @@ export function useLedgerFilters({
     return rows.reduce(
       (acc: { income: number; expenses: number }, row: LedgerTransaction) => {
         if (row.type === 'income') acc.income += row.amount
-        else acc.expenses += row.amount
+        else if (row.type === 'expense') acc.expenses += row.amount
         return acc
       },
       { income: 0, expenses: 0 },
@@ -63,12 +90,55 @@ export function useLedgerFilters({
   }
 
   function clearFilters() {
-    setFilter('all')
+    setFilterState('all')
     setQuery('')
     onNavigate({
       search: { month: currentYearMonth() },
       replace: true,
     })
+  }
+
+  function clearChip(key: string) {
+    if (key === 'type') {
+      setFilter('all')
+      return
+    }
+    if (key === 'q') {
+      setQuery('')
+      return
+    }
+    if (key === 'all-months') {
+      onNavigate({
+        search: (prev: any) => {
+          const next = { ...prev }
+          delete next.month
+          return next
+        },
+        replace: true,
+      })
+      return
+    }
+    if (key === 'category') {
+      onNavigate({
+        search: (prev: any) => {
+          const next = { ...prev }
+          delete next.category
+          return next
+        },
+        replace: true,
+      })
+      return
+    }
+    if (key === 'method') {
+      onNavigate({
+        search: (prev: any) => {
+          const next = { ...prev }
+          delete next.method
+          return next
+        },
+        replace: true,
+      })
+    }
   }
 
   const filterChips = useMemo(() => {
@@ -103,5 +173,6 @@ export function useLedgerFilters({
     filterChips,
     stripComposerSearch,
     clearFilters,
+    clearChip,
   }
 }

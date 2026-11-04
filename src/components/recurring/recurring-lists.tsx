@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { MoreHorizontal, Plus, Repeat } from 'lucide-react'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -19,6 +20,8 @@ import { DueStatusBadge } from '#/components/due-status-badge'
 import { EmptyState } from '#/components/layout/empty-state'
 import { MobileListRow } from '#/components/layout/mobile-list'
 import { Kbd } from '#/components/ui/kbd'
+import { useFlipList } from '#/hooks/use-flip-list'
+import { useIsCompact } from '#/hooks/use-media-query'
 import type { useRecordRecurring } from '#/hooks/use-record-recurring'
 import {
   amountDue,
@@ -149,6 +152,8 @@ function RecurringActionsMenu({
 
 function RecurringMobileRow({
   item,
+  index,
+  flipState,
   currency,
   recording,
   togglePending,
@@ -156,14 +161,21 @@ function RecurringMobileRow({
   onToggle,
   onEdit,
   onSkip,
+  onViewPayments,
   onDelete,
-}: { item: RecurringExpenseRow } & Omit<
-  RowHandlers,
-  'monthlyBudget' | 'onViewPayments'
->) {
+}: {
+  item: RecurringExpenseRow
+  index: number
+  flipState?: 'enter' | 'exit'
+} & Omit<RowHandlers, 'monthlyBudget'>) {
   return (
     <MobileListRow
       className={!item.active ? 'opacity-60' : undefined}
+      flip={
+        flipState
+          ? { key: item.id, state: flipState, index }
+          : { key: item.id, index }
+      }
       title={
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate">{item.name}</span>
@@ -174,32 +186,35 @@ function RecurringMobileRow({
       trailing={
         <span className="tabular-nums">{money(amountDue(item), currency)}</span>
       }
-      onClick={() => onEdit(item)}
+      onClick={flipState === 'exit' ? undefined : () => onEdit(item)}
       actions={
-        <>
-          <RecordButton
-            item={item}
-            recording={recording}
-            recorder={recorder}
-            touch
-          />
-          <Switch
-            checked={item.active}
-            disabled={togglePending}
-            onCheckedChange={(checked) => onToggle(item.id, checked)}
-            aria-label={`Toggle ${item.name}`}
-            className="mr-1"
-          />
-          <RecurringActionsMenu
-            item={item}
-            recording={recording}
-            recorder={recorder}
-            onEdit={onEdit}
-            onSkip={onSkip}
-            onDelete={onDelete}
-            touch
-          />
-        </>
+        flipState === 'exit' ? null : (
+          <>
+            <RecordButton
+              item={item}
+              recording={recording}
+              recorder={recorder}
+              touch
+            />
+            <Switch
+              checked={item.active}
+              disabled={togglePending}
+              onCheckedChange={(checked) => onToggle(item.id, checked)}
+              aria-label={`Toggle ${item.name}`}
+              className="mr-1"
+            />
+            <RecurringActionsMenu
+              item={item}
+              recording={recording}
+              recorder={recorder}
+              onEdit={onEdit}
+              onSkip={onSkip}
+              onViewPayments={onViewPayments}
+              onDelete={onDelete}
+              touch
+            />
+          </>
+        )
       }
     />
   )
@@ -207,6 +222,8 @@ function RecurringMobileRow({
 
 function RecurringTableRow({
   item,
+  index,
+  flipState,
   currency,
   monthlyBudget,
   recording,
@@ -217,12 +234,29 @@ function RecurringTableRow({
   onSkip,
   onViewPayments,
   onDelete,
-}: { item: RecurringExpenseRow } & RowHandlers) {
+}: {
+  item: RecurringExpenseRow
+  index: number
+  flipState?: 'enter' | 'exit'
+} & RowHandlers) {
   const monthly = monthlyEquivalent(item.amount, item.cadence)
   const itemOfBudget = monthlyBudget > 0 ? monthly / monthlyBudget : 0
 
   return (
-    <TableRow key={item.id} className={!item.active ? 'opacity-60' : undefined}>
+    <TableRow
+      key={item.id}
+      data-flip-key={item.id}
+      data-flip-enter={flipState === 'enter' ? '' : undefined}
+      data-flip-exit={flipState === 'exit' ? '' : undefined}
+      style={
+        flipState === 'enter'
+          ? {
+              ['--flip-enter-delay' as string]: `${Math.min(index, 8) * 40}ms`,
+            }
+          : undefined
+      }
+      className={!item.active ? 'opacity-60' : undefined}
+    >
       <TableCell className="font-medium">
         <span className="inline-flex flex-wrap items-center gap-2">
           {item.name}
@@ -283,6 +317,21 @@ function RecurringTableRow({
 
 export function RecurringLists(props: RecurringListsProps) {
   const { items, onCreate } = props
+  const listRef = useRef<HTMLElement | null>(null)
+  const isCompact = useIsCompact()
+  const { isEntering, isExiting } = useFlipList(
+    listRef,
+    items,
+    (item) => item.id,
+    { waapi: !isCompact, enters: !isCompact },
+  )
+
+  function flipState(id: string): 'enter' | 'exit' | undefined {
+    if (isCompact) return undefined
+    if (isExiting(id)) return 'exit'
+    if (isEntering(id)) return 'enter'
+    return undefined
+  }
 
   const empty = (
     <EmptyState
@@ -308,6 +357,7 @@ export function RecurringLists(props: RecurringListsProps) {
 
   return (
     <VirtualizedDataList
+      listRootRef={listRef}
       items={items}
       getItemKey={(item) => item.id}
       mobileEstimateSize={88}
@@ -339,8 +389,22 @@ export function RecurringLists(props: RecurringListsProps) {
           </TableRow>
         </TableHeader>
       }
-      renderMobile={(item) => <RecurringMobileRow item={item} {...props} />}
-      renderDesktop={(item) => <RecurringTableRow item={item} {...props} />}
+      renderMobile={(item, index) => (
+        <RecurringMobileRow
+          item={item}
+          index={index}
+          flipState={flipState(item.id)}
+          {...props}
+        />
+      )}
+      renderDesktop={(item, index) => (
+        <RecurringTableRow
+          item={item}
+          index={index}
+          flipState={flipState(item.id)}
+          {...props}
+        />
+      )}
     />
   )
 }

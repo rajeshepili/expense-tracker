@@ -1,6 +1,6 @@
 import { and, count, eq } from 'drizzle-orm'
 import { categories, recurringExpenses, transactions } from '#/db/schema'
-import type { CategoryRow, TransactionType } from '#/lib/types'
+import type { CategoryRow, CategoryType } from '#/lib/types'
 import { withDb } from '#/data/repo/db'
 
 export async function listCategories() {
@@ -46,7 +46,7 @@ export async function listCategoriesWithUsage(): Promise<CategoryRow[]> {
 
 export async function createCategory(input: {
   name: string
-  type: TransactionType
+  type: CategoryType
 }) {
   return withDb(async (db) => {
     const name = input.name.trim()
@@ -71,7 +71,7 @@ export async function createCategory(input: {
 
 export async function updateCategory(
   id: string,
-  input: { name: string; type: TransactionType },
+  input: { name: string; type: CategoryType },
 ) {
   return withDb(async (db) => {
     const name = input.name.trim()

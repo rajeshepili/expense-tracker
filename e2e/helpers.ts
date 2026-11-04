@@ -8,8 +8,8 @@ import { tmpdir } from 'node:os'
 export async function waitForAppReady(page: Page) {
   await page.goto('/')
   await expect(
-    page.getByRole('heading', { name: 'Set up your local tracker' }).or(
-      page.getByRole('heading', { name: 'Overview' }),
+    page.getByRole('heading', { name: 'Set up this device' }).or(
+      page.getByRole('navigation', { name: 'Primary' }),
     ),
   ).toBeVisible({ timeout: 60_000 })
 }
@@ -22,11 +22,15 @@ export async function completeOnboarding(
 
   await waitForAppReady(page)
 
-  const setup = page.getByRole('heading', { name: 'Set up your local tracker' })
+  const setup = page.getByRole('heading', { name: 'Set up this device' })
   if (!(await setup.isVisible().catch(() => false))) {
     // Already seeded in this browser context.
     return
   }
+
+  // Landing hero sits above setup — ensure the form is in view before filling.
+  await page.getByRole('button', { name: 'Get started' }).click()
+  await expect(setup).toBeInViewport()
 
   await page.getByLabel(/Default monthly budget/i).fill(budget)
   await page
@@ -36,14 +40,30 @@ export async function completeOnboarding(
     .click()
   await page.getByRole('button', { name: 'Continue' }).click()
 
+  await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible({
+    timeout: 60_000,
+  })
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible({
     timeout: 60_000,
   })
 
+  // Tour auto-starts ~600ms after Overview with an inert full-screen blocker.
+  // Close it before the backup nudge, or Later stays unclickable.
+  const closeTour = page.getByRole('button', { name: /Skip|Close tour|Got it/i })
+  try {
+    await closeTour.waitFor({ state: 'visible', timeout: 5_000 })
+    await closeTour.click()
+    await expect(page.locator('[data-slot="tour-blocker"]')).toBeHidden({
+      timeout: 5_000,
+    })
+  } catch {
+    // Tour already done / skipped in this context.
+  }
+
   // First-run backup nudge — dismiss so it does not cover actions.
   const later = page.getByRole('button', { name: 'Later' })
   if (await later.isVisible().catch(() => false)) {
-    await later.click()
+    await later.click({ timeout: 10_000 })
   }
 }
 
@@ -69,7 +89,7 @@ export async function selectOption(
   await page.getByRole('option', { name: optionName }).click()
 }
 
-/** Desktop viewport mounts the table only (useIsMobile); smoke tests use Desktop Chrome. */
+/** Wide viewport (≥1024) mounts the table (useIsCompact); smoke tests use Desktop Chrome. */
 export function tableCell(page: Page, text: string) {
   return page.locator('table').getByRole('cell', { name: text, exact: true })
 }
@@ -108,13 +128,22 @@ export async function exportBackupToFile(page: Page): Promise<string> {
 
 /** Prefer desktop table action (Radix menus need a real, non-forced click). */
 export async function openRowActions(page: Page, label: string) {
-  const trigger = page
-    .locator('table')
-    .getByRole('button', { name: `Actions for ${label}` })
-  await trigger.scrollIntoViewIfNeeded()
-  await expect(trigger).toBeVisible()
-  await trigger.click()
-  await expect(page.getByRole('menu')).toBeVisible()
+  await expect(tableCell(page, label)).toBeVisible()
+  // Virtualized rows remount — retry once if the trigger detaches mid-click.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const trigger = page
+      .locator('table')
+      .getByRole('button', { name: `Actions for ${label}` })
+      .first()
+    await expect(trigger).toBeVisible()
+    try {
+      await trigger.click({ timeout: 5_000 })
+      await expect(page.getByRole('menu')).toBeVisible({ timeout: 5_000 })
+      return
+    } catch (error) {
+      if (attempt === 1) throw error
+    }
+  }
 }
 
 async function saveDownload(download: Download): Promise<string> {
@@ -161,8 +190,8 @@ export async function restoreBackupFromFile(page: Page, filePath: string) {
   ])
 
   const ready = page
-    .getByRole('heading', { name: 'Overview' })
-    .or(page.getByRole('heading', { name: 'Set up your local tracker' }))
+    .getByRole('navigation', { name: 'Primary' })
+    .or(page.getByRole('heading', { name: 'Set up this device' }))
 
   try {
     await expect(ready).toBeVisible({ timeout: 45_000 })

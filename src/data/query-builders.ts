@@ -1,26 +1,29 @@
-
 import type { Db } from './repository'
 import { and, eq, like, desc, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import {
   transactions,
   categories,
-  paymentMethods,
+  accounts,
   recurringExpenses,
   monthlyBudgets,
   savingsGoals,
 } from '#/db/schema'
 import { isYearMonth } from '#/lib/finance'
+import type { TransactionType } from '#/lib/types'
 import { transactionSelect, recurringSelect, savingsGoalSelect } from './selectors'
 
+export type TransactionFilterShape = {
+  month?: string
+  categoryId?: string
+  paymentMethodId?: string
+  accountId?: string
+  type?: TransactionType
+  q?: string
+}
+
 export function buildTransactionFilters(
-  filters: {
-    month?: string
-    categoryId?: string
-    paymentMethodId?: string
-    type?: 'income' | 'expense'
-    q?: string
-  } = {},
+  filters: TransactionFilterShape = {},
 ): SQL[] {
   const conditions: SQL[] = []
 
@@ -30,8 +33,9 @@ export function buildTransactionFilters(
   if (filters.categoryId) {
     conditions.push(eq(transactions.categoryId, filters.categoryId))
   }
-  if (filters.paymentMethodId) {
-    conditions.push(eq(transactions.paymentMethodId, filters.paymentMethodId))
+  const accountFilter = filters.accountId ?? filters.paymentMethodId
+  if (accountFilter) {
+    conditions.push(eq(transactions.accountId, accountFilter))
   }
   if (filters.type) {
     conditions.push(eq(transactions.type, filters.type))
@@ -40,7 +44,7 @@ export function buildTransactionFilters(
   if (needle) {
     const pattern = `%${needle}%`
     conditions.push(
-      sql`(lower(${transactions.description}) like ${pattern} or lower(${categories.name}) like ${pattern} or lower(coalesce(${paymentMethods.name}, '')) like ${pattern})`,
+      sql`(lower(${transactions.description}) like ${pattern} or lower(coalesce(${categories.name}, '')) like ${pattern} or lower(coalesce(${accounts.name}, '')) like ${pattern})`,
     )
   }
   return conditions
@@ -50,14 +54,14 @@ export function baseTransactionQuery(db: Db) {
   return db
     .select(transactionSelect)
     .from(transactions)
-    .innerJoin(categories, eq(transactions.categoryId, categories.id))
-    .leftJoin(paymentMethods, eq(transactions.paymentMethodId, paymentMethods.id))
+    .leftJoin(categories, eq(transactions.categoryId, categories.id))
+    .leftJoin(accounts, eq(transactions.accountId, accounts.id))
     .orderBy(desc(transactions.transactionDate), desc(transactions.createdAt))
 }
 
 export function applyTransactionFilters(
   query: ReturnType<typeof baseTransactionQuery>,
-  filters: { month?: string; categoryId?: string; paymentMethodId?: string; type?: 'income' | 'expense'; q?: string } = {},
+  filters: TransactionFilterShape = {},
 ) {
   const conditions = buildTransactionFilters(filters)
   return conditions.length > 0 ? query.where(and(...conditions)) : query
@@ -68,7 +72,7 @@ export function baseRecurringQuery(db: Db) {
     .select(recurringSelect)
     .from(recurringExpenses)
     .innerJoin(categories, eq(recurringExpenses.categoryId, categories.id))
-    .leftJoin(paymentMethods, eq(recurringExpenses.paymentMethodId, paymentMethods.id))
+    .leftJoin(accounts, eq(recurringExpenses.accountId, accounts.id))
 }
 
 export function baseSavingsGoalQuery(db: Db) {

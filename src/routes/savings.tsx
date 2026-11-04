@@ -1,7 +1,9 @@
-import { useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Plus, Target, ArrowRight } from 'lucide-react'
 import { ComposerFormModal } from '#/components/composer-form-modal'
+import { ConfirmDeleteDialog } from '#/components/confirm-delete-dialog'
+import { ContributeProgressDialog } from '#/components/contribute-progress-dialog'
 import { CategorySelect } from '#/components/entity-selects'
 import { Button } from '#/components/ui/button'
 import {
@@ -15,15 +17,25 @@ import { PageHeader } from '#/components/layout/page-header'
 import { PageError, PageLoading } from '#/components/layout/page-query-state'
 import { PageShell } from '#/components/layout/page-shell'
 import { CompletedGoalRow, SavingsGoalCard } from '#/components/savings-goal-card'
+import { motion } from '#/lib/motion'
 import type { SavingsGoalRow } from '#/lib/types'
 import { useSavingsList } from '#/lib/savings-list'
 import { useSavingsForm, emptySavingsForm } from '#/lib/savings-form'
 
+type SavingsSearch = {
+  new?: boolean
+}
+
 export const Route = createFileRoute('/savings')({
+  validateSearch: (search: Record<string, unknown>): SavingsSearch => ({
+    new: search.new === true || search.new === '1' || search.new === 1,
+  }),
   component: SavingsPage,
 })
 
 function SavingsPage() {
+  const navigate = useNavigate({ from: '/savings' })
+  const { new: openNew } = Route.useSearch()
   const {
     goals,
     activeGoals,
@@ -32,55 +44,93 @@ function SavingsPage() {
     incomeCategories,
     isLoading,
     isError,
+    errorMessage,
+    retry,
   } = useSavingsList()
 
   const [editing, setEditing] = useState<SavingsGoalRow | null>(null)
+  const [deleting, setDeleting] = useState<SavingsGoalRow | null>(null)
+  const [contributing, setContributing] = useState<SavingsGoalRow | null>(null)
   const [form, setForm] = useState(emptySavingsForm())
   const [composerOpen, setComposerOpen] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   function reset() {
     setEditing(null)
     setComposerOpen(false)
     setForm(emptySavingsForm())
+    setSaveError(null)
   }
 
   const {
     createMutation,
     updateMutation,
-    handleContribute,
+    deleteMutation,
     openCreate,
     openEdit,
   } = useSavingsForm({
     onClose: reset,
     editing,
+    deleting,
     form,
     setForm,
     setComposerOpen,
+    setEditing,
+    setDeleting,
     reset,
   })
 
+  useEffect(() => {
+    if (!openNew) return
+    let cancelled = false
+    void (async () => {
+      void motion.openOverlay('modal')
+      if (cancelled) {
+        motion.closeOverlay('modal')
+        return
+      }
+      openCreate()
+      void navigate({ search: {}, replace: true })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [openNew])
+
   function handleSubmit() {
     const targetAmount = Number(form.targetAmount)
-    if (!form.name.trim() || !Number.isFinite(targetAmount) || targetAmount <= 0) {
+    if (!form.name.trim()) {
+      setSaveError('Enter a goal name')
       return
     }
+    if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
+      setSaveError('Enter a target amount greater than 0')
+      return
+    }
+    setSaveError(null)
     if (editing) updateMutation.mutate()
     else createMutation.mutate()
   }
 
   if (isLoading) {
-    return <PageLoading label="Loading savings goals…" />
+    return <PageLoading label="Loading savings goals…" variant="savings" />
   }
 
   if (isError) {
-    return <PageError title="Could not load savings goals" />
+    return (
+      <PageError
+        title="Could not load goals"
+        message={errorMessage}
+        onRetry={retry}
+      />
+    )
   }
 
   return (
     <PageShell scroll="page">
       <PageHeader
-        title="Savings goals"
-        description="Targets you are working toward, plus optional deadlines."
+        title="Goals"
+        description="Savings targets you are working toward, plus optional deadlines."
         actions={
           <Button size="sm" onClick={openCreate}>
             <Plus data-icon="inline-start" />
@@ -104,7 +154,7 @@ function SavingsPage() {
           action={
             <Button size="sm" onClick={openCreate} className="w-full sm:w-auto">
               <Plus data-icon="inline-start" />
-              Add Goal
+              Add goal
             </Button>
           }
         />
@@ -123,7 +173,7 @@ function SavingsPage() {
                         size="sm"
                         variant="outline"
                         className="w-full"
-                        onClick={() => handleContribute(goal)}
+                        onClick={() => setContributing(goal)}
                       >
                         Add progress
                       </Button>
@@ -133,7 +183,19 @@ function SavingsPage() {
                         className="w-full"
                         onClick={() => openEdit(goal)}
                       >
-                        <ArrowRight className="size-4" />
+                        Edit
+                        <ArrowRight className="size-4" data-icon="inline-end" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="w-full text-destructive hover:text-destructive"
+                        onClick={() => {
+                          deleteMutation.reset()
+                          setDeleting(goal)
+                        }}
+                      >
+                        Delete
                       </Button>
                     </div>
                   }
@@ -148,13 +210,27 @@ function SavingsPage() {
                   key={goal.id}
                   goal={goal}
                   action={
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => openEdit(goal)}
-                    >
-                      <ArrowRight className="size-4" />
-                    </Button>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openEdit(goal)}
+                      >
+                        Edit
+                        <ArrowRight className="size-4" data-icon="inline-end" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          deleteMutation.reset()
+                          setDeleting(goal)
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   }
                 />
               ))}
@@ -177,6 +253,12 @@ function SavingsPage() {
         title={editing ? 'Edit savings goal' : 'Add savings goal'}
         description="Set a target amount and optional deadline. Link an income category to get prompted when you record matching income."
         pending={createMutation.isPending || updateMutation.isPending}
+        error={
+          saveError ??
+          createMutation.error?.message ??
+          updateMutation.error?.message ??
+          null
+        }
         onSubmit={handleSubmit}
       >
         <FieldGroup className="gap-4 py-2">
@@ -248,6 +330,29 @@ function SavingsPage() {
           </Field>
         </FieldGroup>
       </ComposerFormModal>
+
+      <ConfirmDeleteDialog
+        open={Boolean(deleting)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleting(null)
+            deleteMutation.reset()
+          }
+        }}
+        title={`Delete “${deleting?.name ?? 'goal'}”?`}
+        description="This savings goal will be removed. This cannot be undone."
+        pending={deleteMutation.isPending}
+        error={deleteMutation.error?.message ?? null}
+        onConfirm={() => deleteMutation.mutate()}
+      />
+
+      <ContributeProgressDialog
+        goal={contributing}
+        currency={currency}
+        onOpenChange={(open) => {
+          if (!open) setContributing(null)
+        }}
+      />
     </PageShell>
   )
 }

@@ -9,7 +9,7 @@ import {
 } from './helpers'
 
 test.describe('categories smoke @smoke', () => {
-  test('add → edit → delete category and payment method', async ({ page }) => {
+  test('add → edit → delete category and account', async ({ page }) => {
     await completeOnboarding(page, { mode: 'empty', budget: '2000' })
     await goToNav(page, 'Categories')
     await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible()
@@ -44,12 +44,12 @@ test.describe('categories smoke @smoke', () => {
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
     await expect(tableCell(page, 'Smoke Pets Renamed')).toHaveCount(0)
 
-    // ——— Payment method CRUD on same page ———
-    await page.getByRole('button', { name: /Add method/i }).click()
+    // ——— Account CRUD on same page ———
+    await page.getByRole('button', { name: /Add account/i }).click()
     await expect(
-      page.getByRole('heading', { name: 'Add method' }),
+      page.getByRole('heading', { name: 'Add account' }),
     ).toBeVisible()
-    await page.locator('#method-name').fill('Smoke Wallet')
+    await page.locator('#account-name').fill('Smoke Wallet')
     await dialogSave(page)
     await expect(tableCell(page, 'Smoke Wallet')).toBeVisible()
 

@@ -157,7 +157,7 @@ export function RecordRecurringControls({
             ) : null}
           </Field>
           <Field>
-            <FieldLabel htmlFor="record-method">Payment method</FieldLabel>
+            <FieldLabel htmlFor="record-method">Account</FieldLabel>
             <PaymentMethodSelect
               id="record-method"
               value={adjustDraft.paymentMethodId}
@@ -185,10 +185,9 @@ export function RecordRecurringControls({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={recording} className="hover-lift">Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={recording}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               disabled={recording}
-              className="hover-lift"
               onClick={(event) => {
                 event.preventDefault()
                 confirmForceRecord()

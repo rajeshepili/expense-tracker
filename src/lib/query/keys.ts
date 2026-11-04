@@ -2,7 +2,8 @@ export type TransactionsListKey = {
   month?: string
   categoryId?: string
   paymentMethodId?: string
-  type?: 'income' | 'expense'
+  accountId?: string
+  type?: 'income' | 'expense' | 'transfer'
   q?: string
   limit?: number
 }
@@ -18,7 +19,11 @@ export const queryKeys = {
     ['recurring', recurringId, 'transactions'] as const,
   categories: ['categories'] as const,
   categoriesUsage: ['categories', 'usage'] as const,
+  accounts: ['accounts'] as const,
+  accountsUsage: ['accounts', 'usage'] as const,
+  /** @deprecated use accounts */
   paymentMethods: ['paymentMethods'] as const,
+  /** @deprecated use accountsUsage */
   paymentMethodsUsage: ['paymentMethods', 'usage'] as const,
   savingsGoals: ['savingsGoals'] as const,
   overview: ['overview'] as const,

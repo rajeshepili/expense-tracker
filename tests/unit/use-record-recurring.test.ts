@@ -42,6 +42,8 @@ const bill: RecurringExpenseRow = {
   category: 'Housing',
   paymentMethod: null,
   paymentMethodId: null,
+  accountId: null,
+  account: null,
 }
 
 const recorded = {

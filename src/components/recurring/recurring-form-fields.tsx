@@ -83,7 +83,7 @@ export function RecurringFormFields({
         />
       </Field>
       <Field>
-        <FieldLabel htmlFor="recurring-method">Payment method</FieldLabel>
+        <FieldLabel htmlFor="recurring-method">Account</FieldLabel>
         <PaymentMethodSelect
           id="recurring-method"
           value={form.paymentMethodId}

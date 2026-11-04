@@ -11,21 +11,27 @@ import { cn } from 'cn'
 
 type RowActionsMenuProps = {
   label: string
-  onDelete: () => void
+  onDelete?: () => void
+  deleteLabel?: string
   onEdit?: () => void
   editLabel?: string
   editAsChild?: ReactElement
   onDuplicate?: () => void
+  onCloseAccount?: () => void
+  onReopenAccount?: () => void
   size?: 'touch' | 'compact'
 }
 
 export function RowActionsMenu({
   label,
   onDelete,
+  deleteLabel = 'Delete',
   onEdit,
   editLabel = 'Edit',
   editAsChild,
   onDuplicate,
+  onCloseAccount,
+  onReopenAccount,
   size = 'compact',
 }: RowActionsMenuProps) {
   return (
@@ -43,18 +49,26 @@ export function RowActionsMenu({
       <DropdownMenuContent align="end">
         {editAsChild ? (
           <DropdownMenuItem asChild>{editAsChild}</DropdownMenuItem>
-        ) : (
+        ) : onEdit ? (
           <DropdownMenuItem onClick={onEdit}>{editLabel}</DropdownMenuItem>
-        )}
+        ) : null}
         {onDuplicate ? (
           <DropdownMenuItem onClick={onDuplicate}>
             <Copy className="mr-2 size-4" aria-hidden />
             Duplicate
           </DropdownMenuItem>
         ) : null}
-        <DropdownMenuItem variant="destructive" onClick={onDelete}>
-          Delete
-        </DropdownMenuItem>
+        {onCloseAccount ? (
+          <DropdownMenuItem onClick={onCloseAccount}>Close</DropdownMenuItem>
+        ) : null}
+        {onReopenAccount ? (
+          <DropdownMenuItem onClick={onReopenAccount}>Reopen</DropdownMenuItem>
+        ) : null}
+        {onDelete ? (
+          <DropdownMenuItem variant="destructive" onClick={onDelete}>
+            {deleteLabel}
+          </DropdownMenuItem>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   )

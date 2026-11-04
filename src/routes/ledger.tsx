@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from '#/components/ui/card'
 import { ComposerFormModal } from '#/components/composer-form-modal'
-import { AnimatedMoney } from '#/components/animated-number'
 import { ConfirmDeleteDialog } from '#/components/confirm-delete-dialog'
 import { FundGoalDialog } from '#/components/fund-goal-dialog'
 import { EmptyState } from '#/components/layout/empty-state'
@@ -23,7 +22,7 @@ import { LedgerLists } from '#/components/ledger/ledger-lists'
 import { Kbd } from '#/components/ui/kbd'
 import { useLedgerPage } from '#/hooks/use-ledger-page'
 import type { LedgerSearch } from '#/lib/types'
-import { formatYearMonth, isYearMonth } from '#/lib/finance'
+import { formatYearMonth, isYearMonth, money } from '#/lib/finance'
 
 export const Route = createFileRoute('/ledger')({
   validateSearch: (search: Record<string, unknown>): LedgerSearch => {
@@ -32,6 +31,11 @@ export const Route = createFileRoute('/ledger')({
       monthRaw === 'all' || (monthRaw && isYearMonth(monthRaw))
         ? monthRaw
         : undefined
+    const typeRaw = typeof search.type === 'string' ? search.type : undefined
+    const type =
+      typeRaw === 'expense' || typeRaw === 'income' || typeRaw === 'transfer'
+        ? typeRaw
+        : undefined
     return {
       new: search.new === true || search.new === '1' || search.new === 1,
       edit: typeof search.edit === 'string' ? search.edit : undefined,
@@ -39,6 +43,7 @@ export const Route = createFileRoute('/ledger')({
       category:
         typeof search.category === 'string' ? search.category : undefined,
       method: typeof search.method === 'string' ? search.method : undefined,
+      type,
       q: typeof search.q === 'string' ? search.q : undefined,
     }
   },
@@ -52,7 +57,7 @@ function LedgerPage() {
   })
 
   if (ledger.status === 'loading') {
-    return <PageLoading label="Loading ledger…" />
+    return <PageLoading label="Loading ledger…" variant="ledger" />
   }
 
   if (ledger.status === 'error') {
@@ -72,9 +77,9 @@ function LedgerPage() {
     openEdit, bindOpenChange,
     monthFilter, categoryFilter, methodFilter, viewingMonth,
     categories, methods, filteredCategories, rows, totals, currency,
-    listMode, filterChips,
-    saveMutation, deleteMutation, openCreateInContext, openDuplicate,
-    goMonth, clearFilters, setSearchFilter, filterByMethod, setType,
+    monthFetching, listMode, filterChips,
+    saveMutation, deleteMutation, transferMutation, openCreateInContext, openDuplicate,
+    goMonth, clearFilters, clearChip, setSearchFilter, filterByMethod, setType,
     submitForm, askDelete, deleting, setDeleting,
   } = ledger
 
@@ -91,8 +96,8 @@ function LedgerPage() {
           <p className="mb-2">
             Add your first expense or income to start tracking.
           </p>
-          <p className="text-xs text-muted-foreground">
-            Tap <Kbd className="mx-1">N</Kbd> or the button below to begin.
+          <p className="hidden text-xs text-muted-foreground lg:block">
+            Press <Kbd className="mx-1">N</Kbd> or use the button below to begin.
           </p>
         </>
       }
@@ -104,7 +109,7 @@ function LedgerPage() {
         >
           <Plus data-icon="inline-start" />
           Add Transaction
-          <Kbd primary className="ml-1.5">
+          <Kbd primary className="ml-1.5 hidden lg:inline-flex">
             N
           </Kbd>
         </Button>
@@ -139,7 +144,12 @@ function LedgerPage() {
       <PageHeader
         title="Ledger"
         description={
-          <MonthNav monthFilter={monthFilter} viewingMonth={viewingMonth} onGoMonth={goMonth} />
+          <MonthNav
+            monthFilter={monthFilter}
+            viewingMonth={viewingMonth}
+            onGoMonth={goMonth}
+            fetching={monthFetching}
+          />
         }
         actions={
           <ComposerFormModal
@@ -150,14 +160,26 @@ function LedgerPage() {
                 <Plus data-icon="inline-start" />
                 <span className="md:hidden">Add</span>
                 <span className="hidden md:inline">Add transaction</span>
-                <Kbd primary className="ml-1.5">
+                <Kbd primary className="ml-1.5 hidden lg:inline-flex">
                   N
                 </Kbd>
               </Button>
             }
-            title={editing ? 'Edit transaction' : 'Add transaction'}
-            description="Saved on this device."
-            pending={saveMutation.isPending}
+            title={
+              form.type === 'transfer'
+                ? editing
+                  ? 'Edit transfer'
+                  : 'Add transfer'
+                : editing
+                  ? 'Edit transaction'
+                  : 'Add transaction'
+            }
+            description={
+              form.type === 'transfer'
+                ? 'Moves money between accounts. Both sides stay linked.'
+                : 'Saved on this device.'
+            }
+            pending={saveMutation.isPending || transferMutation.isPending}
             error={saveError}
             onSubmit={submitForm}
           >
@@ -173,22 +195,17 @@ function LedgerPage() {
         }
       />
 
-      <Card className="flex min-h-0 flex-1 flex-col gap-0 py-0">
+      <Card
+        className="month-view flex min-h-0 flex-1 flex-col gap-0 py-0"
+        aria-busy={monthFetching || undefined}
+      >
         <CardHeader className="shrink-0 border-b py-3">
           <CardTitle className="text-base">Transactions</CardTitle>
           <CardDescription>
             {rows.length} {rows.length === 1 ? 'entry' : 'entries'} ·{' '}
-            <AnimatedMoney
-              amount={totals.expenses}
-              currency={currency}
-              showDelta={false}
-            />{' '}
+            <span className="tabular-nums">{money(totals.expenses, currency)}</span>{' '}
             spent ·{' '}
-            <AnimatedMoney
-              amount={totals.income}
-              currency={currency}
-              showDelta={false}
-            />{' '}
+            <span className="tabular-nums">{money(totals.income, currency)}</span>{' '}
             income
           </CardDescription>
         </CardHeader>
@@ -206,6 +223,7 @@ function LedgerPage() {
             onMethodChange={(method) => setSearchFilter({ method })}
             chips={filterChips}
             onClearFilters={clearFilters}
+            onClearChip={clearChip}
           />
           <LedgerLists
             rows={rows}
@@ -229,8 +247,16 @@ function LedgerPage() {
             deleteMutation.reset()
           }
         }}
-        title={`Delete “${deleting?.description ?? 'transaction'}”?`}
-        description="This transaction will be removed. This cannot be undone."
+        title={
+          deleting?.type === 'transfer'
+            ? `Delete transfer “${deleting.description}”?`
+            : `Delete “${deleting?.description ?? 'transaction'}”?`
+        }
+        description={
+          deleting?.type === 'transfer'
+            ? 'Both linked transfer legs will be removed. This cannot be undone.'
+            : 'This transaction will be removed. This cannot be undone.'
+        }
         pending={deleteMutation.isPending}
         error={deleteMutation.error?.message ?? null}
         onConfirm={() => {

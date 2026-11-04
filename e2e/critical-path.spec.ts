@@ -4,6 +4,7 @@ import {
   dialogSave,
   exportBackupToFile,
   goToNav,
+  openRowActions,
   selectOption,
   tableCell,
   tableRow,
@@ -40,10 +41,7 @@ test.describe('critical path smoke @smoke', () => {
     ).toBeHidden()
 
     // ——— Edit transaction ———
-    await page
-      .locator('table')
-      .getByRole('button', { name: 'Actions for Smoke coffee' })
-      .click()
+    await openRowActions(page, 'Smoke coffee')
     await page.getByRole('menuitem', { name: 'Edit' }).click()
     await expect(
       page.getByRole('heading', { name: 'Edit transaction' }),
@@ -55,18 +53,16 @@ test.describe('critical path smoke @smoke', () => {
     await expect(tableCell(page, 'Smoke coffee')).toHaveCount(0)
 
     // ——— Delete transaction ———
-    await page
-      .locator('table')
-      .getByRole('button', { name: 'Actions for Smoke latte' })
-      .click()
+    await openRowActions(page, 'Smoke latte')
     await page.getByRole('menuitem', { name: 'Delete' }).click()
     await expect(
       page.getByRole('heading', { name: /Delete “Smoke latte”/ }),
     ).toBeVisible()
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
     await expect(tableCell(page, 'Smoke latte')).toHaveCount(0)
+    // Empty fill is outside <table> when there are no rows (virtualized list).
     await expect(
-      page.locator('table [data-slot="empty-title"]').filter({
+      page.locator('[data-slot="empty-title"]').filter({
         hasText: /No transactions/,
       }),
     ).toBeVisible()

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '#/lib/query/keys'
-import { listRecurring, getSettings, getMonthBudget, listCategories, listPaymentMethods } from '#/data/repository'
+import { listRecurring, getSettings, getMonthBudget, listCategories, listAccounts } from '#/data/repository'
 import { sortRecurring } from '#/lib/recurring-form'
 import { formatQueryError } from '#/lib/errors'
 
@@ -27,8 +27,8 @@ export function useRecurringList() {
   })
 
   const methodsQuery = useQuery({
-    queryKey: queryKeys.paymentMethods,
-    queryFn: listPaymentMethods,
+    queryKey: queryKeys.accounts,
+    queryFn: listAccounts,
   })
 
   const items = useMemo(
@@ -41,7 +41,9 @@ export function useRecurringList() {
   const expenseCategories = (categoriesQuery.data ?? []).filter(
     (c) => c.type === 'expense',
   )
-  const paymentMethods = methodsQuery.data ?? []
+  const paymentMethods = (methodsQuery.data ?? [])
+    .filter((account) => !account.closed)
+    .map((account) => ({ id: account.id, name: account.name }))
 
   const isLoading = recurringQuery.isPending || settingsQuery.isPending || monthBudgetQuery.isPending
   const isError = recurringQuery.isError || settingsQuery.isError || monthBudgetQuery.isError

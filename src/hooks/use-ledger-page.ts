@@ -1,16 +1,26 @@
 import { useRef, useEffect, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import type { FundGoalOffer } from '#/components/fund-goal-dialog'
-import type { LedgerSearch, LedgerTransaction, TransactionType } from '#/lib/types'
+import type {
+  CategoryType,
+  LedgerSearch,
+  LedgerTransaction,
+  TransactionType,
+} from '#/lib/types'
 import { currentYearMonth } from '#/lib/finance'
 import { readTransactionDefaults } from '#/lib/transaction-defaults'
 import { useLedgerList } from '#/lib/ledger-list'
 import { useLedgerFilters } from '#/lib/ledger-filters'
-import { useLedgerForm, emptyLedgerForm, formFromTransaction } from '#/lib/ledger-form'
+import {
+  useLedgerForm,
+  emptyLedgerForm,
+  formFromTransaction,
+  prepareTransferEdit,
+} from '#/lib/ledger-form'
 import type { LedgerFormState } from '#/lib/ledger-form'
 import { useComposer } from '#/hooks/use-composer'
 import { useCreateHotkey } from './use-create-hotkey'
-import { motion } from '#/lib/motion'
+import { motion, resolveMonthDirection } from '#/lib/motion'
 
 type LedgerNavigate = (opts: {
   search: LedgerSearch | ((prev: LedgerSearch) => LedgerSearch)
@@ -37,7 +47,7 @@ type LedgerPageReady = { status: 'ready' } & ReturnType<typeof useLedgerForm> & 
   categoryFilter: string | undefined
   methodFilter: string | undefined
   viewingMonth: string | null
-  categories: { id: string; name: string; type: TransactionType }[]
+  categories: { id: string; name: string; type: CategoryType }[]
   methods: { id: string; name: string }[]
   rows: LedgerTransaction[]
   isCurrentMonth: boolean
@@ -46,6 +56,7 @@ type LedgerPageReady = { status: 'ready' } & ReturnType<typeof useLedgerForm> & 
   setFundOffer: (offer: FundGoalOffer | null) => void
   filteredCategories: { id: string; name: string }[]
   currency: string
+  monthFetching: boolean
   goMonth: (month: string) => void
   setSearchFilter: (patch: { category?: string | null; method?: string | null; month?: string }) => void
   filterByMethod: (methodId: string) => void
@@ -75,16 +86,40 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
     form,
     saveError,
     composerOpen,
+    setEditing,
     setForm,
     setSaveError,
     setComposerOpen,
-    openEdit,
+    openEdit: openEditRow,
     reset,
     bindOpenChange,
   } = useComposer<LedgerFormState, LedgerTransaction>({
     emptyForm: emptyLedgerForm,
     formFromRow: formFromTransaction,
   })
+
+  function openEdit(row: LedgerTransaction) {
+    if (row.type === 'transfer') {
+      void (async () => {
+        setSaveError(null)
+        try {
+          const next = await prepareTransferEdit(row)
+          setEditing(row)
+          setForm(next)
+          setComposerOpen(true)
+        } catch (error) {
+          setSaveError(
+            error instanceof Error
+              ? error.message
+              : 'Could not open transfer',
+          )
+          setComposerOpen(true)
+        }
+      })()
+      return
+    }
+    openEditRow(row)
+  }
 
   const setFormForReturn = setForm as (fn: (current: LedgerFormState) => LedgerFormState) => void
 
@@ -100,6 +135,7 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
     viewingMonth,
     listQueryKey,
     isLoading,
+    isFetching,
     isError,
     errorMessage,
     currency,
@@ -112,7 +148,7 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
 
   const {
     filter,
-    setFilter: setFilterState,
+    setFilter: setFilterFromHook,
     query,
     setQuery: setQueryState,
     totals,
@@ -120,6 +156,7 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
     filterChips,
     stripComposerSearch,
     clearFilters,
+    clearChip,
     categoryFilterName,
     methodFilterName,
   } = useLedgerFilters({
@@ -134,11 +171,9 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
   queryRef.current = query
 
   const setFilter: Dispatch<SetStateAction<'all' | TransactionType>> = (next) => {
-    setFilterState((prev) => {
-      const value = typeof next === 'function' ? next(prev) : next
-      filterRef.current = value
-      return value
-    })
+    const value = typeof next === 'function' ? next(filter) : next
+    filterRef.current = value
+    setFilterFromHook(value)
   }
   const setQuery: Dispatch<SetStateAction<string>> = (next) => {
     setQueryState((prev) => {
@@ -148,13 +183,15 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
     })
   }
 
-  const filteredCategories = categories.filter((c) =>
-    form.type === 'income' ? c.type === 'income' : c.type === 'expense',
-  )
+  const filteredCategories = categories.filter((c) => {
+    if (form.type === 'transfer') return false
+    return form.type === 'income' ? c.type === 'income' : c.type === 'expense'
+  })
 
   const {
     saveMutation,
     deleteMutation,
+    transferMutation,
     openCreateInContext,
     openDuplicate,
     submitForm,
@@ -208,7 +245,7 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
     if (!openNew && !row) return
     let cancelled = false
     void (async () => {
-      await motion.openOverlay('modal')
+      void motion.openOverlay('modal')
       if (cancelled) {
         motion.closeOverlay('modal')
         return
@@ -223,7 +260,7 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
   }, [openNew, editId, rows])
 
   useEffect(() => {
-    if (!composerOpen || editing) return
+    if (!composerOpen || editing || form.type === 'transfer') return
     if (form.categoryId && filteredCategories.some((c) => c.id === form.categoryId)) return
     const preferred = readTransactionDefaults().categoryIdByType[form.type]
     const next = filteredCategories.find((c) => c.id === preferred) ?? filteredCategories[0]
@@ -285,15 +322,32 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
     rows,
     totals,
     currency,
+    monthFetching: isFetching,
     isCurrentMonth,
     listMode,
     filterChips,
     saveMutation,
     deleteMutation,
+    transferMutation,
     openCreateInContext,
     openDuplicate,
-    goMonth: (month: string) => navigate({ search: (prev) => ({ ...prev, month }), replace: true }),
+    goMonth: (month: string) => {
+      if (!motion.can('navigate')) return
+      const current = monthFilter ?? currentYearMonth()
+      const direction = resolveMonthDirection(current, month)
+      void motion.coalesceNavigate(`ledger-month:${month}`, async () => {
+        motion.month(
+          () =>
+            void navigate({
+              search: (prev) => ({ ...prev, month }),
+              replace: true,
+            }),
+          direction,
+        )
+      })
+    },
     clearFilters,
+    clearChip,
     setSearchFilter: (patch: { category?: string | null; method?: string | null; month?: string }) => {
       navigate({
         search: (prev: LedgerSearch) => {
@@ -318,7 +372,14 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
       setFormForReturn((current) => ({
         ...current,
         type,
-        categoryId: defaults.categoryIdByType[type] ?? '',
+        categoryId:
+          type === 'transfer'
+            ? ''
+            : (defaults.categoryIdByType[type] ?? ''),
+        fromAccountId: type === 'transfer' ? current.fromAccountId : '',
+        toAccountId: type === 'transfer' ? current.toAccountId : '',
+        paymentMethodId:
+          type === 'transfer' ? '' : current.paymentMethodId,
       }))
     },
     submitForm,

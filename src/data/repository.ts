@@ -20,12 +20,21 @@ export {
 } from '#/data/repo/categories'
 
 export {
+  listAccounts,
+  listAccountsWithBalances,
+  getAccount,
+  getAccountBalance,
+  createAccount,
+  updateAccount,
+  closeAccount,
+  deleteAccount,
+  assertAccountOpen,
   listPaymentMethods,
   listPaymentMethodsWithUsage,
   createPaymentMethod,
   updatePaymentMethod,
   deletePaymentMethod,
-} from '#/data/repo/payment-methods'
+} from '#/data/repo/accounts'
 
 export type { ListTransactionsFilters } from '#/data/repo/transactions'
 export {
@@ -36,6 +45,15 @@ export {
   deleteTransaction,
   listTransactionsForRecurring,
 } from '#/data/repo/transactions'
+
+export {
+  createTransfer,
+  updateTransfer,
+  deleteTransfer,
+  getTransferPair,
+  linkAsTransfer,
+  repairOrphanTransfers,
+} from '#/data/repo/transfers'
 
 export type {
   RecordRecurringOverrides,

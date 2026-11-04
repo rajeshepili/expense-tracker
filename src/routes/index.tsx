@@ -1,9 +1,15 @@
-import { Suspense, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router'
-import { HardDrive, Plus, Wallet } from 'lucide-react'
+import { HardDrive, MoreHorizontal, Plus, Wallet } from 'lucide-react'
 import { Kbd } from '#/components/ui/kbd'
 import { Button } from '#/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu'
 import { ConfirmDeleteDialog } from '#/components/confirm-delete-dialog'
 import { MonthNav } from '#/components/layout/month-nav'
 import { PageHeader } from '#/components/layout/page-header'
@@ -31,16 +37,16 @@ import { invalidateAfter } from '#/lib/query/invalidation'
 import { navigateAfterPrefetch } from '#/lib/navigate-after-prefetch'
 import { prefetchRoute } from '#/lib/query/prefetch'
 import { queryKeys } from '#/lib/query/keys'
-import { OverviewStatsSkeleton, OverviewRecentSkeleton, CategoriesSkeleton, RecurringSkeleton, SavingsSummarySkeleton } from '#/components/overview/overview-skeletons'
+import { OverviewBodySkeleton } from '#/components/layout/page-skeletons'
 import { OverviewMonthStats } from '#/components/overview/overview-month-stats'
 import { OverviewRecentTransactions } from '#/components/overview/overview-recent-transactions'
 import { OverviewCategoryBudget } from '#/components/overview/overview-category-budget'
 import { OverviewRecurringPanel } from '#/components/overview/overview-recurring-panel'
+import { OverviewAccountsPanel } from '#/components/overview/overview-accounts-panel'
 import { BackupModal } from '#/components/backup-modal'
 import { BudgetModal } from '#/components/budget-modal'
 import type { LedgerTransaction } from '#/lib/types'
-import { withViewTransition } from '#/lib/view-transition'
-import { motion } from '#/lib/motion'
+import { motion, resolveMonthDirection } from '#/lib/motion'
 
 
 type OverviewSearch = {
@@ -89,23 +95,21 @@ function Home() {
 
   function goMonth(next: string) {
     if (!motion.can('navigate')) return
-    const direction = next > yearMonth ? 'month-forward' : 'month-back'
+    const direction = resolveMonthDirection(yearMonth, next)
     const prefetch = queryClient.prefetchQuery({
       queryKey: queryKeys.overviewMonth(next),
       queryFn: () => fetchOverview(next),
     })
     void motion.coalesceNavigate(`month:${next}`, async () => {
       await prefetch.catch(() => {})
-      const doNavigate = () =>
-        navigate({
-          to: '/',
-          search: next === currentYearMonth() ? {} : { month: next },
-        })
-      const vt = withViewTransition(() => void doNavigate(), [direction], {
-        out: direction === 'month-back' ? 'month-out-down' : 'month-out-up',
-        in: direction === 'month-back' ? 'month-in-up' : 'month-in-down',
-      })
-      motion.trackPage(vt)
+      motion.month(
+        () =>
+          void navigate({
+            to: '/',
+            search: next === currentYearMonth() ? {} : { month: next },
+          }),
+        direction,
+      )
     })
   }
 
@@ -115,7 +119,12 @@ function Home() {
       await deleteTransaction(deleting.id)
     },
     onSuccess: async () => {
-      await invalidateAfter(queryClient, ['transactions', 'categories'])
+      await invalidateAfter(queryClient, [
+        'transactions',
+        'categories',
+        'accounts',
+        'transfers',
+      ])
       setDeleting(null)
     },
   })
@@ -130,8 +139,29 @@ function Home() {
 
   if (overviewQuery.isPending) {
     return (
-      <PageShell scroll="page">
-        <OverviewStatsSkeleton />
+      <PageShell scroll="page" aria-busy="true" aria-live="polite" aria-label="Loading overview…">
+        <span className="sr-only">Loading overview…</span>
+        <PageHeader
+          title="Overview"
+          description={
+            <nav aria-label="Month navigation">
+              <MonthNav
+                monthFilter={monthParam}
+                viewingMonth={yearMonth}
+                onGoMonth={goMonth}
+              />
+            </nav>
+          }
+          actions={
+            <div className="flex w-full gap-1.5 sm:w-auto sm:items-center">
+              <Button size="sm" className="flex-1 sm:flex-none" disabled>
+                <Plus data-icon="inline-start" />
+                Add
+              </Button>
+            </div>
+          }
+        />
+        <OverviewBodySkeleton />
       </PageShell>
     )
   }
@@ -158,9 +188,13 @@ function Home() {
     upcomingRecurring,
     settings,
     monthBudget,
+    accounts: overviewAccounts,
+    netWorth,
   } = overviewQuery.data
   const monthLabel = formatYearMonth(monthBudget.yearMonth)
   const paymentMethods = methodsQuery.data ?? []
+  const monthFetching =
+    overviewQuery.isFetching && !overviewQuery.isPending
 
   return (
     <PageShell scroll="page">
@@ -174,15 +208,38 @@ function Home() {
               monthFilter={monthParam}
               viewingMonth={yearMonth}
               onGoMonth={goMonth}
+              fetching={monthFetching}
             />
           </nav>
         }
         actions={
-          <div className="flex w-full gap-1.5 sm:w-auto sm:items-center">
+          <div className="flex w-full items-center justify-end gap-1.5 sm:w-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-11 min-w-11 lg:hidden"
+                  aria-label="More overview actions"
+                >
+                  <MoreHorizontal aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-40">
+                <DropdownMenuItem onSelect={() => setBackupOpen(true)}>
+                  <HardDrive aria-hidden />
+                  Backup
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
+                  <Wallet aria-hidden />
+                  Budget
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 sm:flex-none hover-lift"
+              className="hidden lg:inline-flex"
               onClick={() => setBackupOpen(true)}
             >
               <HardDrive aria-hidden="true" data-icon="inline-start" />
@@ -191,13 +248,13 @@ function Home() {
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 sm:flex-none hover-lift"
+              className="hidden lg:inline-flex"
               onClick={() => setSettingsOpen(true)}
             >
               <Wallet aria-hidden="true" data-icon="inline-start" />
               Budget
             </Button>
-            <Button asChild size="sm" className="flex-1 sm:flex-none hover-lift" data-tour="add">
+            <Button asChild size="sm" className="min-h-11 flex-1 sm:flex-none hover-lift" data-tour="add">
               <Link
                 to="/ledger"
                 search={{ new: true, month: yearMonth }}
@@ -222,8 +279,10 @@ function Home() {
         }
       />
 
-      <div className="month-view flex min-h-0 flex-col gap-4 md:gap-5">
-      <Suspense fallback={<OverviewStatsSkeleton />}>
+      <div
+        className="month-view flex min-h-0 flex-col gap-4 md:gap-5"
+        aria-busy={monthFetching || undefined}
+      >
         <OverviewMonthStats
           yearMonth={yearMonth}
           currency={settings.currency}
@@ -233,11 +292,9 @@ function Home() {
           budgetUsed={budgetUsed}
           monthBudget={monthBudget}
         />
-      </Suspense>
 
       <section className="grid shrink-0 gap-3 md:gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(16rem,1fr)]">
         <div className="flex min-w-0 flex-col gap-3 md:gap-4">
-          <Suspense fallback={<OverviewRecentSkeleton />}>
             <OverviewRecentTransactions
               yearMonth={yearMonth}
               currency={settings.currency}
@@ -247,14 +304,15 @@ function Home() {
                 setDeleting(transaction)
               }}
             />
-          </Suspense>
-          <Suspense fallback={<SavingsSummarySkeleton />}>
             <SavingsSummary />
-          </Suspense>
+          <OverviewAccountsPanel
+            currency={settings.currency}
+            accounts={overviewAccounts}
+            netWorth={netWorth}
+          />
         </div>
 
         <div className="flex min-w-0 flex-col gap-3 md:gap-4">
-          <Suspense fallback={<CategoriesSkeleton />}>
             <OverviewCategoryBudget
               yearMonth={yearMonth}
               monthLabel={monthLabel}
@@ -264,8 +322,6 @@ function Home() {
               categoryView={categoryView}
               onCategoryViewChange={setCategoryView}
             />
-          </Suspense>
-          <Suspense fallback={<RecurringSkeleton />}>
             <OverviewRecurringPanel
               currency={settings.currency}
               recurringMonthly={recurringMonthly}
@@ -273,7 +329,6 @@ function Home() {
               upcomingRecurring={upcomingRecurring}
               recorder={recorder}
             />
-          </Suspense>
         </div>
       </section>
 
@@ -297,8 +352,16 @@ function Home() {
             deleteMutation.reset()
           }
         }}
-        title={`Delete “${deleting?.description ?? 'transaction'}”?`}
-        description="This transaction will be removed. This cannot be undone."
+        title={
+          deleting?.type === 'transfer'
+            ? `Delete transfer “${deleting.description}”?`
+            : `Delete “${deleting?.description ?? 'transaction'}”?`
+        }
+        description={
+          deleting?.type === 'transfer'
+            ? 'Both linked transfer legs will be removed. This cannot be undone.'
+            : 'This transaction will be removed. This cannot be undone.'
+        }
         pending={deleteMutation.isPending}
         error={deleteMutation.error?.message ?? null}
         onConfirm={() => deleteMutation.mutate()}
