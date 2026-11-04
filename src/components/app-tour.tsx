@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouterState } from '@tanstack/react-router'
 import { TourProvider, useTour } from '#/components/ui/tour'
 import type { TourStep } from '#/components/ui/tour'
+import { APP_NAME } from '#/lib/brand'
 import { isTourDone, markTourDone } from '#/lib/tour'
 import { motion } from '#/lib/motion'
 
 const STEPS: TourStep[] = [
   {
-    title: 'Welcome to Expense Tracker',
+    title: `Welcome to ${APP_NAME}`,
     content:
       'Everything here lives only in this browser. Let\'s take a quick look around.',
   },
@@ -26,7 +27,8 @@ const STEPS: TourStep[] = [
     target: '[data-tour="stats"]',
     side: 'bottom',
     title: 'This month at a glance',
-    content: 'Tap any stat to open the ledger for that month.',
+    content:
+      'Tap Income or Expenses to open the ledger filtered to that type for the month.',
   },
   {
     target: '[data-tour="recent"]',

@@ -425,7 +425,7 @@ function TourPopover({
         >
           <PopoverPrimitive.Popup
             data-slot="tour-popover"
-            className="flex w-80 origin-(--transform-origin) flex-col gap-3 rounded-2xl bg-popover p-4 text-sm text-popover-foreground shadow-2xl ring-1 ring-foreground/5 outline-hidden duration-enter data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95"
+            className="flex w-80 origin-(--transform-origin) flex-col gap-3 rounded-2xl bg-popover p-4 text-sm text-popover-foreground shadow-2xl ring-1 ring-foreground/5 outline-hidden"
           >
             {targetEl && (
               <PopoverPrimitive.Arrow

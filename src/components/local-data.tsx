@@ -79,7 +79,7 @@ export function LocalDataCallout({
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="flex min-h-11 min-w-0 flex-1 touch-manipulation items-center justify-between gap-2 text-left transition-transform duration-settle ease-settle hover-lift active:scale-[0.97]"
+              className="flex min-h-11 min-w-0 flex-1 touch-manipulation items-center justify-between gap-2 text-left transition-transform duration-settle ease-settle active:scale-[0.97]"
             >
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">
@@ -123,19 +123,30 @@ export function LocalDataCallout({
 
 export function BackupReminder({ className }: { className?: string }) {
   const [open, setOpen] = useState(false)
+  const [phase, setPhase] = useState<'in' | 'out'>('in')
   const [pending, setPending] = useState(false)
   const [lastLabel, setLastLabel] = useState(() =>
     formatLastExportLabel(getLastExportAt()),
   )
 
   useEffect(() => {
-    setOpen(shouldShowBackupReminder())
+    if (shouldShowBackupReminder()) {
+      setPhase('in')
+      setOpen(true)
+    }
   }, [])
+
+  function closeReminder() {
+    setPhase('out')
+    window.setTimeout(() => setOpen(false), 160)
+  }
 
   if (!open) return null
 
   return (
-    <Alert className={cn(className)}>
+    <Alert
+      className={cn(className, phase === 'out' && 'dismiss-fade-out')}
+    >
       <Download />
       <AlertTitle>Download a backup</AlertTitle>
       <AlertDescription>
@@ -150,10 +161,9 @@ export function BackupReminder({ className }: { className?: string }) {
             variant="outline"
             size="sm"
             disabled={pending}
-            className="hover-lift"
             onClick={() => {
               dismissBackupReminder()
-              setOpen(false)
+              closeReminder()
             }}
           >
             Later
@@ -163,10 +173,10 @@ export function BackupReminder({ className }: { className?: string }) {
             variant="ghost"
             size="sm"
             disabled={pending}
-            className="hover-lift text-muted-foreground"
+            className="text-muted-foreground"
             onClick={() => {
               hideBackupReminderForever()
-              setOpen(false)
+              closeReminder()
             }}
           >
             Don&apos;t show again
@@ -175,13 +185,12 @@ export function BackupReminder({ className }: { className?: string }) {
             type="button"
             size="sm"
             disabled={pending}
-            className="hover-lift"
             onClick={() => {
               setPending(true)
               void downloadBackup()
                 .then(() => {
                   setLastLabel(formatLastExportLabel(getLastExportAt()))
-                  setOpen(false)
+                  closeReminder()
                   toast.success('Backup exported')
                 })
                 .catch((err: unknown) => {
@@ -225,7 +234,6 @@ export function BackupPanel() {
           variant="outline"
           size="sm"
           disabled={busy}
-          className="hover-lift"
           onClick={() => {
             setExporting(true)
             setError(null)
@@ -250,7 +258,6 @@ export function BackupPanel() {
           variant="outline"
           size="sm"
           disabled={busy}
-          className="hover-lift"
           onClick={() => inputRef.current?.click()}
         >
           <Upload data-icon="inline-start" />

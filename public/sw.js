@@ -1,5 +1,5 @@
 /**
- * Service Worker for Expense Tracker PWA
+ * Service Worker for Pocketbook PWA
  * Caches shell assets for offline use.
  */
 

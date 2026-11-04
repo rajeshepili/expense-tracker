@@ -1,7 +1,7 @@
 {
-  "name": "Expense Tracker",
-  "short_name": "Expenses",
-  "description": "Personal, local-only expense tracker. Data stays in this browser.",
+  "name": "Pocketbook",
+  "short_name": "Pocketbook",
+  "description": "Personal, local-only money tracker. Data stays in this browser — no account, no cloud sync.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
