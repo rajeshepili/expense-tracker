@@ -1,4 +1,5 @@
-import { Plus } from 'lucide-react'
+import { useRef } from 'react'
+import { Plus, Tags } from 'lucide-react'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
@@ -10,12 +11,14 @@ import {
 import { VirtualizedDataList } from '#/components/ui/virtualized-data-list'
 import { EmptyState } from '#/components/layout/empty-state'
 import { MobileListRow } from '#/components/layout/mobile-list'
-import { TableEmptyRow } from '#/components/layout/page-shell'
 import { RowActionsMenu } from '#/components/row-actions-menu'
-import type { CategoryRow } from '#/lib/types'
+import { useFlipList } from '#/hooks/use-flip-list'
+import type { CategoryRow, CategoryType } from '#/lib/types'
 
 type CategoryListsProps = {
   rows: CategoryRow[]
+  filter?: 'all' | CategoryType
+  totalCount?: number
   onCreate: () => void
   onEdit: (row: CategoryRow) => void
   onDelete: (row: CategoryRow) => void
@@ -23,14 +26,37 @@ type CategoryListsProps = {
 
 export function CategoryLists({
   rows,
+  filter = 'all',
+  totalCount,
   onCreate,
   onEdit,
   onDelete,
 }: CategoryListsProps) {
+  const listRef = useRef<HTMLElement | null>(null)
+  const { isEntering, isExiting } = useFlipList(listRef, rows, (row) => row.id)
+
+  function flipState(id: string): 'enter' | 'exit' | undefined {
+    if (isExiting(id)) return 'exit'
+    if (isEntering(id)) return 'enter'
+    return undefined
+  }
+
+  const filteredEmpty =
+    filter !== 'all' && (totalCount ?? 0) > 0 && rows.length === 0
+
   const empty = (
     <EmptyState
-      title="No categories yet"
-      description="Add a category to get started."
+      icon={<Tags />}
+      title={
+        filteredEmpty
+          ? `No ${filter} categories`
+          : 'No categories yet'
+      }
+      description={
+        filteredEmpty
+          ? `Switch to All, or add a new ${filter} category.`
+          : 'Add a category to get started.'
+      }
       action={
         <Button size="sm" onClick={onCreate}>
           <Plus data-icon="inline-start" />
@@ -43,13 +69,13 @@ export function CategoryLists({
   return (
     <VirtualizedDataList
       layout="flow"
+      listRootRef={listRef}
       items={rows}
       getItemKey={(row) => row.id}
       mobileEstimateSize={56}
       desktopEstimateSize={40}
       colSpan={5}
       empty={empty}
-      desktopEmpty={<TableEmptyRow colSpan={5}>{empty}</TableEmptyRow>}
       mobileClassName="overflow-y-auto overscroll-contain"
       header={
         <TableHeader>
@@ -68,52 +94,75 @@ export function CategoryLists({
           </TableRow>
         </TableHeader>
       }
-      renderMobile={(category) => (
-        <MobileListRow
-          key={category.id}
-          title={category.name}
-          meta={`${category.type} · ${category.transactionCount} txn${category.recurringCount ? ` · ${category.recurringCount} bills` : ''}`}
-          onClick={() => onEdit(category)}
-          actions={
-            <RowActionsMenu
-              label={category.name}
-              size="touch"
-              onEdit={() => onEdit(category)}
-              onDelete={() => onDelete(category)}
-            />
-          }
-        />
-      )}
-      renderDesktop={(category) => (
-        <TableRow key={category.id}>
-          <TableCell className="font-medium">{category.name}</TableCell>
-          <TableCell>
-            <Badge
-              variant="outline"
-              className={
-                category.type === 'income'
-                  ? 'badge-income capitalize'
-                  : 'badge-expense capitalize'
-              }
-            >
-              {category.type}
-            </Badge>
-          </TableCell>
-          <TableCell className="text-right whitespace-nowrap tabular-nums">
-            {category.transactionCount}
-          </TableCell>
-          <TableCell className="hidden text-right whitespace-nowrap tabular-nums sm:table-cell">
-            {category.recurringCount}
-          </TableCell>
-          <TableCell>
-            <RowActionsMenu
-              label={category.name}
-              onEdit={() => onEdit(category)}
-              onDelete={() => onDelete(category)}
-            />
-          </TableCell>
-        </TableRow>
-      )}
+      renderMobile={(category, index) => {
+        const state = flipState(category.id)
+        return (
+          <MobileListRow
+            key={category.id}
+            flip={{ key: category.id, state, index }}
+            title={category.name}
+            meta={`${category.type} · ${category.transactionCount} txn${category.recurringCount ? ` · ${category.recurringCount} bills` : ''}`}
+            onClick={state === 'exit' ? undefined : () => onEdit(category)}
+            actions={
+              state === 'exit' ? null : (
+                <RowActionsMenu
+                  label={category.name}
+                  size="touch"
+                  onEdit={() => onEdit(category)}
+                  onDelete={() => onDelete(category)}
+                />
+              )
+            }
+          />
+        )
+      }}
+      renderDesktop={(category, index) => {
+        const state = flipState(category.id)
+        return (
+          <TableRow
+            key={category.id}
+            data-flip-key={category.id}
+            data-flip-enter={state === 'enter' ? '' : undefined}
+            data-flip-exit={state === 'exit' ? '' : undefined}
+            style={
+              state === 'enter'
+                ? {
+                    ['--flip-enter-delay' as string]: `${Math.min(index, 8) * 40}ms`,
+                  }
+                : undefined
+            }
+          >
+            <TableCell className="font-medium">{category.name}</TableCell>
+            <TableCell>
+              <Badge
+                variant="outline"
+                className={
+                  category.type === 'income'
+                    ? 'badge-income capitalize'
+                    : 'badge-expense capitalize'
+                }
+              >
+                {category.type}
+              </Badge>
+            </TableCell>
+            <TableCell className="text-right whitespace-nowrap tabular-nums">
+              {category.transactionCount}
+            </TableCell>
+            <TableCell className="hidden text-right whitespace-nowrap tabular-nums sm:table-cell">
+              {category.recurringCount}
+            </TableCell>
+            <TableCell>
+              {state === 'exit' ? null : (
+                <RowActionsMenu
+                  label={category.name}
+                  onEdit={() => onEdit(category)}
+                  onDelete={() => onDelete(category)}
+                />
+              )}
+            </TableCell>
+          </TableRow>
+        )
+      }}
     />
   )
 }

@@ -1,8 +1,5 @@
 import { cn } from 'cn'
-
-function Skel({ className }: { className: string }) {
-  return <div className={cn('skeleton-shimmer', className)} />
-}
+import { Skel } from '#/components/layout/page-skeletons'
 
 export function OverviewStatsSkeleton() {
   return (

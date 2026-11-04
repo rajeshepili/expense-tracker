@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '#/lib/query/keys'
 import { listSavingsGoals, getSettings, listCategories } from '#/data/repository'
+import { formatQueryError } from '#/lib/errors'
 import { partitionSavingsGoals, savingsProgressPercent } from '#/lib/savings'
 
 export function useSavingsList() {
@@ -36,6 +37,9 @@ export function useSavingsList() {
 
   const isLoading = goalsQuery.isPending || settingsQuery.isPending
   const isError = goalsQuery.isError || settingsQuery.isError
+  const errorMessage = isError
+    ? formatQueryError(goalsQuery.error ?? settingsQuery.error)
+    : null
 
   return {
     goals,
@@ -46,6 +50,11 @@ export function useSavingsList() {
     incomeCategories,
     isLoading,
     isError,
+    errorMessage,
+    retry: () => {
+      void goalsQuery.refetch()
+      void settingsQuery.refetch()
+    },
     savingsProgressPercent,
   }
 }

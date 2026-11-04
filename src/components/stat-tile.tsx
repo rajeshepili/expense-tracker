@@ -27,7 +27,7 @@ export function StatTile({
     <div
       data-tone={tone}
       className={cn(
-        'stat-tile overflow-visible rounded-lg border px-3 py-3 transition-shadow duration-settle ease-settle hover-lift md:px-4 md:py-3',
+        'stat-tile overflow-visible rounded-lg border px-3 py-3 transition-shadow duration-settle ease-settle md:px-4 md:py-3',
         className,
       )}
     >

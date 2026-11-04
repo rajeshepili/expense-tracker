@@ -119,6 +119,7 @@ describe('transaction math', () => {
         { type: 'income', amount: 100 },
         { type: 'expense', amount: 40 },
         { type: 'expense', amount: 10 },
+        { type: 'transfer', amount: 99 },
       ]),
     ).toEqual({ income: 100, expenses: 50 })
     expect(monthlyEquivalent(100, 'monthly')).toBe(100)

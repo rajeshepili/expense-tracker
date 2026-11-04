@@ -1,6 +1,6 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Fragment, useRef, useState } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
+import { Fragment, useCallback, useRef, useState } from 'react'
+import type { CSSProperties, ReactNode, Ref } from 'react'
 import { cn } from 'cn'
 import { TableBody } from '#/components/ui/table'
 
@@ -12,6 +12,14 @@ type SharedProps<T> = {
   overscan?: number
   getItemKey?: (item: T, index: number) => string | number
   children: VirtualRowRender<T>
+  /** Ancestor of `[data-flip-key]` rows for FLIP measurements. */
+  listRootRef?: Ref<HTMLElement | null>
+}
+
+function assignRef<T>(ref: Ref<T> | undefined, value: T) {
+  if (!ref) return
+  if (typeof ref === 'function') ref(value)
+  else ref.current = value
 }
 
 export function VirtualizedList<T>({
@@ -22,11 +30,19 @@ export function VirtualizedList<T>({
   children,
   className,
   style,
+  listRootRef,
 }: SharedProps<T> & {
   className?: string
   style?: CSSProperties
 }) {
   const parentRef = useRef<HTMLDivElement>(null)
+  const setParentRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      parentRef.current = node
+      assignRef(listRootRef, node)
+    },
+    [listRootRef],
+  )
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => parentRef.current,
@@ -38,7 +54,7 @@ export function VirtualizedList<T>({
 
   return (
     <div
-      ref={parentRef}
+      ref={setParentRef}
       className={cn('relative overflow-y-auto overscroll-contain', className)}
       style={style}
     >
@@ -72,6 +88,7 @@ export function VirtualizedTable<T>({
   children,
   className,
   empty,
+  listRootRef,
 }: SharedProps<T> & {
   colSpan: number
   header: ReactNode
@@ -79,6 +96,13 @@ export function VirtualizedTable<T>({
   empty?: ReactNode
 }) {
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
+  const bindScrollEl = useCallback(
+    (node: HTMLDivElement | null) => {
+      setScrollEl(node)
+      assignRef(listRootRef, node)
+    },
+    [listRootRef],
+  )
   const virtualizer = useVirtualizer({
     count: empty ? 0 : items.length,
     getScrollElement: () => scrollEl,
@@ -98,9 +122,23 @@ export function VirtualizedTable<T>({
       : 0
   const useVirtual = !!scrollEl && virtualRows.length > 0
 
+  if (empty) {
+    return (
+      <div
+        ref={bindScrollEl}
+        className={cn(
+          'min-h-0 flex-1 overflow-y-auto overscroll-contain',
+          className,
+        )}
+      >
+        {empty}
+      </div>
+    )
+  }
+
   return (
     <div
-      ref={setScrollEl}
+      ref={bindScrollEl}
       className={cn(
         'min-h-0 flex-1 overflow-y-auto overscroll-contain',
         className,
@@ -109,9 +147,7 @@ export function VirtualizedTable<T>({
       <table data-slot="table" className="w-full caption-bottom text-sm">
         {header}
         <TableBody>
-          {empty ? (
-            empty
-          ) : useVirtual ? (
+          {useVirtual ? (
             <>
               {paddingTop > 0 ? (
                 <tr aria-hidden="true">

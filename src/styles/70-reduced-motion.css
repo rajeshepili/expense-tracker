@@ -6,7 +6,8 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: var(--duration-reduced) !important;
-    transition-property: opacity, color, background-color, border-color, fill, stroke !important;
+    /* Omit border-color — prevents table-row shimmer under PRM. */
+    transition-property: opacity, color, background-color, fill, stroke !important;
     scroll-behavior: auto !important;
   }
 
@@ -33,5 +34,17 @@
   .animated-number-value {
     will-change: auto;
   }
-}
 
+  .landing-brand-hero,
+  .landing-headline,
+  .landing-lede,
+  .landing-cta-block,
+  .landing-hero-mock .landing-mock,
+  .landing-mock-row {
+    animation: none !important;
+  }
+
+  .landing-scroll-cue {
+    display: none;
+  }
+}

@@ -68,8 +68,8 @@ test.describe('critical path smoke @smoke', () => {
     ).toBeVisible()
 
     // ——— Add recurring + record ———
-    await goToNav(page, 'Recurring')
-    await expect(page.getByRole('heading', { name: 'Recurring' })).toBeVisible()
+    await goToNav(page, 'Bills')
+    await expect(page.getByRole('heading', { name: 'Bills' })).toBeVisible()
 
     await page
       .getByRole('button', { name: 'Add recurring N', exact: true })

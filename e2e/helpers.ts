@@ -69,7 +69,7 @@ export async function completeOnboarding(
 
 export async function goToNav(
   page: Page,
-  label: 'Ledger' | 'Recurring' | 'Overview' | 'Categories',
+  label: 'Ledger' | 'Bills' | 'Overview' | 'Categories' | 'Goals',
 ) {
   // Ensure app is ready (handles post-restore reload)
   await waitForAppReady(page)

@@ -14,6 +14,12 @@ export function useMediaQuery(query: string) {
   )
 }
 
+/** Phone-only: bottom tabs + compact top bar (`md` / 768px). */
 export function useIsMobile() {
   return useMediaQuery('(max-width: 767px)')
+}
+
+/** Phone + tablet: list rows, drawers, compact chrome until `lg` / 1024px. */
+export function useIsCompact() {
+  return useMediaQuery('(max-width: 1023px)')
 }

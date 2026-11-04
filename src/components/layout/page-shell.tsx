@@ -1,4 +1,4 @@
-import type { ReactNode, Ref } from 'react'
+import type { ComponentPropsWithoutRef, ReactNode, Ref } from 'react'
 import { cn } from 'cn'
 import { ScrollArea } from '#/components/ui/scroll-area'
 import { TableCell, TableRow } from '#/components/ui/table'
@@ -7,12 +7,13 @@ type PageShellProps = {
   children: ReactNode
   className?: string
   scroll?: 'none' | 'page'
-}
+} & ComponentPropsWithoutRef<'div'>
 
 export function PageShell({
   children,
   className,
   scroll = 'none',
+  ...props
 }: PageShellProps) {
   return (
     <div
@@ -21,6 +22,7 @@ export function PageShell({
         scroll === 'page' && 'scroll-panel overflow-y-auto',
         className,
       )}
+      {...props}
     >
       {children}
     </div>

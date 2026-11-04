@@ -13,8 +13,9 @@ import { money } from '#/lib/finance'
 import { quietDelta } from '#/lib/overview-helpers'
 import { navigateAfterPrefetch } from '#/lib/navigate-after-prefetch'
 import { prefetchRoute } from '#/lib/query/prefetch'
-import { useIsMobile } from '#/hooks/use-media-query'
+import { useIsCompact } from '#/hooks/use-media-query'
 import type { MonthBudget } from '#/lib/types'
+import { cn } from 'cn'
 
 type OverviewMonthStatsProps = {
   yearMonth: string
@@ -35,6 +36,7 @@ interface StatConfig {
   goodWhen: 'up' | 'down'
   isPercent?: boolean
   link?: boolean
+  ledgerType?: 'income' | 'expense'
 }
 
 export function OverviewMonthStats({
@@ -49,7 +51,7 @@ export function OverviewMonthStats({
   const queryClient = useQueryClient()
   const router = useRouter()
   const effectiveBudget = monthBudget.budget
-  const isMobile = useIsMobile()
+  const isCompact = useIsCompact()
 
   const stats: StatConfig[] = [
     {
@@ -60,6 +62,7 @@ export function OverviewMonthStats({
       delta: quietDelta(summary.income, priorSummary.income),
       goodWhen: 'up',
       link: true,
+      ledgerType: 'income',
     },
     {
       label: 'Expenses',
@@ -69,6 +72,7 @@ export function OverviewMonthStats({
       delta: quietDelta(summary.expenses, priorSummary.expenses),
       goodWhen: 'down',
       link: true,
+      ledgerType: 'expense',
     },
     {
       label: 'Budget left',
@@ -92,45 +96,28 @@ export function OverviewMonthStats({
       value: budgetUsed * 100,
       isPercent: true,
       delta: (
-        <Progress
-          className="mt-1.5 h-1.5"
-          value={Math.min(budgetUsed * 100, 100)}
-          aria-label="Budget used"
-        />
+        <div className="flex min-h-5 items-center">
+          <Progress
+            className="h-1.5 w-full"
+            value={Math.min(budgetUsed * 100, 100)}
+            aria-label="Budget used"
+          />
+        </div>
       ),
       goodWhen: 'down',
     },
   ]
 
-  if (isMobile) {
-    return (
-      <section
-        data-tour="stats"
-        className="grid shrink-0 grid-cols-2 gap-2"
-        role="region"
-        aria-label="Month summary"
-      >
-        {stats.map((stat) => (
-          <StatTile
-            key={stat.label}
-            label={stat.label}
-            tone={stat.tone}
-            icon={stat.icon}
-            className="rounded-xl px-3.5 py-3.5 shadow-sm"
-            value={
-              <span className="text-xl font-semibold tracking-tight tabular-nums">
-                {stat.isPercent ? `${stat.value.toFixed(1)}%` : money(stat.value, currency)}
-              </span>
-            }
-            hint={stat.delta}
-          />
-        ))}
-      </section>
-    )
-  }
-
   return (
-    <section data-tour="stats" className="grid shrink-0 grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4">
+    <section
+      data-tour="stats"
+      className={cn(
+        'grid shrink-0 grid-cols-2 items-stretch gap-2',
+        !isCompact && 'md:gap-3 xl:grid-cols-4',
+      )}
+      role="region"
+      aria-label="Month summary"
+    >
       {stats.map((stat, index) => {
         const tile = (
           <StatTile
@@ -138,9 +125,19 @@ export function OverviewMonthStats({
             tone={stat.tone}
             icon={stat.icon}
             linked={stat.link}
-            className="px-3 py-3 md:px-4 md:py-3.5"
+            className={cn(
+              'h-full',
+              isCompact
+                ? 'rounded-xl px-3.5 py-3.5 shadow-sm pressable'
+                : 'px-3 py-3 md:px-4 md:py-3.5',
+            )}
             value={
-              <span className="text-xl font-semibold tracking-tight md:text-2xl tabular-nums">
+              <span
+                className={cn(
+                  'font-semibold tracking-tight tabular-nums',
+                  isCompact ? 'text-xl' : 'text-xl md:text-2xl',
+                )}
+              >
                 {stat.isPercent ? `${stat.value.toFixed(1)}%` : money(stat.value, currency)}
               </span>
             }
@@ -150,22 +147,41 @@ export function OverviewMonthStats({
         return (
           <div
             key={stat.label}
+            className="min-h-0 h-full"
             style={{ animationDelay: `${index * 40}ms` }}
           >
             {stat.link ? (
               <Link
                 to="/ledger"
-                search={{ month: yearMonth }}
+                search={{
+                  month: yearMonth,
+                  ...(stat.ledgerType ? { type: stat.ledgerType } : {}),
+                }}
                 aria-label={`${stat.label}: ${stat.isPercent ? `${stat.value.toFixed(1)}%` : money(stat.value, currency)} — open ledger`}
-                className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring [&_.stat-tile]:hover-lift"
-                onMouseEnter={() => prefetchRoute(queryClient, '/ledger', { month: yearMonth })}
-                onFocus={() => prefetchRoute(queryClient, '/ledger', { month: yearMonth })}
+                className="block h-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onMouseEnter={() =>
+                  prefetchRoute(queryClient, '/ledger', { month: yearMonth })
+                }
+                onFocus={() =>
+                  prefetchRoute(queryClient, '/ledger', { month: yearMonth })
+                }
                 onClick={(event) => {
-                  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                  if (
+                    event.defaultPrevented ||
+                    event.button !== 0 ||
+                    event.metaKey ||
+                    event.ctrlKey ||
+                    event.shiftKey ||
+                    event.altKey
+                  )
+                    return
                   event.preventDefault()
                   void navigateAfterPrefetch(router, queryClient, {
                     to: '/ledger',
-                    search: { month: yearMonth },
+                    search: {
+                      month: yearMonth,
+                      ...(stat.ledgerType ? { type: stat.ledgerType } : {}),
+                    },
                     month: yearMonth,
                   })
                 }}

@@ -3,6 +3,7 @@ import type {ReactNode} from 'react';
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '#/components/ui/button'
 import { Spinner } from '#/components/ui/spinner'
+import { APP_NAME } from '#/lib/brand'
 import { queryKeys } from '#/lib/query/keys'
 
 const OnboardingScreen = lazy(() =>
@@ -18,7 +19,7 @@ type GateState =
 function messageOf(error: unknown) {
   return error instanceof Error
     ? error.message
-    : 'Failed to open local database'
+    : 'Something went wrong while starting up.'
 }
 
 export function AppGate({ children }: { children: ReactNode }) {
@@ -30,8 +31,13 @@ export function AppGate({ children }: { children: ReactNode }) {
 
     const init = async () => {
       try {
-        const { bootstrapApp, getOverview } = await import('#/data/repository')
+        const { bootstrapApp, getOverview, repairOrphanTransfers } =
+          await import('#/data/repository')
         const { needsOnboarding } = await bootstrapApp()
+        if (cancelled) return
+
+        // After migrate/bootstrap: drop broken transfer legs left by older builds.
+        await repairOrphanTransfers()
         if (cancelled) return
 
         queryClient.setQueryData(queryKeys.onboarding, needsOnboarding)
@@ -66,36 +72,63 @@ export function AppGate({ children }: { children: ReactNode }) {
 
   if (state.status === 'loading') {
     return (
-      <div className="mx-auto flex h-dvh w-full max-w-6xl flex-col items-center justify-center gap-3 p-6">
-        <Spinner className="size-5 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Opening local database…</p>
-      </div>
+      <main
+        id="main"
+        className="flex h-dvh min-h-0 flex-col overflow-hidden"
+        aria-busy="true"
+        aria-live="polite"
+        aria-label={`Preparing ${APP_NAME}`}
+      >
+        <div
+          className="z-10 hidden h-12 shrink-0 border-b border-border/80 bg-background/80 backdrop-blur-md md:block"
+          aria-hidden
+        />
+        <div
+          className="z-10 h-12 shrink-0 border-b border-border/80 bg-background/80 pt-[var(--safe-top)] backdrop-blur-md md:hidden"
+          aria-hidden
+        />
+        <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
+          <p className="brand-wordmark text-base font-semibold tracking-tight text-foreground">
+            {APP_NAME}
+          </p>
+          <Spinner className="size-5 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            Getting your ledger ready…
+          </p>
+          <p className="max-w-xs text-xs text-muted-foreground/80">
+            Stays on this device — nothing is uploaded.
+          </p>
+        </div>
+      </main>
     )
   }
 
   if (state.status === 'error') {
     return (
-      <div className="mx-auto flex h-dvh w-full max-w-6xl flex-col items-center justify-center gap-3 p-6 text-center">
-        <p className="text-sm font-medium">Could not open the local database</p>
+      <main
+        id="main"
+        className="mx-auto flex h-dvh w-full max-w-6xl flex-col items-center justify-center gap-3 p-6 text-center"
+        role="alert"
+      >
+        <p className="brand-wordmark text-base font-semibold tracking-tight">
+          {APP_NAME}
+        </p>
+        <p className="text-sm font-medium">Couldn’t get started</p>
         <p className="text-sm text-muted-foreground">{state.message}</p>
         <p className="max-w-md text-xs text-muted-foreground">
-          Prefer Chrome or Edge in a normal window. Avoid private mode if you
-          want data to stick. The server must send COOP/COEP headers — see{' '}
-          <code className="text-[0.7rem]">
-            docs/opfs-and-cross-origin-isolation.md
-          </code>
-          .
+          Try Chrome or Edge in a normal window (not private). Your ledger needs
+          a secure, isolated browser tab to keep data on this device.
         </p>
         <Button variant="outline" onClick={() => window.location.reload()}>
-          Retry
+          Try again
         </Button>
-      </div>
+      </main>
     )
   }
 
   if (state.status === 'onboarding') {
     return (
-      <div className="scroll-panel h-dvh">
+      <main id="main" className="scroll-panel h-dvh">
         <Suspense
           fallback={
             <div className="flex h-full items-center justify-center p-6">
@@ -110,7 +143,7 @@ export function AppGate({ children }: { children: ReactNode }) {
             }}
           />
         </Suspense>
-      </div>
+      </main>
     )
   }
 

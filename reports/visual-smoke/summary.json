@@ -1,0 +1,12 @@
+{
+  "url": "http://localhost:3001/",
+  "started_at": "2026-11-03T22:05:32.814Z",
+  "checks": {
+    "fetch_reachable": false,
+    "html_non_empty": false,
+    "screenshots": "skipped-no-browser-driver"
+  },
+  "errors": [
+    "fetch failed"
+  ]
+}

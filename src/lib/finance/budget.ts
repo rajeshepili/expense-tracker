@@ -32,12 +32,30 @@ export function monthBudgetMatchesDefault(
   return monthBudget === defaultBudget
 }
 
-export function amountToneClass(type: TransactionType) {
-  return type === 'income' ? 'text-income' : 'text-expense'
+export function amountToneClass(
+  type: TransactionType,
+  transferDirection?: 'in' | 'out' | null,
+) {
+  if (type === 'income') return 'text-income'
+  if (type === 'transfer') {
+    if (transferDirection === 'in') return 'text-income'
+    if (transferDirection === 'out') return 'text-expense'
+    return 'text-muted-foreground'
+  }
+  return 'text-expense'
 }
 
-export function signedAmountPrefix(type: TransactionType) {
-  return type === 'income' ? '+' : '−'
+export function signedAmountPrefix(
+  type: TransactionType,
+  transferDirection?: 'in' | 'out' | null,
+) {
+  if (type === 'income') return '+'
+  if (type === 'transfer') {
+    if (transferDirection === 'in') return '+'
+    if (transferDirection === 'out') return '−'
+    return ''
+  }
+  return '−'
 }
 
 export function summarizeTransactions(
@@ -46,7 +64,7 @@ export function summarizeTransactions(
   return rows.reduce(
     (acc, row) => {
       if (row.type === 'income') acc.income += row.amount
-      else acc.expenses += row.amount
+      else if (row.type === 'expense') acc.expenses += row.amount
       return acc
     },
     { income: 0, expenses: 0 },

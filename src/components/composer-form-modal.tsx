@@ -1,7 +1,7 @@
 import { cloneElement, isValidElement, useEffect, useRef } from 'react'
 import type { ReactNode, ForwardedRef } from 'react'
 import { Button } from '#/components/ui/button'
-import { useIsMobile } from '#/hooks/use-media-query'
+import { useIsCompact } from '#/hooks/use-media-query'
 import { FieldError } from '#/components/ui/field'
 import {
   ResponsiveModal,
@@ -25,8 +25,13 @@ type ComposerFormModalProps = {
   submitDisabled?: boolean
   submitLabel?: string
   pendingLabel?: string
+  /** Hide the primary submit button (Cancel only). */
+  hideSubmit?: boolean
+  submitVariant?: 'default' | 'destructive'
   error?: string | null
-  onSubmit: () => void
+  onSubmit?: () => void
+  /** Read-only viewer: dismiss button only, no Save. */
+  mode?: 'form' | 'view'
   children: ReactNode
   contentClassName?: string
 }
@@ -49,26 +54,29 @@ export function ComposerFormModal({
   submitDisabled = false,
   submitLabel = 'Save',
   pendingLabel = 'Saving…',
+  hideSubmit = false,
+  submitVariant = 'default',
   error,
   onSubmit,
+  mode = 'form',
   children,
   contentClassName = 'sm:max-w-md',
 }: ComposerFormModalProps) {
   const triggerRef = useRef<HTMLButtonElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const wasOpen = useRef(open)
-  const isMobile = useIsMobile()
+  const isCompact = useIsCompact()
 
-  // Focus first input on desktop dialogs only — on mobile the sheet is a vaul
+  // Focus first input on desktop dialogs only — on compact the sheet is a vaul
   // drawer and autofocus mid-animation shoves it off-screen (vaul#503).
   useEffect(() => {
-    if (open && !wasOpen.current && !isMobile) {
+    if (open && !wasOpen.current && !isCompact) {
       requestAnimationFrame(() => {
         focusFirstInput(contentRef.current)
       })
     }
     wasOpen.current = open
-  }, [open, isMobile])
+  }, [open, isCompact])
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen && triggerRef.current) {
@@ -92,36 +100,65 @@ export function ComposerFormModal({
     <ResponsiveModal open={open} onOpenChange={handleOpenChange}>
       {triggerButton}
       <ResponsiveModalContent ref={contentRef} className={contentClassName}>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            onSubmit()
-          }}
-        >
-          <ResponsiveModalHeader>
-            <ResponsiveModalTitle>{title}</ResponsiveModalTitle>
-            {description ? (
-              <ResponsiveModalDescription>
-                {description}
-              </ResponsiveModalDescription>
-            ) : null}
-          </ResponsiveModalHeader>
-          {children}
-          {error ? <FieldError className="px-0 pt-2">{error}</FieldError> : null}
-          <ResponsiveModalFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-              disabled={pending}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={pending || submitDisabled}>
-              {pending ? pendingLabel : submitLabel}
-            </Button>
-          </ResponsiveModalFooter>
-        </form>
+        {mode === 'view' ? (
+          <>
+            <ResponsiveModalHeader>
+              <ResponsiveModalTitle>{title}</ResponsiveModalTitle>
+              {description ? (
+                <ResponsiveModalDescription>
+                  {description}
+                </ResponsiveModalDescription>
+              ) : null}
+            </ResponsiveModalHeader>
+            {children}
+            <ResponsiveModalFooter>
+              <Button
+                type="button"
+                className="w-full sm:w-auto"
+                onClick={() => handleOpenChange(false)}
+              >
+                Dismiss
+              </Button>
+            </ResponsiveModalFooter>
+          </>
+        ) : (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              onSubmit?.()
+            }}
+          >
+            <ResponsiveModalHeader>
+              <ResponsiveModalTitle>{title}</ResponsiveModalTitle>
+              {description ? (
+                <ResponsiveModalDescription>
+                  {description}
+                </ResponsiveModalDescription>
+              ) : null}
+            </ResponsiveModalHeader>
+            {children}
+            {error ? <FieldError className="px-0 pt-2">{error}</FieldError> : null}
+            <ResponsiveModalFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+                disabled={pending}
+              >
+                Cancel
+              </Button>
+              {hideSubmit ? null : (
+                <Button
+                  type="submit"
+                  variant={submitVariant}
+                  disabled={pending || submitDisabled}
+                >
+                  {pending ? pendingLabel : submitLabel}
+                </Button>
+              )}
+            </ResponsiveModalFooter>
+          </form>
+        )}
       </ResponsiveModalContent>
     </ResponsiveModal>
   )

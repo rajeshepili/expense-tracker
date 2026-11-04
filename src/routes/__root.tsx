@@ -17,10 +17,10 @@ import { Toaster } from '#/components/ui/sonner'
 import '#/db/index'
 
 import appCss from '../styles.css?url'
-import sqliteWasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url'
 
 import type { QueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
+import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME } from '#/lib/brand'
 
 interface MyRouterContext {
   queryClient: QueryClient
@@ -46,10 +46,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       {
         name: 'description',
-        content:
-          'Personal, local-only expense tracker. Data stays in this browser.',
+        content: APP_DESCRIPTION,
       },
-      { title: 'Expense Tracker' },
+      { title: APP_NAME },
       {
         name: 'theme-color',
         content: '#f4f6f8',
@@ -62,7 +61,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
-      { name: 'apple-mobile-web-app-title', content: 'Expense Tracker' },
+      { name: 'apple-mobile-web-app-title', content: APP_SHORT_NAME },
       { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
     ],
     links: [
@@ -79,12 +78,8 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         href: '/icons/apple-touch-icon.png',
         sizes: '180x180',
       },
-      {
-        rel: 'preload',
-        href: sqliteWasmUrl,
-        as: 'fetch',
-        crossOrigin: 'anonymous',
-      },
+      // Do not preload sqlite3.wasm here: sqlocal fetches it inside a worker, so a
+      // document-level link preload is unused and triggers a Chrome console warning.
     ],
   }),
   component: RootComponent,
@@ -124,7 +119,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body className="h-dvh overflow-hidden antialiased">
         <ThemeProvider defaultTheme="system" storageKey="expense-tracker-theme">
           {children}
-          <Toaster position="top-center" richColors closeButton />
+          <Toaster
+            position="bottom-center"
+            richColors
+            closeButton
+            offset={16}
+            mobileOffset={{ bottom: 'calc(var(--tab-bar-h) + 0.75rem)' }}
+          />
         </ThemeProvider>
         {import.meta.env.DEV ? (
           <TanStackDevtools

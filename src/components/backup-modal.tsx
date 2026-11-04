@@ -40,22 +40,24 @@ export function BackupModal({
       title="Local backup"
       description="Download a .sqlite3 copy, or restore one to replace all data on this device."
       pending={busy}
-      submitDisabled={!file && !exporting}
-      submitLabel={file ? 'Restore & reload' : undefined}
+      hideSubmit={!file}
+      submitDisabled={!file || busy}
+      submitLabel="Restore & reload"
+      submitVariant="destructive"
       pendingLabel={restoring ? 'Restoring…' : exporting ? 'Exporting…' : undefined}
+      error={error}
       onSubmit={async () => {
-        if (file) {
-          setRestoring(true)
-          setError(null)
-          try {
-            await restoreBackup(file)
-          } catch (err: unknown) {
-            setRestoring(false)
-            const message =
-              err instanceof Error ? err.message : 'Could not restore backup'
-            setError(message)
-            toast.error(message)
-          }
+        if (!file) return
+        setRestoring(true)
+        setError(null)
+        try {
+          await restoreBackup(file)
+        } catch (err: unknown) {
+          setRestoring(false)
+          const message =
+            err instanceof Error ? err.message : 'Could not restore backup'
+          setError(message)
+          toast.error(message)
         }
       }}
     >
@@ -66,6 +68,7 @@ export function BackupModal({
             type="button"
             variant="outline"
             size="sm"
+            className="min-h-11 md:min-h-9"
             disabled={busy}
             onClick={() => {
               setExporting(true)
@@ -91,11 +94,12 @@ export function BackupModal({
             type="button"
             variant="outline"
             size="sm"
+            className="min-h-11 md:min-h-9"
             disabled={busy}
             onClick={() => inputRef.current?.click()}
           >
             <Upload data-icon="inline-start" />
-            Restore backup
+            Choose file…
           </Button>
           <input
             ref={inputRef}
@@ -111,16 +115,12 @@ export function BackupModal({
             }}
           />
         </div>
-        {error ? (
-          <p className="text-xs text-destructive" role="alert">
-            {error}
+        {file ? (
+          <p className="text-xs text-muted-foreground">
+            Selected: {file.name} ({Math.round(file.size / 1024)} KB). Restore
+            replaces all local data.
           </p>
         ) : null}
-        {file && (
-          <p className="text-xs text-muted-foreground">
-            Selected: {file.name} ({Math.round(file.size / 1024)} KB)
-          </p>
-        )}
       </div>
     </ComposerFormModal>
   )

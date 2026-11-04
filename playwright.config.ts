@@ -35,7 +35,9 @@ export default defineConfig({
   webServer: {
     command: `pnpm exec vite dev --host 127.0.0.1 --port ${PORT}`,
     url: BASE_URL,
+    // Local only: reuse a healthy server. Stale/wedged Vite+Nitro runners cause
+    // "transport invoke timed out" then 120s webServer wait — kill the port first.
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 180_000,
   },
 })

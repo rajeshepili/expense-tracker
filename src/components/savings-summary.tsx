@@ -31,6 +31,7 @@ export function SavingsSummary() {
             <Button asChild size="sm">
               <Link
                 to="/savings"
+                search={{ new: true }}
                 onMouseEnter={prefetchSavings}
                 onFocus={prefetchSavings}
               >
@@ -50,6 +51,7 @@ export function SavingsSummary() {
               <Button asChild size="sm" className="w-full sm:w-auto">
                 <Link
                   to="/savings"
+                  search={{ new: true }}
                   onMouseEnter={prefetchSavings}
                   onFocus={prefetchSavings}
                 >

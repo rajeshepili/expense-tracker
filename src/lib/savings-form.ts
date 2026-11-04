@@ -3,6 +3,7 @@ import type { SavingsGoalRow } from '#/lib/types'
 import {
   createSavingsGoal,
   updateSavingsGoal,
+  deleteSavingsGoal,
   recordSavingsContribution,
 } from '#/data/repository'
 import { invalidateAfter } from '#/lib/query/invalidation'
@@ -39,6 +40,7 @@ export function formFromGoal(goal: SavingsGoalRow): SavingsFormState {
 interface UseSavingsFormArgs {
   onClose: () => void
   editing: SavingsGoalRow | null
+  deleting: SavingsGoalRow | null
   form: {
     name: string
     targetAmount: string
@@ -54,15 +56,20 @@ interface UseSavingsFormArgs {
     categoryId: string
   }>>
   setComposerOpen: (open: boolean) => void
+  setEditing: (goal: SavingsGoalRow | null) => void
+  setDeleting: (goal: SavingsGoalRow | null) => void
   reset: () => void
 }
 
 export function useSavingsForm({
   onClose,
   editing,
+  deleting,
   form,
   setForm,
   setComposerOpen,
+  setEditing,
+  setDeleting,
   reset,
 }: UseSavingsFormArgs) {
   const queryClient = useQueryClient()
@@ -100,6 +107,18 @@ export function useSavingsForm({
     },
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!deleting) throw new Error('No goal selected')
+      await deleteSavingsGoal(deleting.id)
+    },
+    onSuccess: async () => {
+      await invalidateAfter(queryClient, ['savingsGoals'])
+      setDeleting(null)
+      onClose()
+    },
+  })
+
   const contributeMutation = useMutation({
     mutationFn: async ({ id, amount }: { id: string; amount: number }) => {
       await recordSavingsContribution(id, amount)
@@ -115,6 +134,7 @@ export function useSavingsForm({
   }
 
   function openEdit(goal: SavingsGoalRow) {
+    setEditing(goal)
     setForm(formFromGoal(goal))
     setComposerOpen(true)
   }
@@ -135,11 +155,16 @@ export function useSavingsForm({
     }
   }
 
-  const isSubmitting = createMutation.isPending || updateMutation.isPending || contributeMutation.isPending
+  const isSubmitting =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    contributeMutation.isPending
 
   return {
     createMutation,
     updateMutation,
+    deleteMutation,
     contributeMutation,
     openCreate,
     openEdit,

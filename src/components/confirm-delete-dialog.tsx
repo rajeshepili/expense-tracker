@@ -1,14 +1,13 @@
 import type { ReactNode } from 'react'
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '#/components/ui/alert-dialog'
 import { Button } from '#/components/ui/button'
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+} from '#/components/ui/responsive-modal'
 
 type ConfirmDeleteDialogProps = {
   open: boolean
@@ -38,29 +37,37 @@ export function ConfirmDeleteDialog({
   children,
 }: ConfirmDeleteDialogProps) {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent size="default">
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
+    <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+      <ResponsiveModalContent className="sm:max-w-md" showCloseButton={false}>
+        <ResponsiveModalHeader>
+          <ResponsiveModalTitle>{title}</ResponsiveModalTitle>
+          <ResponsiveModalDescription>{description}</ResponsiveModalDescription>
+        </ResponsiveModalHeader>
         {children}
         {error ? (
           <p className="text-sm text-destructive" role="alert">
             {error}
           </p>
         ) : null}
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+        <ResponsiveModalFooter>
           <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
             variant="destructive"
             disabled={pending || confirmDisabled}
             onClick={onConfirm}
           >
             {pending ? pendingLabel : confirmLabel}
           </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </ResponsiveModalFooter>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   )
 }

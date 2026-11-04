@@ -23,18 +23,18 @@ Expense Tracker is a **local-only** web app. On Android, use **Chrome** and inst
 3. Open from the icon; confirm the ledger still loads after a cold start.
 4. Optionally export a backup from Overview → Budget.
 
-## Layout: phone vs desktop
+## Layout: phone vs tablet vs desktop
 
-The UI splits at the `md` (768px) breakpoint (`useIsMobile` / Tailwind `md:`):
+Navigation splits at `md` (768px) via `useIsMobile` / Tailwind `md:`. Lists and composers stay compact until `lg` (1024px) via `useIsCompact`:
 
-|            | Phone                                                              | Desktop                |
-| ---------- | ------------------------------------------------------------------ | ---------------------- |
-| Navigation | Bottom tabs (Overview / Ledger / Bills / Goals / Categories)       | Top bar                |
-| Lists      | Card rows (no horizontal table pan)                                | Dense tables           |
-| Forms      | Vaul drawer (sheet), sticky footer actions                         | Centered dialog        |
-| Overview   | Page scroll; month stats in a 2×2 grid                             | Multi-column dashboard |
+|            | Phone (`<768`)                                                     | Tablet (`768–1023`)      | Desktop (`≥1024`)      |
+| ---------- | ------------------------------------------------------------------ | ------------------------ | ---------------------- |
+| Navigation | Bottom tabs (Overview / Ledger / Bills / Goals / Categories)       | Top bar                  | Top bar                |
+| Lists      | Card rows                                                          | Card rows                | Dense tables           |
+| Forms      | Vaul drawer (sheet), sticky footer                                 | Vaul drawer              | Centered dialog        |
+| Overview   | Page scroll; month stats in a 2×2 grid                             | Same single column       | Multi-column dashboard |
 
-Same local SQLite database either way. Composers use `ResponsiveModal` (Drawer below `md`, Dialog from `md` up). Drawers set `repositionInputs={false}` so the keyboard does not shove the sheet off-screen; Save/Cancel stay in a sticky footer.
+Same local SQLite database either way. Composers use `ResponsiveModal` (Drawer below `lg`, Dialog from `lg` up). Drawers set `repositionInputs={false}` so the keyboard does not shove the sheet off-screen; Save/Cancel stay in a sticky footer.
 
 The root viewport uses `viewport-fit=cover`. Safe-area insets feed `--safe-*` and `--tab-bar-h` in `src/styles/10-tokens.css` so content and the install nudge clear the home indicator and tab bar.
 

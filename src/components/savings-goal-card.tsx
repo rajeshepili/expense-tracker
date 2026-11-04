@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Target } from 'lucide-react'
 import { Progress } from '#/components/ui/progress'
-import { money, percent } from '#/lib/finance'
+import { formatIsoDate, money, percent } from '#/lib/finance'
 import {
   daysUntilTargetDate,
   formatDaysUntilLabel,
@@ -21,7 +21,7 @@ export function SavingsGoalCard({
   const progress = savingsProgressPercent(goal)
   const days = daysUntilTargetDate(goal.targetDate)
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="rounded-xl border bg-card p-4 pressable-row">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -39,7 +39,7 @@ export function SavingsGoalCard({
           <Progress className="mt-2 h-1.5" value={progress} />
           {goal.targetDate && days !== null ? (
             <p className="mt-1 text-xs text-muted-foreground">
-              Target: {goal.targetDate} · {formatDaysUntilLabel(days)}
+              Target: {formatIsoDate(goal.targetDate)} · {formatDaysUntilLabel(days)}
             </p>
           ) : null}
         </div>

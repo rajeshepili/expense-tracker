@@ -2,7 +2,8 @@
 
 import * as React from 'react'
 import { cn } from 'cn'
-import { useIsMobile } from '#/hooks/use-media-query'
+import { useIsCompact } from '#/hooks/use-media-query'
+import { motion } from '#/lib/motion'
 import {
   Dialog,
   DialogClose,
@@ -36,13 +37,54 @@ function pick<T>(drawer: T, dialog: T) {
 }
 
 function ResponsiveModal({
+  open,
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof Dialog> & React.ComponentProps<typeof Drawer>) {
-  const isMobile = useIsMobile()
+  const isCompact = useIsCompact()
+  const blocker = isCompact ? 'drawer' : 'modal'
+  const openRef = React.useRef(Boolean(open))
+
+  React.useEffect(() => {
+    if (open === undefined) return
+    openRef.current = open
+    if (open) void motion.openOverlay(blocker)
+    else motion.closeOverlay(blocker)
+  }, [open, blocker])
+
+  const handleOpenChange = React.useCallback(
+    (next: boolean) => {
+      if (next) {
+        // Open immediately; phase-gate in parallel so VT/page-enter still defer.
+        void motion.openOverlay(blocker)
+        onOpenChange?.(true)
+        return
+      }
+      motion.closeOverlay(blocker)
+      onOpenChange?.(false)
+    },
+    [blocker, onOpenChange],
+  )
+
+  React.useEffect(() => {
+    return () => {
+      if (openRef.current) motion.closeOverlay(blocker)
+    }
+  }, [blocker])
+
   return (
-    <ModalModeContext.Provider value={isMobile ? 'drawer' : 'dialog'}>
+    <ModalModeContext.Provider value={isCompact ? 'drawer' : 'dialog'}>
       {/* repositionInputs={false}: vaul's keyboard repositioning breaks on iOS (vaul#503). */}
-      {isMobile ? <Drawer repositionInputs={false} {...props} /> : <Dialog {...props} />}
+      {isCompact ? (
+        <Drawer
+          repositionInputs={false}
+          open={open}
+          onOpenChange={handleOpenChange}
+          {...props}
+        />
+      ) : (
+        <Dialog open={open} onOpenChange={handleOpenChange} {...props} />
+      )}
     </ModalModeContext.Provider>
   )
 }

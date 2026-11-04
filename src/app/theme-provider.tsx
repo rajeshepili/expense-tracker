@@ -22,6 +22,7 @@ type ThemeProviderProps = {
 
 type ThemeProviderState = {
   theme: Theme
+  resolvedTheme: ResolvedTheme
   setTheme: (theme: Theme, origin?: ThemeOrigin) => void
 }
 
@@ -145,14 +146,9 @@ function withThemeTransition(
   }
 
   if (typeof doc.startViewTransition === 'function') {
-    void motion.beginTheme(() => {
-      try {
-        doc.startViewTransition(update)
-      } catch {
-        release()
-        update()
-      }
-    })
+    // beginTheme already starts the VT — pass the DOM update directly
+    // (nested startViewTransition made page-content run route slides).
+    void motion.beginTheme(update)
     return
   }
 
@@ -167,6 +163,7 @@ export function ThemeProvider({
   storageKey = 'expense-tracker-theme',
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(defaultTheme)
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>('light')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -182,6 +179,7 @@ export function ThemeProvider({
   useEffect(() => {
     if (!mounted) return
     applyTheme(theme)
+    setResolvedTheme(resolveTheme(theme))
   }, [theme, mounted])
 
   useEffect(() => {
@@ -191,7 +189,10 @@ export function ThemeProvider({
     const onChange = () => {
       const next = resolveTheme('system')
       const prev: ResolvedTheme = next === 'dark' ? 'light' : 'dark'
-      withThemeTransition(() => applyTheme('system'), {
+      withThemeTransition(() => {
+        applyTheme('system')
+        setResolvedTheme(next)
+      }, {
         motion: motionFor(prev, next),
       })
     }
@@ -207,14 +208,17 @@ export function ThemeProvider({
     withThemeTransition(
       () => {
         applyTheme(next)
-        flushSync(() => setThemeState(next))
+        flushSync(() => {
+          setThemeState(next)
+          setResolvedTheme(to)
+        })
       },
       { origin, motion: motionFor(from, to) },
     )
   }
 
   return (
-    <ThemeProviderContext value={{ theme, setTheme }}>
+    <ThemeProviderContext value={{ theme, resolvedTheme, setTheme }}>
       <ScriptOnce>{getThemeScript(storageKey, defaultTheme)}</ScriptOnce>
       {children}
     </ThemeProviderContext>

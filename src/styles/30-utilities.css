@@ -12,12 +12,9 @@
   }
 }
 
+/* Geometry owned by #/lib/motion animateChrome (interruptible spring). */
 @utility nav-pill {
-  transition:
-    transform var(--duration-settle) var(--ease-settle),
-    width var(--duration-settle) var(--ease-settle),
-    height var(--duration-settle) var(--ease-settle),
-    opacity var(--duration-enter) var(--ease-enter);
+  will-change: transform, width, height;
 }
 
 @utility hover-lift {

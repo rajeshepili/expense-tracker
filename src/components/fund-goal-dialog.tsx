@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Target } from 'lucide-react'
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '#/components/ui/alert-dialog'
 import { Button } from '#/components/ui/button'
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+} from '#/components/ui/responsive-modal'
 import { Field, FieldLabel } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import {
@@ -183,7 +182,7 @@ export function FundGoalDialog({
   }
 
   return (
-    <AlertDialog
+    <ResponsiveModal
       open={open}
       onOpenChange={(next) => {
         if (!next) {
@@ -194,20 +193,20 @@ export function FundGoalDialog({
         onOpenChange(next)
       }}
     >
-      <AlertDialogContent size="default">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
+      <ResponsiveModalContent className="sm:max-w-md" showCloseButton={false}>
+        <ResponsiveModalHeader>
+          <ResponsiveModalTitle className="flex items-center gap-2">
             <Target className="size-4" aria-hidden />
             Add income to a savings goal?
-          </AlertDialogTitle>
-          <AlertDialogDescription>
+          </ResponsiveModalTitle>
+          <ResponsiveModalDescription>
             {offer
               ? `You just recorded ${money(offer.amount, offer.currency)}${
                   offer.description ? ` for “${offer.description}”` : ''
                 }. Put some of it toward a goal.`
               : 'Put some of this income toward a goal.'}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
 
         <div className="grid gap-3 py-1">
           <Field>
@@ -216,7 +215,7 @@ export function FundGoalDialog({
               value={selected?.goal.id ?? ''}
               onValueChange={selectGoal}
             >
-              <SelectTrigger id="fund-goal" className="w-full">
+              <SelectTrigger id="fund-goal" className="min-h-11 w-full md:min-h-9">
                 <SelectValue placeholder="Choose goal" />
               </SelectTrigger>
               <SelectContent>
@@ -240,6 +239,7 @@ export function FundGoalDialog({
               inputMode="decimal"
               min="0.01"
               step="0.01"
+              className="min-h-11 md:min-h-9"
               value={amount}
               onChange={(event) => {
                 setAmount(event.target.value)
@@ -261,18 +261,24 @@ export function FundGoalDialog({
           ) : null}
         </div>
 
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={fundMutation.isPending}>
-            Skip
-          </AlertDialogCancel>
+        <ResponsiveModalFooter>
           <Button
+            type="button"
+            variant="outline"
+            disabled={fundMutation.isPending}
+            onClick={() => onOpenChange(false)}
+          >
+            Skip
+          </Button>
+          <Button
+            type="button"
             disabled={fundMutation.isPending || !selected}
             onClick={submit}
           >
             {fundMutation.isPending ? 'Adding…' : 'Add to goal'}
           </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </ResponsiveModalFooter>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   )
 }

@@ -1,12 +1,12 @@
 import { Fragment } from 'react'
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
 import {
   VirtualizedList,
   VirtualizedTable,
 } from '#/components/ui/virtualized-list'
 import { MobileList } from '#/components/layout/mobile-list'
 import { Table, TableBody } from '#/components/ui/table'
-import { useIsMobile } from '#/hooks/use-media-query'
+import { useIsCompact } from '#/hooks/use-media-query'
 import { cn } from 'cn'
 
 type VirtualizedDataListProps<T> = {
@@ -20,10 +20,11 @@ type VirtualizedDataListProps<T> = {
   renderDesktop: (item: T, index: number) => ReactNode
   overscan?: number
   empty?: ReactNode
-  desktopEmpty?: ReactNode
   className?: string
   mobileClassName?: string
   layout?: 'fill' | 'flow'
+  /** Forwarded to the scroll root that owns `[data-flip-key]` rows. */
+  listRootRef?: Ref<HTMLElement | null>
 }
 
 export function VirtualizedDataList<T>({
@@ -37,24 +38,15 @@ export function VirtualizedDataList<T>({
   renderDesktop,
   overscan = 6,
   empty,
-  desktopEmpty,
   className,
   mobileClassName,
   layout = 'fill',
+  listRootRef,
 }: VirtualizedDataListProps<T>) {
-  const isMobile = useIsMobile()
+  const isCompact = useIsCompact()
   const isEmpty = items.length === 0
-  const desktopEmptyBody =
-    desktopEmpty ??
-    (empty ? (
-      <tr className="hover:bg-transparent">
-        <td colSpan={colSpan} className="p-0">
-          {empty}
-        </td>
-      </tr>
-    ) : null)
 
-  if (isMobile) {
+  if (isCompact) {
     if (isEmpty) {
       return (
         <div className={cn('min-h-0', layout === 'fill' && 'flex-1', mobileClassName)}>
@@ -65,7 +57,7 @@ export function VirtualizedDataList<T>({
 
     if (layout === 'flow') {
       return (
-        <div className={cn(mobileClassName)}>
+        <div ref={listRootRef as Ref<HTMLDivElement>} className={cn(mobileClassName)}>
           <MobileList>
             {items.map((item, index) => (
               <Fragment key={getItemKey(item, index)}>
@@ -77,6 +69,7 @@ export function VirtualizedDataList<T>({
       )
     }
 
+    // Virtualized mobile uses translateY — do not attach FLIP root (WAAPI fight).
     return (
       <div className={cn('min-h-0 flex-1', mobileClassName)}>
         <MobileList className="flex min-h-0 max-h-full flex-col overflow-hidden p-0">
@@ -95,20 +88,37 @@ export function VirtualizedDataList<T>({
   }
 
   if (layout === 'flow') {
+    // Empty: no column header bar — same as compact (headers with no rows look broken).
+    if (isEmpty) {
+      return (
+        <div ref={listRootRef as Ref<HTMLDivElement>} className={className}>
+          {empty}
+        </div>
+      )
+    }
     return (
-      <div className={className}>
+      <div ref={listRootRef as Ref<HTMLDivElement>} className={className}>
         <Table>
           {header}
           <TableBody>
-            {isEmpty
-              ? desktopEmptyBody
-              : items.map((item, index) => (
-                  <Fragment key={getItemKey(item, index)}>
-                    {renderDesktop(item, index)}
-                  </Fragment>
-                ))}
+            {items.map((item, index) => (
+              <Fragment key={getItemKey(item, index)}>
+                {renderDesktop(item, index)}
+              </Fragment>
+            ))}
           </TableBody>
         </Table>
+      </div>
+    )
+  }
+
+  if (isEmpty) {
+    return (
+      <div
+        ref={listRootRef as Ref<HTMLDivElement>}
+        className={cn('min-h-0 flex-1', className)}
+      >
+        {empty}
       </div>
     )
   }
@@ -120,9 +130,9 @@ export function VirtualizedDataList<T>({
       estimateSize={desktopEstimateSize}
       overscan={overscan}
       getItemKey={getItemKey}
-      empty={isEmpty ? desktopEmptyBody : undefined}
       header={header}
       className={className}
+      listRootRef={listRootRef}
     >
       {renderDesktop}
     </VirtualizedTable>

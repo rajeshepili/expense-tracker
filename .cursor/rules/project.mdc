@@ -3,7 +3,7 @@ description: Expense Tracker v1 product scope and stack
 alwaysApply: true
 ---
 
-# Expense Tracker (v1)
+# Expense Tracker (v1 / v1.1)
 
 Personal, local-only money tracker. Not tax software, payroll, banking, or multi-user sync.
 
@@ -12,6 +12,8 @@ Personal, local-only money tracker. Not tax software, payroll, banking, or multi
 - First-run onboarding (currency, budget, empty vs sample)
 - Overview, ledger, recurring expenses, savings goals, categories
 - Monthly budget + display currency (optional per-month override)
+- **Accounts (v1.1)** — named balances (type, starting balance, close); Overview net worth
+- **Transfers (v1.1)** — paired ledger legs between accounts; compose/edit/delete as a pair
 - Browser SQLite via SQLocal / OPFS (Chromium)
 - Android Chrome installable PWA + mobile shell (bottom tabs)
 - HTTPS demo host (Vercel) with COEP/COOP headers
@@ -21,7 +23,7 @@ Personal, local-only money tracker. Not tax software, payroll, banking, or multi
 
 - Capacitor / Expo / Play Store / App Store packaging (later phase)
 - iOS Safari as a supported runtime (later: Capacitor + native SQLite)
-- Cloud sync, accounts, auth, remote APIs
+- Cloud sync, multi-user accounts, auth, remote APIs
 - Employer / tax / bank integrations
 
 ## Layout

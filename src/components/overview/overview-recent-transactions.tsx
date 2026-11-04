@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useRouter } from '@tanstack/react-router'
 import { Plus, Receipt } from 'lucide-react'
@@ -19,13 +20,31 @@ import {
 import { VirtualizedDataList } from '#/components/ui/virtualized-data-list'
 import { EmptyState } from '#/components/layout/empty-state'
 import { MobileListRow } from '#/components/layout/mobile-list'
-import { TableEmptyRow } from '#/components/layout/page-shell'
 import { RowActionsMenu } from '#/components/row-actions-menu'
 import { SignedMoney } from '#/components/signed-money'
+import { useFlipList } from '#/hooks/use-flip-list'
 import { formatIsoDate } from '#/lib/finance'
+import { transferBadgeClass } from '#/lib/ledger-form'
 import { navigateAfterPrefetch } from '#/lib/navigate-after-prefetch'
 import { prefetchRoute } from '#/lib/query/prefetch'
 import type { LedgerTransaction } from '#/lib/types'
+
+function recentCategoryBadge(transaction: LedgerTransaction) {
+  if (transaction.type === 'transfer') {
+    const label =
+      transaction.transferDirection === 'in'
+        ? 'Transfer in'
+        : transaction.transferDirection === 'out'
+          ? 'Transfer out'
+          : 'Transfer'
+    return (
+      <Badge variant="outline" className={transferBadgeClass(transaction.transferDirection)}>
+        {label}
+      </Badge>
+    )
+  }
+  return <Badge variant="secondary">{transaction.category}</Badge>
+}
 
 type OverviewRecentTransactionsProps = {
   yearMonth: string
@@ -42,6 +61,18 @@ export function OverviewRecentTransactions({
 }: OverviewRecentTransactionsProps) {
   const queryClient = useQueryClient()
   const router = useRouter()
+  const listRef = useRef<HTMLElement | null>(null)
+  const { isEntering, isExiting } = useFlipList(
+    listRef,
+    transactions,
+    (row) => row.id,
+  )
+
+  function flipState(id: string): 'enter' | 'exit' | undefined {
+    if (isExiting(id)) return 'exit'
+    if (isEntering(id)) return 'enter'
+    return undefined
+  }
 
   function openInLedger(id: string) {
     prefetchRoute(queryClient, '/ledger', { month: yearMonth })
@@ -115,13 +146,13 @@ export function OverviewRecentTransactions({
       <CardContent className="px-0 pb-1">
         <VirtualizedDataList
           layout="flow"
+          listRootRef={listRef}
           items={transactions}
           getItemKey={(row) => row.id}
           mobileEstimateSize={64}
           desktopEstimateSize={44}
           colSpan={5}
           empty={empty}
-          desktopEmpty={<TableEmptyRow colSpan={5}>{empty}</TableEmptyRow>}
           mobileClassName="px-3 py-2"
           header={
             <TableHeader>
@@ -138,60 +169,95 @@ export function OverviewRecentTransactions({
               </TableRow>
             </TableHeader>
           }
-          renderMobile={(transaction) => (
-            <MobileListRow
-              key={transaction.id}
-              title={transaction.description}
-              meta={`${transaction.category} · ${formatIsoDate(transaction.date)}`}
-              trailing={
-                <SignedMoney
-                  type={transaction.type}
-                  amount={transaction.amount}
-                  currency={currency}
-                />
-              }
-              onClick={() => openInLedger(transaction.id)}
-              actions={
-                <RowActionsMenu
-                  label={transaction.description}
-                  size="touch"
-                  editAsChild={editLink(transaction.id)}
-                  onDelete={() => onDelete(transaction)}
-                />
-              }
-            />
-          )}
-          renderDesktop={(transaction) => (
-            <TableRow
-              key={transaction.id}
-              className="cursor-pointer pressable-row"
-              onClick={() => openInLedger(transaction.id)}
-            >
-              <TableCell className="font-medium">
-                {transaction.description}
-              </TableCell>
-              <TableCell>
-                <Badge variant="secondary">{transaction.category}</Badge>
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {formatIsoDate(transaction.date)}
-              </TableCell>
-              <TableCell className="text-right whitespace-nowrap tabular-nums">
-                <SignedMoney
-                  type={transaction.type}
-                  amount={transaction.amount}
-                  currency={currency}
-                />
-              </TableCell>
-              <TableCell onClick={(event) => event.stopPropagation()}>
-                <RowActionsMenu
-                  label={transaction.description}
-                  editAsChild={editLink(transaction.id)}
-                  onDelete={() => onDelete(transaction)}
-                />
-              </TableCell>
-            </TableRow>
-          )}
+          renderMobile={(transaction, index) => {
+            const state = flipState(transaction.id)
+            return (
+              <MobileListRow
+                key={transaction.id}
+                flip={{ key: transaction.id, state, index }}
+                title={transaction.description}
+                meta={`${
+                  transaction.type === 'transfer'
+                    ? transaction.transferDirection === 'in'
+                      ? 'Transfer in'
+                      : transaction.transferDirection === 'out'
+                        ? 'Transfer out'
+                        : 'Transfer'
+                    : transaction.category
+                } · ${formatIsoDate(transaction.date)}`}
+                trailing={
+                  <SignedMoney
+                    type={transaction.type}
+                    amount={transaction.amount}
+                    currency={currency}
+                    transferDirection={transaction.transferDirection}
+                  />
+                }
+                onClick={
+                  state === 'exit' ? undefined : () => openInLedger(transaction.id)
+                }
+                actions={
+                  state === 'exit' ? null : (
+                    <RowActionsMenu
+                      label={transaction.description}
+                      size="touch"
+                      editAsChild={editLink(transaction.id)}
+                      onDelete={() => onDelete(transaction)}
+                    />
+                  )
+                }
+              />
+            )
+          }}
+          renderDesktop={(transaction, index) => {
+            const state = flipState(transaction.id)
+            return (
+              <TableRow
+                key={transaction.id}
+                data-flip-key={transaction.id}
+                data-flip-enter={state === 'enter' ? '' : undefined}
+                data-flip-exit={state === 'exit' ? '' : undefined}
+                style={
+                  state === 'enter'
+                    ? {
+                        ['--flip-enter-delay' as string]: `${Math.min(index, 8) * 40}ms`,
+                      }
+                    : undefined
+                }
+                className="cursor-pointer pressable-row"
+                onClick={
+                  state === 'exit'
+                    ? undefined
+                    : () => openInLedger(transaction.id)
+                }
+              >
+                <TableCell className="font-medium">
+                  {transaction.description}
+                </TableCell>
+                <TableCell>{recentCategoryBadge(transaction)}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {formatIsoDate(transaction.date)}
+                </TableCell>
+                <TableCell className="text-right whitespace-nowrap tabular-nums">
+                  <SignedMoney
+                    type={transaction.type}
+                    amount={transaction.amount}
+                    currency={currency}
+                    transferDirection={transaction.transferDirection}
+                  />
+                </TableCell>
+                <TableCell onClick={(event) => event.stopPropagation()}>
+                  {state === 'exit' ? null : (
+                    <RowActionsMenu
+                      label={transaction.description}
+                      editAsChild={editLink(transaction.id)}
+                      onDelete={() => onDelete(transaction)}
+                    />
+                  )}
+                </TableCell>
+              </TableRow>
+            )
+          }}
         />
       </CardContent>
     </Card>

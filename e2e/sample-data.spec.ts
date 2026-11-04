@@ -15,8 +15,8 @@ test.describe('sample data smoke @smoke', () => {
     await expect(tableCell(page, 'Grocery run')).toBeVisible()
     await expect(tableCell(page, 'Top up spending card')).toHaveCount(2)
 
-    await goToNav(page, 'Recurring')
-    await expect(page.getByRole('heading', { name: 'Recurring' })).toBeVisible()
+    await goToNav(page, 'Bills')
+    await expect(page.getByRole('heading', { name: 'Bills' })).toBeVisible()
     await expect(page.locator('table tbody tr').first()).toBeVisible()
   })
 })

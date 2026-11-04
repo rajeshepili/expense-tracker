@@ -15,7 +15,6 @@ import { EmptyState } from '#/components/layout/empty-state'
 import type { useRecordRecurring } from '#/hooks/use-record-recurring'
 import { amountDue, canOneTapRecord, formatIsoDate, money } from '#/lib/finance'
 import type { RecurringExpenseRow } from '#/lib/types'
-import { cn } from 'cn'
 
 type OverviewRecurringPanelProps = {
   currency: string
@@ -48,7 +47,6 @@ export function OverviewRecurringPanel({
             asChild
             variant="ghost"
             size="icon-sm"
-            className="hover-lift"
             aria-label="Manage recurring"
           >
             <Link to="/recurring">
@@ -70,7 +68,7 @@ export function OverviewRecurringPanel({
             title="No active recurring"
             description="Set up rent, subscriptions, or other repeats."
             action={
-              <Button asChild variant="outline" size="sm" className="hover-lift">
+              <Button asChild variant="outline" size="sm">
                 <Link to="/recurring">
                   <Repeat data-icon="inline-start" />
                   Manage
@@ -83,10 +81,7 @@ export function OverviewRecurringPanel({
             {upcomingRecurring.map((item) => (
               <div
                 key={item.id}
-                className={cn(
-                  'flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 rounded-md bg-muted/30',
-                  'transition-shadow duration-settle ease-settle hover-lift'
-                )}
+                className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2 sm:gap-3 rounded-md bg-muted/30 p-3"
               >
                 <div className="min-w-0">
                   <p className="flex flex-wrap items-center gap-2 truncate text-sm font-medium">
@@ -107,7 +102,7 @@ export function OverviewRecurringPanel({
                   {canOneTapRecord(item.nextDate) ? (
                     <Button
                       size="sm"
-                      className="active:scale-[0.97] w-full sm:w-auto hover-lift"
+                      className="w-full sm:w-auto"
                       disabled={recorder.recording}
                       onClick={() => recorder.recordOneTap(item)}
                     >
@@ -117,7 +112,7 @@ export function OverviewRecurringPanel({
                     <Button
                       size="sm"
                       variant="outline"
-                      className="active:scale-[0.97] w-full sm:w-auto hover-lift"
+                      className="w-full sm:w-auto"
                       disabled={recorder.recording}
                       onClick={() => recorder.openAdjust(item)}
                     >

@@ -60,8 +60,9 @@ export function MobileListRow({
       }
       className={cn(
         'min-h-[3.75rem] touch-manipulation rounded-none border-0 border-b border-border/60 last:border-b-0',
-        'transition-[transform,background-color] duration-settle ease-settle',
-        onClick && 'cursor-pointer active:scale-[0.98] hover:bg-muted/50',
+        'pressable-row',
+        onClick &&
+          'cursor-pointer pressable [@media(hover:hover)]:hover:bg-muted/50',
         className,
       )}
       role={onClick ? 'button' : undefined}

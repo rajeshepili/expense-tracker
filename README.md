@@ -4,8 +4,9 @@ A personal, local-only expense tracker. Everything runs in the browser and is st
 
 ## Features
 
-- **Overview** — this month’s income and expenses, budget left / used, category breakdown, upcoming recurring
-- **Ledger** — add, edit, delete, filter, and search transactions
+- **Overview** — this month’s income and expenses, budget left / used, category breakdown, accounts / net worth, upcoming recurring
+- **Ledger** — add, edit, delete, filter, and search transactions; transfers move money between accounts as a linked pair
+- **Accounts** — named balances (cash, cards, bank) with type, starting balance, and close; used on expenses/income and transfers
 - **Recurring** — weekly / monthly / yearly bills with active toggle and budget impact
 - **Savings** — goals with progress, funding from income, optional target dates
 - **Categories** — manage income and expense categories; deletes reassign related items
@@ -89,8 +90,8 @@ pnpm preview   # Nitro Node server (applies COEP to HTML + /assets)
 | `settings`           | Default monthly budget, currency, onboarding flag |
 | `monthly_budgets`    | Optional per-month budget overrides (`YYYY-MM`)   |
 | `categories`         | Income / expense categories                       |
-| `payment_methods`    | How a transaction was paid                        |
-| `transactions`       | Ledger entries                                    |
+| `payment_methods`    | Accounts (balances); table name kept for migrations |
+| `transactions`       | Ledger entries (expense / income / transfer legs) |
 | `recurring_expenses` | Recurring bills                                   |
 | `savings_goals`      | Savings goals (target, current, optional date)    |
 

@@ -7,15 +7,16 @@ import { ModeToggle } from '#/app/mode-toggle'
 import { useMediaQuery } from '#/hooks/use-media-query'
 import { NAV_PATHS } from '#/lib/app-config'
 import { navigateAfterPrefetch } from '#/lib/navigate-after-prefetch'
-import { motion } from '#/lib/motion'
+import { animateChrome, motion, prefersReducedMotion, snapChrome } from '#/lib/motion'
+import { APP_NAME } from '#/lib/brand'
 import { prefetchRoute } from '#/lib/query/prefetch'
 
 const linkMeta: Record<(typeof NAV_PATHS)[number], { label: string; shortLabel: string; icon: typeof LayoutDashboard; exact: boolean }> = {
   '/': { label: 'Overview', shortLabel: 'Overview', icon: LayoutDashboard, exact: true },
   '/ledger': { label: 'Ledger', shortLabel: 'Ledger', icon: Receipt, exact: false },
-  '/recurring': { label: 'Recurring', shortLabel: 'Bills', icon: Repeat, exact: false },
+  '/recurring': { label: 'Bills', shortLabel: 'Bills', icon: Repeat, exact: false },
   '/categories': { label: 'Categories', shortLabel: 'Categories', icon: Tags, exact: false },
-  '/savings': { label: 'Savings', shortLabel: 'Goals', icon: Target, exact: false },
+  '/savings': { label: 'Goals', shortLabel: 'Goals', icon: Target, exact: false },
 }
 
 const links = NAV_PATHS.map((to) => ({ to, ...linkMeta[to] }))
@@ -38,30 +39,54 @@ const desktopLinkClass = cn(
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
 )
 
-type Pill = { left: number; width: number; height: number; top: number; visible: boolean }
+type PillMetrics = { left: number; width: number; height: number; top: number }
 
 function useNavPill<T extends HTMLElement>(activeIndex: number, visible: boolean) {
   const containerRef = useRef<T | null>(null)
   const itemRefs = useRef<(HTMLElement | null)[]>([])
-  const [pill, setPill] = useState<Pill>({ left: 0, width: 0, height: 0, top: 0, visible: false })
+  const pillRef = useRef<HTMLSpanElement | null>(null)
   const [ready, setReady] = useState(false)
+  const hasAnimated = useRef(false)
 
   useLayoutEffect(() => {
-    if (!visible) return
+    if (!visible) {
+      hasAnimated.current = false
+      setReady(false)
+      return
+    }
     const measure = () => {
       const container = containerRef.current
       const el = itemRefs.current[activeIndex]
-      if (!container || !el) return
+      const node = pillRef.current
+      if (!container || !el || !node) return
       const c = container.getBoundingClientRect()
       const r = el.getBoundingClientRect()
       if (r.width === 0 || r.height === 0) return
-      setPill({
+
+      const metrics: PillMetrics = {
         left: r.left - c.left,
         top: r.top - c.top,
         width: r.width,
         height: r.height,
-        visible: true,
-      })
+      }
+
+      const next = {
+        transform: `translate(${metrics.left}px, ${metrics.top}px)`,
+        width: `${metrics.width}px`,
+        height: `${metrics.height}px`,
+      }
+
+      // First paint or PRM: snap. Subsequent tab changes: interruptible spring.
+      if (!hasAnimated.current || prefersReducedMotion()) {
+        snapChrome(node, next)
+        hasAnimated.current = true
+      } else {
+        animateChrome(node, {
+          transform: next.transform,
+          width: metrics.width,
+          height: metrics.height,
+        })
+      }
       setReady(true)
     }
     measure()
@@ -76,7 +101,7 @@ function useNavPill<T extends HTMLElement>(activeIndex: number, visible: boolean
     }
   }, [activeIndex, visible])
 
-  return { containerRef, itemRefs, pill, ready }
+  return { containerRef, itemRefs, pillRef, ready }
 }
 
 export function AppNav() {
@@ -106,11 +131,11 @@ export function AppNav() {
         <div className="mx-auto flex h-12 w-full max-w-6xl items-center gap-4 px-6 md:px-8">
           <Link
             to="/"
-            className="shrink-0 text-sm font-semibold tracking-tight text-foreground no-underline"
+            className="brand-wordmark shrink-0 text-sm font-semibold tracking-tight text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             onMouseEnter={() => prefetchRoute(queryClient, '/')}
             onFocus={() => prefetchRoute(queryClient, '/')}
           >
-            Expense Tracker
+            {APP_NAME}
           </Link>
           <nav
             data-tour="nav"
@@ -118,16 +143,14 @@ export function AppNav() {
             className="relative flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             aria-label="Primary"
           >
-            {desktopNav.ready && (
             <span
+              ref={desktopNav.pillRef}
               aria-hidden
-              className="nav-pill pointer-events-none absolute rounded-md bg-secondary"
-              style={{
-                transform: `translate(${desktopNav.pill.left}px, ${desktopNav.pill.top}px)`,
-                width: desktopNav.pill.width,
-                height: desktopNav.pill.height,
-              }}
-            />)}
+              className={cn(
+                'nav-pill pointer-events-none absolute rounded-md bg-secondary',
+                !desktopNav.ready && 'opacity-0',
+              )}
+            />
             {links.map((link, i) => {
               const active = isActive(pathname, link)
               const Icon = link.icon
@@ -165,11 +188,11 @@ export function AppNav() {
         <div className="flex h-12 items-center justify-between gap-3 px-4">
           <Link
             to="/"
-            className="text-sm font-semibold tracking-tight text-foreground no-underline"
+            className="brand-wordmark text-sm font-semibold tracking-tight text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             onMouseEnter={() => prefetchRoute(queryClient, '/')}
             onFocus={() => prefetchRoute(queryClient, '/')}
           >
-            Expense Tracker
+            {APP_NAME}
           </Link>
           <ModeToggle />
         </div>
@@ -185,16 +208,14 @@ export function AppNav() {
           ref={mobileNav.containerRef}
           className="relative mx-auto flex max-w-lg items-stretch gap-1 px-2 pt-1"
         >
-          {mobileNav.ready && (
           <span
+            ref={mobileNav.pillRef}
             aria-hidden
-            className="nav-pill pointer-events-none absolute rounded-md bg-secondary"
-            style={{
-              transform: `translate(${mobileNav.pill.left}px, ${mobileNav.pill.top}px)`,
-              width: mobileNav.pill.width,
-              height: mobileNav.pill.height,
-            }}
-          />)}
+            className={cn(
+              'nav-pill pointer-events-none absolute rounded-md bg-secondary',
+              !mobileNav.ready && 'opacity-0',
+            )}
+          />
           {links.map((link, i) => {
             const active = isActive(pathname, link)
             const Icon = link.icon

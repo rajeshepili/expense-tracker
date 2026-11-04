@@ -1,4 +1,4 @@
-import { todayIso } from './finance'
+import { MONEY_EPSILON, todayIso } from './finance'
 import type { SavingsGoalInput, SavingsGoalRow, SavingsGoalUpdate } from './types'
 
 export type SavingsGoalAmounts = Pick<
@@ -12,7 +12,7 @@ export type RankedSavingsGoal = {
   categoryMatch: boolean
 }
 
-export const MONEY_EPSILON = 1e-4
+export { MONEY_EPSILON }
 
 export function savingsRemaining(goal: SavingsGoalAmounts): number {
   const left = goal.targetAmount - goal.currentAmount

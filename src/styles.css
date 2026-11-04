@@ -3,15 +3,16 @@
    ------------------------------------------------------------
    00-imports.css           fonts, tailwindcss, plugins, tw-animate-css, dark variant
    10-tokens.css            :root + .dark — color/radius/shadow tokens
-   20-theme.css             @theme inline — color mapping + motion tokens
-                            (--ease-*, --duration-*, --animate-*) + their keyframes
+   20-theme.css             @theme inline — color / font / radius mapping
+   25-motion-tokens.css     easings, durations, shared keyframes
    30-utilities.css         @utility — pressable, pressable-row, nav-pill, hover-lift
-   40-base.css              @layer base — resets, body, bg gradients, mobile cards,
-                            scroll-panel, page-section entrance
-   50-view-transitions.css  ::view-transition-* pseudos + route/month/theme keyframes
-   60-components.css        entry @starting-style for dialogs/popovers/toasts;
-                            skip-link, badges, stat-tile, animated-number,
-                            skeleton-shimmer, FLIP [data-flip-*]
+   40-base.css              @layer base — resets, body, bg gradients, scroll-panel
+   45-page-enter.css        @starting-style / settle — scoped to .page-content only
+   50-view-transitions.css  ::view-transition-* + route/month/theme keyframes
+   55-overlays.css          dialog/select/dropdown/toast/drawer @starting-style
+   56-list-flip.css         FLIP enter/exit + composer/dismiss panes
+   60-components.css        skip-link, badges, stat-tile, animated-number, skeleton
+   65-landing.css           first-run landing layout + keyframes
    70-reduced-motion.css    single global prefers-reduced-motion kill-switch (LAST)
 
    MOTION RULES — read before adding any animation:
@@ -22,17 +23,25 @@
       page 300ms route+month slides · press 100ms linear :active · theme 460ms bloom.
    3. Animate transform + opacity only. Gate hover behind
       @media (hover: hover) and (pointer: fine). Stagger lists 40ms/row, cap 8.
-   4. prefers-reduced-motion is handled ONLY in 70-reduced-motion.css — new
-      animations degrade automatically; don't add per-component rules.
-   5. View Transitions: wrap updates in lib/view-transition.ts withViewTransition();
-      style ::view-transition-* pseudos in 50-view-transitions.css.
+   4. prefers-reduced-motion: kill-switch in 70-reduced-motion.css; page-enter
+      opacity-only in 45-page-enter.css. Router disables route VT under PRM.
+   5. Stack: route/month = View Transitions (direction = view-transition-name
+      page-forward|page-back / month-*) · sheets = Vaul · chrome springs =
+      animateChrome · press = CSS :active ~100ms.
+   6. Orchestrate via #/lib/motion; style named VT groups in 50-view-transitions.css.
+      Never rely on :active-view-transition-type to retarget route slides.
    ============================================================ */
 
 @import './styles/00-imports.css';
 @import './styles/10-tokens.css';
 @import './styles/20-theme.css';
+@import './styles/25-motion-tokens.css';
 @import './styles/30-utilities.css';
 @import './styles/40-base.css';
+@import './styles/45-page-enter.css';
 @import './styles/50-view-transitions.css';
+@import './styles/55-overlays.css';
+@import './styles/56-list-flip.css';
 @import './styles/60-components.css';
+@import './styles/65-landing.css';
 @import './styles/70-reduced-motion.css';
