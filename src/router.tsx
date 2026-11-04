@@ -1,6 +1,6 @@
 import { createRouter as createTanStackRouter } from '@tanstack/react-router'
 import { routeTree } from './routeTree.gen'
-import { NAV_PATHS } from '#/lib/app-config'
+import { applyRouteVtDirection, resolveNavDirection } from '#/lib/motion'
 
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import { getContext } from './integrations/tanstack-query/root-provider'
@@ -14,6 +14,8 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
+    // History / non-tab navigations. Tabs stamp + VT in navigateAfterPrefetch.
+    // types callback is only used to stamp page-forward|page-back names (and PRM).
     defaultViewTransition: {
       types: ({
         fromLocation,
@@ -27,31 +29,17 @@ export function getRouter() {
         if (!pathChanged) return false
         if (typeof document === 'undefined') return false
         if (document.startViewTransition === undefined) return false
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false
-        const root = document.documentElement
-        const clear = () => {
-          root.style.removeProperty('--route-vt-out')
-          root.style.removeProperty('--route-vt-in')
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          return false
         }
-        const setDir = (back: boolean) => {
-          root.style.setProperty('--route-vt-out', back ? 'route-out-right' : 'route-out-left')
-          root.style.setProperty('--route-vt-in', back ? 'route-in-left' : 'route-in-right')
-          window.setTimeout(clear, 400)
-        }
-        const fromIdx = fromLocation?.state?.__TSR_index
-        const toIdx = toLocation.state?.__TSR_index
-        if (fromIdx !== undefined && toIdx !== undefined && toIdx < fromIdx) {
-          setDir(true)
-          return ['nav-back']
-        }
-        const fromNav = NAV_PATHS.indexOf(fromLocation?.pathname as (typeof NAV_PATHS)[number] ?? '')
-        const toNav = NAV_PATHS.indexOf(toLocation.pathname as (typeof NAV_PATHS)[number])
-        if (fromNav !== -1 && toNav !== -1 && fromNav !== toNav) {
-          setDir(toNav < fromNav)
-          return [toNav > fromNav ? 'nav-forward' : 'nav-back']
-        }
-        setDir(false)
-        return ['nav-forward']
+        const { back } = resolveNavDirection({
+          fromPathname: fromLocation?.pathname,
+          toPathname: toLocation.pathname,
+          fromIndex: fromLocation?.state?.__TSR_index,
+          toIndex: toLocation.state?.__TSR_index,
+        })
+        applyRouteVtDirection(back)
+        return ['route']
       },
     },
   })

@@ -1,6 +1,11 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { AnyRouter, NavigateOptions } from '@tanstack/react-router'
-import { motion } from '#/lib/motion'
+import {
+  applyRouteVtDirection,
+  clearRouteVtDirection,
+  motion,
+  resolveNavDirection,
+} from '#/lib/motion'
 import { prefetchRouteAsync } from '#/lib/query/prefetch'
 
 type NavigateAfterPrefetchOptions = NavigateOptions & {
@@ -8,6 +13,10 @@ type NavigateAfterPrefetchOptions = NavigateOptions & {
   month?: string
 }
 
+/**
+ * Tab nav: stamp page-forward|page-back name, then run one View Transition
+ * around a typeless navigate (router VT disabled for this call).
+ */
 export async function navigateAfterPrefetch(
   router: AnyRouter,
   queryClient: QueryClient,
@@ -15,23 +24,46 @@ export async function navigateAfterPrefetch(
 ): Promise<void> {
   const { animate, month, to, ...rest } = opts
   const toPath = typeof to === 'string' ? to : '/'
+  const fromPath = router.state.location.pathname
+  const pathChanged = fromPath !== toPath
   try {
     await prefetchRouteAsync(queryClient, toPath, { month })
   } catch {
     // Prefetch failure must not block navigation.
   }
-  const doNavigate = () =>
+
+  const navigateNoVt = () =>
     router.navigate({
       ...rest,
       to,
-      viewTransition: animate === false ? false : undefined,
+      viewTransition: false,
     } as NavigateOptions)
-  if (animate === false || motion.reduced()) {
-    await doNavigate()
+
+  if (animate === false || motion.reduced() || !pathChanged) {
+    await navigateNoVt()
     return
   }
+
+  const { back } = resolveNavDirection({
+    fromPathname: fromPath,
+    toPathname: toPath,
+  })
+  applyRouteVtDirection(back)
+
   await motion.coalesceNavigate(toPath, async () => {
-    await doNavigate()
-    queueMicrotask(() => motion.trackPage())
+    const start = document.startViewTransition?.bind(document)
+    if (typeof start !== 'function') {
+      await navigateNoVt()
+      clearRouteVtDirection()
+      return
+    }
+
+    const vt = start(() => navigateNoVt())
+    motion.trackPage(vt)
+    try {
+      await vt.updateCallbackDone
+    } catch {
+      // trackPage / safety timer still settle.
+    }
   })
 }

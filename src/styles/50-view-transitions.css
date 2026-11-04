@@ -1,51 +1,95 @@
+/*
+ * Route direction is encoded in view-transition-name (page-forward | page-back),
+ * set via html[data-vt-route] before navigate. Do not use :active-view-transition-type
+ * or attr selectors on VT pseudos — those overrides never win in Chromium.
+ */
+
 .page-content {
-  view-transition-name: page-content;
-  /* Opaque so the slide does not show the frozen root underneath. */
+  /* Idle / theme / month: no route name. Nav stamps page-forward|page-back. */
+  view-transition-name: none;
   background-color: var(--background);
+}
+
+html[data-vt-route='forward'] .page-content {
+  view-transition-name: page-forward;
+}
+html[data-vt-route='back'] .page-content {
+  view-transition-name: page-back;
+}
+
+html[data-motion='theme'] .page-content,
+html[data-motion='theme'] .month-view,
+html[data-motion='month'] .page-content {
+  view-transition-name: none;
 }
 
 ::view-transition-old(root) {
   animation: none;
 }
 
-/* Direction via --route-vt-out/--route-vt-in on <html> (VT pseudos inherit). */
-::view-transition-old(page-content) {
-  animation: var(--route-vt-out, route-out-left) var(--duration-page) var(--ease-page) both;
+/* Forward: old exits left, new enters from right */
+::view-transition-old(page-forward) {
+  animation: route-out-left var(--duration-page) var(--ease-page) both;
 }
-::view-transition-new(page-content) {
-  animation: var(--route-vt-in, route-in-right) var(--duration-page) var(--ease-page) both;
+::view-transition-new(page-forward) {
+  animation: route-in-right var(--duration-page) var(--ease-page) both;
+}
+
+/* Back: reverse path (spatial consistency) */
+::view-transition-old(page-back) {
+  animation: route-out-right var(--duration-page) var(--ease-page) both;
+}
+::view-transition-new(page-back) {
+  animation: route-in-left var(--duration-page) var(--ease-page) both;
 }
 
 @keyframes route-out-left {
   to {
+    opacity: 0;
     transform: translateX(-6%);
   }
 }
 @keyframes route-in-right {
   from {
+    opacity: 0;
     transform: translateX(6%);
   }
 }
 @keyframes route-out-right {
   to {
+    opacity: 0;
     transform: translateX(6%);
   }
 }
 @keyframes route-in-left {
   from {
+    opacity: 0;
     transform: translateX(-6%);
   }
 }
 
-.month-view {
-  view-transition-name: month-view;
+/*
+ * Month: name only while data-motion=month (avoids fighting route VT on Overview/Ledger).
+ * Direction via month-forward | month-back names — same pattern as routes.
+ */
+html[data-motion='month'][data-vt-month='forward'] .month-view {
+  view-transition-name: month-forward;
+}
+html[data-motion='month'][data-vt-month='back'] .month-view {
+  view-transition-name: month-back;
 }
 
-::view-transition-old(month-view) {
-  animation: var(--month-vt-out, month-out-up) var(--duration-page) var(--ease-page) both;
+::view-transition-old(month-forward) {
+  animation: month-out-up var(--duration-page) var(--ease-page) both;
 }
-::view-transition-new(month-view) {
-  animation: var(--month-vt-in, month-in-down) var(--duration-page) var(--ease-page) both;
+::view-transition-new(month-forward) {
+  animation: month-in-down var(--duration-page) var(--ease-page) both;
+}
+::view-transition-old(month-back) {
+  animation: month-out-down var(--duration-page) var(--ease-page) both;
+}
+::view-transition-new(month-back) {
+  animation: month-in-up var(--duration-page) var(--ease-page) both;
 }
 
 @keyframes month-out-up {
@@ -77,7 +121,7 @@
   display: none;
 }
 
-/* Theme bloom keyframes via custom props on <html> (VT pseudos inherit). */
+/* Theme bloom — custom props on <html> (root VT; props inherit here). */
 ::view-transition-old(root) {
   mix-blend-mode: normal;
   height: 100%;
@@ -148,4 +192,3 @@ html.theme-transition body {
     background-color var(--duration-theme) var(--ease-theme),
     color var(--duration-theme) var(--ease-theme);
 }
-

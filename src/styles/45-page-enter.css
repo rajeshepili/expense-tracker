@@ -1,0 +1,63 @@
+/* Page enter / settle — scoped to .page-content only (never landing).
+ * Full motion: opacity + short translateY. PRM: opacity cross-fade only
+ * (see @media below + 70-reduced-motion.css). */
+
+@starting-style {
+  html:not([data-motion='page']):not([data-motion='month']):not([data-motion='theme']):not([data-motion='overlay'])
+    .page-content > * > *:first-child,
+  html:not([data-motion='page']):not([data-motion='month']):not([data-motion='theme']):not([data-motion='overlay'])
+    .page-content .scroll-panel > * {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.page-content > * > *:first-child,
+.page-content .scroll-panel > * {
+  transition:
+    opacity var(--duration-enter) var(--ease-enter),
+    transform var(--duration-enter) var(--ease-enter);
+}
+
+/* HIG: Make motion optional — no vestibular slide under PRM. */
+@media (prefers-reduced-motion: reduce) {
+  @starting-style {
+    html:not([data-motion='page']):not([data-motion='month']):not([data-motion='theme']):not([data-motion='overlay'])
+      .page-content > * > *:first-child,
+    html:not([data-motion='page']):not([data-motion='month']):not([data-motion='theme']):not([data-motion='overlay'])
+      .page-content .scroll-panel > * {
+      opacity: 0;
+      transform: none;
+    }
+  }
+
+  .page-content > * > *:first-child,
+  .page-content .scroll-panel > * {
+    transform: none;
+    transition: opacity var(--duration-reduced) linear;
+  }
+}
+
+html[data-motion='page'] .page-content > * > *:first-child,
+html[data-motion='page'] .page-content .scroll-panel > *,
+html[data-motion='month'] .page-content > * > *:first-child,
+html[data-motion='month'] .page-content .scroll-panel > *,
+html[data-motion='theme'] .page-content > * > *:first-child,
+html[data-motion='theme'] .page-content .scroll-panel > *,
+html[data-motion='overlay'] .page-content > * > *:first-child,
+html[data-motion='overlay'] .page-content .scroll-panel > * {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+/* Settle stagger only after true route page VT — never month. */
+html[data-motion='settle'] .page-content .scroll-panel > * {
+  transition-delay: calc(min(var(--motion-i, 0), 5) * 40ms);
+}
+html[data-motion='settle'] .page-content .scroll-panel > *:nth-child(1) { --motion-i: 0; }
+html[data-motion='settle'] .page-content .scroll-panel > *:nth-child(2) { --motion-i: 1; }
+html[data-motion='settle'] .page-content .scroll-panel > *:nth-child(3) { --motion-i: 2; }
+html[data-motion='settle'] .page-content .scroll-panel > *:nth-child(4) { --motion-i: 3; }
+html[data-motion='settle'] .page-content .scroll-panel > *:nth-child(5) { --motion-i: 4; }
+html[data-motion='settle'] .page-content .scroll-panel > *:nth-child(6) { --motion-i: 5; }

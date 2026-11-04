@@ -1,5 +1,20 @@
+import { prefersReducedMotion } from './reduced'
+import {
+  startVT,
+  activeViewTransition,
+  clearRouteVtDirection,
+  clearMonthVtDirection,
+} from './vt'
+import type { MonthDirection } from './directions'
 
-export type MotionPhase = 'idle' | 'page' | 'theme' | 'settle' | 'overlay'
+export type MotionPhase =
+  | 'idle'
+  | 'page'
+  | 'month'
+  | 'theme'
+  | 'settle'
+  | 'overlay'
+
 export type MotionBlocker = 'modal' | 'drawer' | 'alert' | 'tour' | 'busy'
 
 export type MotionKind =
@@ -15,13 +30,6 @@ const SAFETY_MS = 1200
 
 function root(): HTMLElement | null {
   return typeof document === 'undefined' ? null : document.documentElement
-}
-
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  )
 }
 
 type Listener = () => void
@@ -64,23 +72,46 @@ function clearTimers() {
   }
 }
 
-function activeVT(): ViewTransition | null {
-  if (typeof document === 'undefined') return null
-  const doc = document as Document & { activeViewTransition?: ViewTransition | null }
-  return doc.activeViewTransition ?? null
+function busyForIdle(): boolean {
+  return (
+    state.phase === 'page' ||
+    state.phase === 'month' ||
+    state.phase === 'theme' ||
+    Boolean(activeViewTransition())
+  )
 }
 
+/** Hold name stamps until VT finished (~duration-page if handle missing). */
+const PAGE_VT_MS = 320
+
+/** After route VT: settle stagger once, then idle. Not used for month. */
 function releasePage(vt: ViewTransition | null) {
   clearTimers()
   const finish = vt
     ? Promise.resolve(vt.finished).catch(() => {})
-    : Promise.resolve()
+    : new Promise<void>((resolve) => {
+        window.setTimeout(resolve, PAGE_VT_MS)
+      })
   void finish.then(() => {
+    clearRouteVtDirection()
     if (state.phase !== 'page') return
     setPhase('settle')
     state.settleTimer = window.setTimeout(() => {
       if (state.phase === 'settle') setPhase('idle')
     }, SETTLE_BUDGET_MS)
+  })
+}
+
+function releaseMonth(vt: ViewTransition | null) {
+  clearTimers()
+  const finish = vt
+    ? Promise.resolve(vt.finished).catch(() => {})
+    : new Promise<void>((resolve) => {
+        window.setTimeout(resolve, PAGE_VT_MS)
+      })
+  void finish.then(() => {
+    clearMonthVtDirection()
+    if (state.phase === 'month') setPhase('idle')
   })
 }
 
@@ -99,19 +130,28 @@ export const motion = {
   },
 
   can(kind: MotionKind): boolean {
-    const b = state.blockers
+    const busy =
+      state.phase === 'page' ||
+      state.phase === 'month' ||
+      state.phase === 'theme' ||
+      state.phase === 'overlay'
     switch (kind) {
       case 'overlay':
-        return state.phase !== 'page' && state.phase !== 'theme' && !activeVT()
+        return (
+          state.phase !== 'page' &&
+          state.phase !== 'month' &&
+          state.phase !== 'theme' &&
+          !activeViewTransition()
+        )
       case 'pageEnter':
         return state.phase === 'idle' || state.phase === 'settle'
       case 'listFlip':
-        return state.phase !== 'page' && state.phase !== 'overlay'
+        return !busy && state.phase !== 'settle'
       case 'dataTween':
-        return state.phase !== 'page' && !activeVT()
+        return !busy && !activeViewTransition()
       case 'hotkey':
       case 'navigate':
-        return b.size === 0
+        return state.blockers.size === 0
       default:
         return true
     }
@@ -119,64 +159,65 @@ export const motion = {
 
   awaitIdle(): Promise<void> {
     if (prefersReducedMotion()) return Promise.resolve()
-    if (state.phase !== 'page' && state.phase !== 'theme' && !activeVT()) {
-      return Promise.resolve()
-    }
+    if (!busyForIdle()) return Promise.resolve()
     return new Promise((resolve) => {
       state.idleWaiters.push(resolve)
       window.setTimeout(resolve, SAFETY_MS)
     })
   },
 
+  /** Route tab change — settle after VT. */
   trackPage(vt?: ViewTransition | null): void {
     if (prefersReducedMotion()) {
       setPhase('idle')
       return
     }
     setPhase('page')
-    const v = vt ?? activeVT()
+    const v = vt ?? activeViewTransition()
     releasePage(v)
     state.safetyTimer = window.setTimeout(() => {
       if (state.phase === 'page') releasePage(null)
     }, SAFETY_MS)
   },
 
-  async beginPage(
+  /**
+   * In-place month change. Sets `data-motion=month` so `.page-content` drops
+   * its VT name (no horizontal shell slide). Does NOT enter settle.
+   */
+  month(
     update: () => void,
-    opts?: { types?: string[] },
-  ): Promise<ViewTransition | undefined> {
+    direction: MonthDirection,
+  ): ViewTransition | undefined {
     if (prefersReducedMotion() || typeof document === 'undefined') {
       update()
-      setPhase('idle')
       return undefined
     }
-    if (state.phase === 'page' || state.phase === 'theme' || activeVT()) {
+    if (
+      state.phase === 'page' ||
+      state.phase === 'theme' ||
+      state.phase === 'month' ||
+      activeViewTransition()
+    ) {
       update()
       return undefined
     }
-    const doc = document as Document & {
-      startViewTransition?: (
-        cb: (() => void) | { update: () => void; types: string[] },
-      ) => ViewTransition
-    }
-    if (typeof doc.startViewTransition !== 'function') {
-      update()
-      setPhase('idle')
-      return undefined
-    }
-    setPhase('page')
-    const vt = doc.startViewTransition(
-      opts?.types ? { update, types: opts.types } : update,
-    )
-    releasePage(vt)
+
+    setPhase('month')
+    const vt = startVT({ update, kind: 'month', direction })
+    releaseMonth(vt ?? null)
     state.safetyTimer = window.setTimeout(() => {
-      if (state.phase === 'page') releasePage(null)
+      if (state.phase === 'month') setPhase('idle')
     }, SAFETY_MS)
     return vt
   },
 
   async beginTheme(update: () => void): Promise<void> {
-    if (prefersReducedMotion() || state.phase === 'page' || activeVT()) {
+    if (
+      prefersReducedMotion() ||
+      state.phase === 'page' ||
+      state.phase === 'month' ||
+      activeViewTransition()
+    ) {
       update()
       return
     }
@@ -184,19 +225,13 @@ export const motion = {
       update()
       return
     }
-    const doc = document as Document & {
-      startViewTransition?: (cb: () => void) => ViewTransition
-    }
-    if (
-      typeof document === 'undefined' ||
-      typeof doc.startViewTransition !== 'function'
-    ) {
+    if (typeof document === 'undefined') {
       update()
       return
     }
     setPhase('theme')
-    const vt = doc.startViewTransition(update)
-    void Promise.resolve(vt.finished)
+    const vt = startVT({ update, kind: 'theme' })
+    void Promise.resolve(vt?.finished)
       .catch(() => {})
       .then(() => {
         if (state.phase === 'theme') setPhase('idle')
@@ -209,7 +244,9 @@ export const motion = {
   async openOverlay(kind: MotionBlocker): Promise<void> {
     await motion.awaitIdle()
     state.blockers.add(kind)
-    if (state.phase === 'idle') setPhase('overlay')
+    if (state.phase === 'idle' || state.phase === 'settle') {
+      setPhase('overlay')
+    }
     notify()
   },
 

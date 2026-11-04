@@ -1,0 +1,177 @@
+/* Overlay enter — @starting-style only (no tw-animate double-enter). */
+
+@starting-style {
+  [data-slot='dialog-overlay'][data-state='open'],
+  [data-slot='alert-dialog-overlay'][data-state='open'],
+  [data-slot='drawer-overlay'][data-state='open'] {
+    opacity: 0;
+  }
+}
+
+[data-slot='dialog-overlay'][data-state='open'],
+[data-slot='alert-dialog-overlay'][data-state='open'],
+[data-slot='drawer-overlay'][data-state='open'] {
+  transition: opacity var(--duration-enter) var(--ease-enter);
+}
+
+[data-slot='dialog-overlay'][data-state='closed'],
+[data-slot='alert-dialog-overlay'][data-state='closed'],
+[data-slot='drawer-overlay'][data-state='closed'] {
+  transition: opacity var(--duration-exit) var(--ease-exit);
+  opacity: 0;
+}
+
+/* Dialogs / alerts / tour: center origin (viewport modal, not trigger-anchored). */
+@starting-style {
+  [data-radix-dialog-content][data-state='open'],
+  [data-radix-alert-dialog-content][data-state='open'],
+  [data-slot='dialog-content'][data-state='open'],
+  [data-slot='alert-dialog-content'][data-state='open'],
+  [data-slot='tour-popover'] {
+    opacity: 0;
+    transform: scale(0.92);
+    transform-origin: center;
+  }
+}
+
+[data-radix-dialog-content][data-state='open'],
+[data-radix-alert-dialog-content][data-state='open'],
+[data-slot='dialog-content'][data-state='open'],
+[data-slot='alert-dialog-content'][data-state='open'],
+[data-slot='tour-popover'] {
+  transition: opacity var(--duration-enter) var(--ease-enter),
+              transform var(--duration-enter) var(--ease-enter);
+  transform-origin: center;
+}
+
+[data-slot='tour-popover'] {
+  /* Base UI sets --transform-origin on the positioner; prefer it when present. */
+  transform-origin: var(--transform-origin, center);
+}
+
+[data-radix-dialog-content][data-state='closed'],
+[data-radix-alert-dialog-content][data-state='closed'],
+[data-slot='dialog-content'][data-state='closed'],
+[data-slot='alert-dialog-content'][data-state='closed'] {
+  transition: opacity var(--duration-exit) var(--ease-exit),
+              transform var(--duration-exit) var(--ease-exit);
+  opacity: 0;
+  transform: scale(0.92);
+  transform-origin: center;
+}
+
+/*
+ * Menus / select / tooltip / popover: grow from trigger (HIG popovers).
+ * Animate the content node only — never [data-radix-popper-content-wrapper],
+ * which owns Floating UI's translate for placement.
+ * Prefer Radix origin vars; fall back to Base UI --transform-origin, then center.
+ */
+@starting-style {
+  [data-radix-select-content][data-state='open'],
+  [data-radix-dropdown-menu-content][data-state='open'],
+  [data-radix-tooltip-content][data-state='open'],
+  [data-slot='popover-content'][data-state='open'],
+  [data-slot='select-content'][data-state='open'],
+  [data-slot='dropdown-menu-content'][data-state='open'],
+  [data-slot='tooltip-content'][data-state='open'] {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+[data-radix-select-content][data-state='open'],
+[data-radix-dropdown-menu-content][data-state='open'],
+[data-radix-tooltip-content][data-state='open'],
+[data-slot='popover-content'][data-state='open'],
+[data-slot='select-content'][data-state='open'],
+[data-slot='dropdown-menu-content'][data-state='open'],
+[data-slot='tooltip-content'][data-state='open'] {
+  opacity: 1;
+  transform: none;
+  transition: opacity var(--duration-enter) var(--ease-enter),
+              transform var(--duration-enter) var(--ease-enter);
+  transform-origin: var(
+    --radix-dropdown-menu-content-transform-origin,
+    var(
+      --radix-select-content-transform-origin,
+      var(
+        --radix-popover-content-transform-origin,
+        var(--radix-tooltip-content-transform-origin, var(--transform-origin, center))
+      )
+    )
+  );
+}
+
+[data-radix-select-content][data-state='closed'],
+[data-radix-dropdown-menu-content][data-state='closed'],
+[data-slot='select-content'][data-state='closed'],
+[data-slot='dropdown-menu-content'][data-state='closed'],
+[data-slot='popover-content'][data-state='closed'],
+[data-slot='tooltip-content'][data-state='closed'] {
+  transition: opacity var(--duration-exit) var(--ease-exit),
+              transform var(--duration-exit) var(--ease-exit);
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+/* Vaul owns translate; opacity only — never CSS transform on drawer content. */
+[data-slot='drawer-content'][data-state='open'] {
+  transition: opacity var(--duration-enter) var(--ease-enter);
+}
+
+[data-slot='drawer-content'][data-state='closed'] {
+  transition: opacity var(--duration-exit) var(--ease-exit);
+}
+
+@starting-style {
+  [data-slot='drawer-content'][data-state='open'] {
+    opacity: 0;
+  }
+}
+
+/* HIG: PRM — opacity cross-fade only (no scale). Mirrors 45-page-enter.css. */
+@media (prefers-reduced-motion: reduce) {
+  @starting-style {
+    [data-radix-dialog-content][data-state='open'],
+    [data-radix-alert-dialog-content][data-state='open'],
+    [data-slot='dialog-content'][data-state='open'],
+    [data-slot='alert-dialog-content'][data-state='open'],
+    [data-slot='tour-popover'],
+    [data-radix-select-content][data-state='open'],
+    [data-radix-dropdown-menu-content][data-state='open'],
+    [data-radix-tooltip-content][data-state='open'],
+    [data-slot='popover-content'][data-state='open'],
+    [data-slot='select-content'][data-state='open'],
+    [data-slot='dropdown-menu-content'][data-state='open'],
+    [data-slot='tooltip-content'][data-state='open'] {
+      opacity: 0;
+      transform: none;
+    }
+  }
+
+  [data-radix-dialog-content][data-state='open'],
+  [data-radix-alert-dialog-content][data-state='open'],
+  [data-slot='dialog-content'][data-state='open'],
+  [data-slot='alert-dialog-content'][data-state='open'],
+  [data-slot='tour-popover'],
+  [data-radix-select-content][data-state='open'],
+  [data-radix-dropdown-menu-content][data-state='open'],
+  [data-radix-tooltip-content][data-state='open'],
+  [data-slot='popover-content'][data-state='open'],
+  [data-slot='select-content'][data-state='open'],
+  [data-slot='dropdown-menu-content'][data-state='open'],
+  [data-slot='tooltip-content'][data-state='open'],
+  [data-radix-dialog-content][data-state='closed'],
+  [data-radix-alert-dialog-content][data-state='closed'],
+  [data-slot='dialog-content'][data-state='closed'],
+  [data-slot='alert-dialog-content'][data-state='closed'],
+  [data-radix-select-content][data-state='closed'],
+  [data-radix-dropdown-menu-content][data-state='closed'],
+  [data-slot='select-content'][data-state='closed'],
+  [data-slot='dropdown-menu-content'][data-state='closed'],
+  [data-slot='popover-content'][data-state='closed'],
+  [data-slot='tooltip-content'][data-state='closed'] {
+    transform: none;
+    transition: opacity var(--duration-reduced) linear;
+  }
+}

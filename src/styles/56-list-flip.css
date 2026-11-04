@@ -1,0 +1,46 @@
+/* FLIP list enter/exit — no always-on transitions (avoids border shimmer). */
+
+[data-flip-key][data-flip-enter] {
+  animation: flip-row-enter var(--duration-enter) var(--ease-enter) both;
+  animation-delay: var(--flip-enter-delay, 0ms);
+}
+
+@keyframes flip-row-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+[data-flip-key][data-flip-exit] {
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+  transition:
+    opacity var(--duration-exit) var(--ease-exit),
+    transform var(--duration-exit) var(--ease-exit);
+}
+
+.composer-fields-pane,
+.category-view-pane {
+  animation: composer-pane-in var(--duration-settle) var(--ease-settle) both;
+}
+
+@keyframes composer-pane-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.dismiss-fade-out {
+  animation: dismiss-fade-out var(--duration-exit) var(--ease-exit) forwards;
+  pointer-events: none;
+}
+
+@keyframes dismiss-fade-out {
+  to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
