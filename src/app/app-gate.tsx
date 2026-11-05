@@ -1,9 +1,10 @@
-import { lazy, Suspense, useEffect, useState  } from 'react'
-import type {ReactNode} from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '#/components/ui/button'
 import { Spinner } from '#/components/ui/spinner'
 import { APP_NAME } from '#/lib/brand'
+import { checkModeConsistency, redirectForCurrentRoute } from '#/lib/site-mode'
 import { queryKeys } from '#/lib/query/keys'
 
 const OnboardingScreen = lazy(() =>
@@ -13,6 +14,7 @@ const OnboardingScreen = lazy(() =>
 type GateState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
+  | { status: 'mode-mismatch'; message: string }
   | { status: 'onboarding' }
   | { status: 'ready' }
 
@@ -26,11 +28,48 @@ export function AppGate({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const [state, setState] = useState<GateState>({ status: 'loading' })
 
+  // Cross-host redirect for the two-project split (client-only, post-mount).
+  // Edge redirects in vercel.*.json handle the common case in production;
+  // this is the fallback for previews and local portless.
+  useEffect(() => {
+    const consistency = checkModeConsistency(window.location.hostname)
+    if (!consistency.ok) {
+      console.error(consistency.message)
+      setState({ status: 'mode-mismatch', message: consistency.message })
+      return
+    }
+
+    const redirect = redirectForCurrentRoute(window.location.pathname, {
+      hostname: window.location.hostname,
+    })
+    if (!redirect) return
+    // 150ms opacity cross-fade before the cross-host handoff (PRM: none).
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!reduce) {
+      document.documentElement.style.transition = 'opacity 150ms ease-out'
+      document.documentElement.style.opacity = '0'
+      const t = window.setTimeout(() => window.location.assign(redirect), 150)
+      return () => window.clearTimeout(t)
+    }
+    window.location.assign(redirect)
+  }, [])
+
   useEffect(() => {
     let cancelled = false
 
     const init = async () => {
       try {
+        // App tree only — marketing builds never mount AppGate.
+        // Best-effort durable storage: Chromium often denies until the PWA is
+        // installed or engagement is high. OPFS still works either way.
+        try {
+          if (navigator.storage?.persist) {
+            const already = (await navigator.storage.persisted?.()) ?? false
+            if (!already) await navigator.storage.persist()
+          }
+        } catch {
+          // non-fatal
+        }
         const { bootstrapApp, getOverview, repairOrphanTransfers } =
           await import('#/data/repository')
         const { needsOnboarding } = await bootstrapApp()
@@ -124,6 +163,29 @@ export function AppGate({ children }: { children: ReactNode }) {
     )
   }
 
+  if (state.status === 'mode-mismatch') {
+    return (
+      <main
+        id="main"
+        className="mx-auto flex h-dvh w-full max-w-6xl flex-col items-center justify-center gap-3 p-6 text-center"
+        role="alert"
+        data-testid="mode-mismatch"
+      >
+        <p className="brand-wordmark text-base font-semibold tracking-tight">
+          {APP_NAME}
+        </p>
+        <p className="text-sm font-medium">Wrong host for this build</p>
+        <p className="max-w-md text-sm text-muted-foreground">{state.message}</p>
+        <p className="max-w-md text-xs text-muted-foreground">
+          Check Vercel project env: marketing host needs{' '}
+          <code className="rounded bg-muted px-1">VITE_SITE_MODE=marketing</code>
+          , app host needs{' '}
+          <code className="rounded bg-muted px-1">VITE_SITE_MODE=app</code>.
+        </p>
+      </main>
+    )
+  }
+
   if (state.status === 'error') {
     return (
       <main
@@ -137,8 +199,9 @@ export function AppGate({ children }: { children: ReactNode }) {
         <p className="text-sm font-medium">Couldn’t get started</p>
         <p className="text-sm text-muted-foreground">{state.message}</p>
         <p className="max-w-md text-xs text-muted-foreground">
-          Try Chrome or Edge in a normal window (not private). Your ledger needs
-          a secure, isolated browser tab to keep data on this device.
+          This needs Chrome or Edge in a normal (non-private) window — the
+          ledger is stored in this browser&rsquo;s private file system (OPFS),
+          which private mode and some browsers don&rsquo;t provide.
         </p>
         <Button variant="outline" onClick={() => window.location.reload()}>
           Try again
@@ -160,6 +223,21 @@ export function AppGate({ children }: { children: ReactNode }) {
           <OnboardingScreen
             onComplete={() => {
               queryClient.setQueryData(queryKeys.onboarding, false)
+              void (async () => {
+                try {
+                  const { getOverview } = await import('#/data/repository')
+                  const { currentYearMonth } = await import('#/lib/finance')
+                  const yearMonth = currentYearMonth()
+                  const overview = await getOverview(yearMonth)
+                  queryClient.setQueryData(
+                    queryKeys.overviewMonth(yearMonth),
+                    overview,
+                  )
+                  queryClient.setQueryData(queryKeys.settings, overview.settings)
+                } catch {
+                  // Overview will load via route queries.
+                }
+              })()
               setState({ status: 'ready' })
             }}
           />

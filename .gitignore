@@ -19,3 +19,7 @@ todos.json
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# local agent skill copies (not project code)
+.agents/
+.claude/

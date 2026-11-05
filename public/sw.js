@@ -3,7 +3,9 @@
  * Caches shell assets for offline use.
  */
 
-const CACHE_NAME = 'expense-tracker-v1'
+// Versioned per release so deploys cleanly replace old caches.
+const SW_VERSION = '2026-11-05.1'
+const CACHE_NAME = `expense-tracker-${SW_VERSION}`
 const STATIC_ASSETS = [
   '/',
   '/manifest.webmanifest',

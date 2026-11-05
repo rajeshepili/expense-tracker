@@ -71,6 +71,16 @@ export async function importDatabaseFile(file: File) {
   reset()
 }
 
-if (typeof window !== 'undefined') {
+// Auto-warm only where OPFS exists (Chromium). In jsdom/tests or non-OPFS
+// contexts SQLocal would fall back to an uninitialized memory driver.
+function hasOpfs(): boolean {
+  return (
+    typeof navigator !== 'undefined' &&
+    'storage' in navigator &&
+    typeof navigator.storage.getDirectory === 'function'
+  )
+}
+
+if (typeof window !== 'undefined' && hasOpfs()) {
   warmDatabase()
 }

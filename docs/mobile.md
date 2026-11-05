@@ -42,6 +42,18 @@ The root viewport uses `viewport-fit=cover`. Safe-area insets feed `--safe-*` an
 
 Phone and desktop both need cross-origin isolation. See [opfs-and-cross-origin-isolation.md](./opfs-and-cross-origin-isolation.md).
 
+## Local phone testing (LAN)
+
+Prefer [portless](https://portless.sh) LAN mode over raw `IP:port`:
+
+```bash
+portless proxy start --lan
+pnpm dev:portless        # app → https://app.pocketbook.local (mDNS)
+# on the phone (same Wi-Fi), open that .local URL in Chrome
+```
+
+See [deploy.md](./deploy.md) for the two-origin portless workflow. Still use a normal (non-private) Chrome tab so OPFS works.
+
 ## Later phases
 
 1. Capacitor Android shell wrapping this web build (optional Play Store).

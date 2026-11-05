@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { ModeToggle } from '#/app/mode-toggle'
 import { LandingProductMock } from '#/components/landing/product-mock'
+import { MarketingFooter } from '#/components/landing/marketing-page'
 import { LocalDataCallout } from '#/components/local-data'
 import { Button } from '#/components/ui/button'
 import {
@@ -114,9 +116,13 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   return (
     <div className="landing-page relative">
       <header className="landing-topbar">
-        <span className="brand-wordmark text-sm font-semibold tracking-tight text-foreground">
+        <Link to="/" className="brand-wordmark text-sm font-semibold tracking-tight text-foreground no-underline">
           {APP_NAME}
-        </span>
+        </Link>
+        <nav className="mkt-nav" aria-label="Marketing">
+          <Link to="/features" className="mkt-nav-link">Features</Link>
+          <Link to="/privacy" className="mkt-nav-link">Privacy</Link>
+        </nav>
         <ModeToggle />
       </header>
 
@@ -280,6 +286,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
           </div>
         </div>
       </section>
+      <MarketingFooter />
     </div>
   )
 }

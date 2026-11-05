@@ -6,9 +6,16 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev --port 3000",
-    "generate-routes": "tsr generate",
+    "dev": "VITE_SITE_MODE=app vite dev --port 3000",
+    "dev:app": "VITE_SITE_MODE=app vite dev",
+    "dev:mkt": "VITE_SITE_MODE=marketing vite dev",
+    "dev:portless": "portless run --name app.pocketbook pnpm dev:app",
+    "dev:portless:mkt": "portless run --name pocketbook pnpm dev:mkt",
+    "generate-routes": "node scripts/generate-routes.mjs",
     "build": "vite build",
+    "build:app": "VITE_SITE_MODE=app vite build",
+    "build:mkt": "VITE_SITE_MODE=marketing vite build",
+    "assert:mkt-bundle": "node scripts/assert-marketing-bundle.mjs",
     "preview": "node .output/server/index.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

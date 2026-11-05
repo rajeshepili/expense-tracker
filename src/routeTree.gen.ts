@@ -8,13 +8,14 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as CategoriesRouteImport } from './routes/categories'
-import { Route as LedgerRouteImport } from './routes/ledger'
-import { Route as RecurringRouteImport } from './routes/recurring'
-import { Route as SavingsRouteImport } from './routes/savings'
-import { Route as YearRouteImport } from './routes/year'
+import { Route as rootRouteImport } from './routes/app/__root'
+import { Route as IndexRouteImport } from './routes/app/index'
+import { Route as CategoriesRouteImport } from './routes/app/categories'
+import { Route as LedgerRouteImport } from './routes/app/ledger'
+import { Route as NotFoundRouteImport } from './routes/app/not-found'
+import { Route as RecurringRouteImport } from './routes/app/recurring'
+import { Route as SavingsRouteImport } from './routes/app/savings'
+import { Route as YearRouteImport } from './routes/app/year'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,6 +30,11 @@ const CategoriesRoute = CategoriesRouteImport.update({
 const LedgerRoute = LedgerRouteImport.update({
   id: '/ledger',
   path: '/ledger',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotFoundRoute = NotFoundRouteImport.update({
+  id: '/not-found',
+  path: '/not-found',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecurringRoute = RecurringRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/categories': typeof CategoriesRoute
   '/ledger': typeof LedgerRoute
+  '/not-found': typeof NotFoundRoute
   '/recurring': typeof RecurringRoute
   '/savings': typeof SavingsRoute
   '/year': typeof YearRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/categories': typeof CategoriesRoute
   '/ledger': typeof LedgerRoute
+  '/not-found': typeof NotFoundRoute
   '/recurring': typeof RecurringRoute
   '/savings': typeof SavingsRoute
   '/year': typeof YearRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/categories': typeof CategoriesRoute
   '/ledger': typeof LedgerRoute
+  '/not-found': typeof NotFoundRoute
   '/recurring': typeof RecurringRoute
   '/savings': typeof SavingsRoute
   '/year': typeof YearRoute
@@ -75,14 +84,28 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/categories' | '/ledger' | '/recurring' | '/savings' | '/year'
+    | '/'
+    | '/categories'
+    | '/ledger'
+    | '/not-found'
+    | '/recurring'
+    | '/savings'
+    | '/year'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/categories' | '/ledger' | '/recurring' | '/savings' | '/year'
+  to:
+    | '/'
+    | '/categories'
+    | '/ledger'
+    | '/not-found'
+    | '/recurring'
+    | '/savings'
+    | '/year'
   id:
     | '__root__'
     | '/'
     | '/categories'
     | '/ledger'
+    | '/not-found'
     | '/recurring'
     | '/savings'
     | '/year'
@@ -92,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CategoriesRoute: typeof CategoriesRoute
   LedgerRoute: typeof LedgerRoute
+  NotFoundRoute: typeof NotFoundRoute
   RecurringRoute: typeof RecurringRoute
   SavingsRoute: typeof SavingsRoute
   YearRoute: typeof YearRoute
@@ -118,6 +142,13 @@ declare module '@tanstack/react-router' {
       path: '/ledger'
       fullPath: '/ledger'
       preLoaderRoute: typeof LedgerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/not-found': {
+      id: '/not-found'
+      path: '/not-found'
+      fullPath: '/not-found'
+      preLoaderRoute: typeof NotFoundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recurring': {
@@ -148,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CategoriesRoute: CategoriesRoute,
   LedgerRoute: LedgerRoute,
+  NotFoundRoute: NotFoundRoute,
   RecurringRoute: RecurringRoute,
   SavingsRoute: SavingsRoute,
   YearRoute: YearRoute,

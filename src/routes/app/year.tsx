@@ -6,12 +6,12 @@ import { Button } from '#/components/ui/button'
 import { PageHeader } from '#/components/layout/page-header'
 import { PageError, PageLoading } from '#/components/layout/page-query-state'
 import { PageShell } from '#/components/layout/page-shell'
-import { StatTile } from '#/components/stat-tile'
+import { StatTile } from '#/features/shared/stat-tile'
 import { getSettings, getYearOverview } from '#/data/repository'
 import { formatQueryError } from '#/lib/errors'
 import { money } from '#/lib/finance'
 import { queryKeys } from '#/lib/query/keys'
-import { CategorySpendChart } from '#/components/category-spend-chart'
+import { CategorySpendChart } from '#/features/overview/category-spend-chart'
 
 export const Route = createFileRoute('/year')({
   validateSearch: (search: Record<string, unknown>) => {

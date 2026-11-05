@@ -1,26 +1,28 @@
+import { lazy, useEffect } from 'react'
 import {
   HeadContent,
   Outlet,
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
-
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
-import { InstallNudge } from '#/components/install-nudge'
-import { AppTour } from '#/components/app-tour'
+import { InstallNudge } from '#/features/shared/install-nudge'
+import { AppTour } from '#/features/shared/app-tour'
 import { AppGate } from '#/app/app-gate'
 import { AppNav } from '#/app/app-nav'
 import { ThemeProvider } from '#/app/theme-provider'
 import { Toaster } from '#/components/ui/sonner'
 import '#/db/index'
 
-import appCss from '../styles.css?url'
+import appCss from '../../styles.css?url'
+import font400Url from '@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2?url'
 
 import type { QueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
-import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME } from '#/lib/brand'
+import {
+  APP_DESCRIPTION,
+  APP_NAME,
+  APP_SHORT_NAME,
+  SITE_MODE,
+} from '#/lib/brand'
 
 interface MyRouterContext {
   queryClient: QueryClient
@@ -62,10 +64,20 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-title', content: APP_SHORT_NAME },
-      { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+      {
+        name: 'apple-mobile-web-app-status-bar-style',
+        content: 'black-translucent',
+      },
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
+      {
+        rel: 'preload',
+        href: font400Url,
+        as: 'font',
+        type: 'font/woff2',
+        crossOrigin: 'anonymous',
+      },
       { rel: 'manifest', href: '/manifest.webmanifest' },
       {
         rel: 'icon',
@@ -78,12 +90,40 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         href: '/icons/apple-touch-icon.png',
         sizes: '180x180',
       },
-      // Do not preload sqlite3.wasm here: sqlocal fetches it inside a worker, so a
-      // document-level link preload is unused and triggers a Chrome console warning.
     ],
   }),
   component: RootComponent,
   shellComponent: RootDocument,
+  notFoundComponent: () => <NotFoundPage />,
+})
+
+const NotFoundPage = lazy(() =>
+  import('#/components/landing/not-found-page').then((m) => ({
+    default: m.NotFoundPage,
+  })),
+)
+
+/** Dev-only: dynamically imported so prod bundles exclude devtools + their fonts. */
+const DevtoolsLazy = lazy(async () => {
+  const [{ TanStackDevtools }, { TanStackRouterDevtoolsPanel }, queryDevtools] =
+    await Promise.all([
+      import('@tanstack/react-devtools'),
+      import('@tanstack/react-router-devtools'),
+      import('../../integrations/tanstack-query/devtools'),
+    ])
+  return {
+    default: function Devtools() {
+      return (
+        <TanStackDevtools
+          config={{ position: 'bottom-right' }}
+          plugins={[
+            { name: 'Tanstack Router', render: <TanStackRouterDevtoolsPanel /> },
+            queryDevtools.default,
+          ]}
+        />
+      )
+    },
+  }
 })
 
 function RootComponent() {
@@ -112,7 +152,7 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-site-mode={SITE_MODE}>
       <head>
         <HeadContent />
       </head>
@@ -127,20 +167,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             mobileOffset={{ bottom: 'calc(var(--tab-bar-h) + 0.75rem)' }}
           />
         </ThemeProvider>
-        {import.meta.env.DEV ? (
-          <TanStackDevtools
-            config={{
-              position: 'bottom-right',
-            }}
-            plugins={[
-              {
-                name: 'Tanstack Router',
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-              TanStackQueryDevtools,
-            ]}
-          />
-        ) : null}
+        {import.meta.env.DEV ? <DevtoolsLazy /> : null}
         <Scripts />
       </body>
     </html>

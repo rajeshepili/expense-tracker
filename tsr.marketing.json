@@ -1,0 +1,5 @@
+{
+  "target": "react",
+  "routesDirectory": "./src/routes/marketing",
+  "generatedRouteTree": "./src/routeTree.marketing.gen.ts"
+}

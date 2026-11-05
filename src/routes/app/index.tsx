@@ -1,23 +1,16 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router'
-import { HardDrive, MoreHorizontal, Plus, Wallet } from 'lucide-react'
-import { Kbd } from '#/components/ui/kbd'
+import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
+import { Plus } from 'lucide-react'
 import { Button } from '#/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '#/components/ui/dropdown-menu'
-import { ConfirmDeleteDialog } from '#/components/confirm-delete-dialog'
+import { ConfirmDeleteDialog } from '#/features/shared/confirm-delete-dialog'
 import { MonthNav } from '#/components/layout/month-nav'
 import { PageHeader } from '#/components/layout/page-header'
 import { PageError } from '#/components/layout/page-query-state'
 import { PageShell } from '#/components/layout/page-shell'
-import { BackupReminder, LocalDataCallout } from '#/components/local-data'
-import { SavingsSummary } from '#/components/savings-summary'
-import { RecordRecurringControls } from '#/components/record-recurring-controls'
+import { BackupReminder, LocalDataCallout } from '#/features/shared/local-data'
+import { SavingsSummary } from '#/features/overview/savings-summary'
+import { RecordRecurringControls } from '#/features/recurring/record-recurring-controls'
 import {
   deleteTransaction,
   getOverview,
@@ -35,16 +28,16 @@ import { readCategoryView } from '#/lib/overview-helpers'
 import type { CategoryView } from '#/lib/overview-helpers'
 import { invalidateAfter } from '#/lib/query/invalidation'
 import { navigateAfterPrefetch } from '#/lib/navigate-after-prefetch'
-import { prefetchRoute } from '#/lib/query/prefetch'
 import { queryKeys } from '#/lib/query/keys'
 import { OverviewBodySkeleton } from '#/components/layout/page-skeletons'
-import { OverviewMonthStats } from '#/components/overview/overview-month-stats'
-import { OverviewRecentTransactions } from '#/components/overview/overview-recent-transactions'
-import { OverviewCategoryBudget } from '#/components/overview/overview-category-budget'
-import { OverviewRecurringPanel } from '#/components/overview/overview-recurring-panel'
-import { OverviewAccountsPanel } from '#/components/overview/overview-accounts-panel'
-import { BackupModal } from '#/components/backup-modal'
-import { BudgetModal } from '#/components/budget-modal'
+import { OverviewMonthStats } from '#/features/overview/overview-month-stats'
+import { OverviewRecentTransactions } from '#/features/overview/overview-recent-transactions'
+import { OverviewCategoryBudget } from '#/features/overview/overview-category-budget'
+import { OverviewRecurringPanel } from '#/features/overview/overview-recurring-panel'
+import { OverviewAccountsPanel } from '#/features/overview/overview-accounts-panel'
+import { OverviewHeaderActions } from '#/features/overview/overview-header-actions'
+import { BackupModal } from '#/features/settings/backup-modal'
+import { BudgetModal } from '#/features/settings/budget-modal'
 import type { LedgerTransaction } from '#/lib/types'
 import { motion, resolveMonthDirection } from '#/lib/motion'
 
@@ -215,69 +208,11 @@ function Home() {
           </nav>
         }
         actions={
-          <div className="flex w-full items-center justify-end gap-1.5 sm:w-auto">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="min-h-11 min-w-11 lg:hidden"
-                  aria-label="More overview actions"
-                >
-                  <MoreHorizontal aria-hidden />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-40">
-                <DropdownMenuItem onSelect={() => setBackupOpen(true)}>
-                  <HardDrive aria-hidden />
-                  Backup
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
-                  <Wallet aria-hidden />
-                  Budget
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden lg:inline-flex"
-              onClick={() => setBackupOpen(true)}
-            >
-              <HardDrive aria-hidden="true" data-icon="inline-start" />
-              Backup
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden lg:inline-flex"
-              onClick={() => setSettingsOpen(true)}
-            >
-              <Wallet aria-hidden="true" data-icon="inline-start" />
-              Budget
-            </Button>
-            <Button asChild size="sm" className="min-h-11 flex-1 sm:flex-none hover-lift" data-tour="add">
-              <Link
-                to="/ledger"
-                search={{ new: true, month: yearMonth }}
-                onMouseEnter={() => prefetchRoute(queryClient, '/ledger', { month: yearMonth })}
-                onFocus={() => prefetchRoute(queryClient, '/ledger', { month: yearMonth })}
-                onClick={(event) => {
-                  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-                  event.preventDefault()
-                  void navigateAfterPrefetch(router, queryClient, {
-                    to: '/ledger',
-                    search: { new: true, month: yearMonth },
-                    month: yearMonth,
-                  })
-                }}
-              >
-                <Plus data-icon="inline-start" />
-                Add
-                <Kbd primary className="hidden sm:inline-flex">N</Kbd>
-              </Link>
-            </Button>
-          </div>
+          <OverviewHeaderActions
+            yearMonth={yearMonth}
+            onBackup={() => setBackupOpen(true)}
+            onBudget={() => setSettingsOpen(true)}
+          />
         }
       />
 

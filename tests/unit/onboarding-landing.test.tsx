@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
@@ -19,6 +20,17 @@ vi.mock('#/app/mode-toggle', () => ({
 vi.mock('#/components/local-data', () => ({
   LocalDataCallout: () => <div>Local data note</div>,
 }))
+
+// Onboarding now links to marketing pages — stub TanStack Link (no router in unit tests).
+vi.mock('@tanstack/react-router', async () => {
+  const actual = await vi.importActual('@tanstack/react-router')
+  return {
+    ...actual,
+    Link: (props: { to: string; children: ReactNode; className?: string }) => (
+      <a href={String(props.to)} className={props.className}>{props.children}</a>
+    ),
+  }
+})
 
 function renderLanding() {
   const client = new QueryClient({
@@ -66,6 +78,6 @@ describe('Pocketbook landing + setup', () => {
   it('renders the product overview mock', () => {
     renderLanding()
     expect(document.querySelector('.landing-mock')).toBeTruthy()
-    expect(screen.getByText('Overview')).toBeTruthy()
+    expect(document.querySelector('.landing-mock-title')?.textContent).toBe('Overview')
   })
 })
