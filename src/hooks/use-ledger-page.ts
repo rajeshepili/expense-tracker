@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
-import type { FundGoalOffer } from '#/components/fund-goal-dialog'
+import type { FundGoalOffer } from '#/features/savings/fund-goal-dialog'
 import type {
   CategoryType,
   LedgerSearch,
@@ -270,6 +270,14 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
   }, [composerOpen, editing, form.categoryId, form.type, filteredCategories, setForm])
 
   useEffect(() => {
+    if (!composerOpen || editing || form.type === 'transfer') return
+    if (methods.length !== 1) return
+    const sole = methods[0].id
+    if (form.paymentMethodId === sole) return
+    setForm((current) => ({ ...current, paymentMethodId: sole }))
+  }, [composerOpen, editing, form.type, form.paymentMethodId, methods, setForm])
+
+  useEffect(() => {
     if (!composerOpen) return
     const frame = window.requestAnimationFrame(() => {
       descriptionRef.current?.focus()
@@ -369,6 +377,7 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
     filterByMethod: (methodId: string) => navigate({ search: (prev: LedgerSearch) => ({ ...prev, method: methodId }), replace: true }),
     setType: (type: TransactionType) => {
       const defaults = readTransactionDefaults()
+      const sole = methods.length === 1 ? methods[0].id : null
       setFormForReturn((current) => ({
         ...current,
         type,
@@ -379,7 +388,7 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
         fromAccountId: type === 'transfer' ? current.fromAccountId : '',
         toAccountId: type === 'transfer' ? current.toAccountId : '',
         paymentMethodId:
-          type === 'transfer' ? '' : current.paymentMethodId,
+          type === 'transfer' ? '' : (current.paymentMethodId || sole || ''),
       }))
     },
     submitForm,

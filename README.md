@@ -11,7 +11,7 @@ A personal, local-only expense tracker. Everything runs in the browser and is st
 - **Savings** — goals with progress, funding from income, optional target dates
 - **Categories** — manage income and expense categories; deletes reassign related items
 - **Budget & currency** — set monthly budget and display currency from Overview
-- **Onboarding** — first visit: currency, budget, start empty or load sample data
+- **Onboarding** — first visit wizard: currency, budget, and first account (or restore a backup)
 - **Theme** — light, dark, or system (circular bloom on toggle where View Transitions allow)
 - **Phone (Android)** — installable PWA in Chrome; bottom tab navigation on small screens
 
@@ -49,7 +49,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-On first visit, onboarding asks for currency, monthly budget, and whether to start empty or load sample data (`src/data/sample-ledger.ts`). After setup, screens read and write the local DB through TanStack Query and `src/data/repository.ts`.
+On first visit, the app host shows a short setup wizard (currency, monthly budget, first account, expense categories) or restore-from-backup. Income is always seeded; you pick expense tags (or none) and can add more income types later on Categories. With one account, new entries use it automatically and Transfer stays hidden until you add another. Marketing CTAs use `/?from=mkt` so setup starts without a second landing page. After setup, screens read and write the local DB through TanStack Query and `src/data/repository.ts`.
 
 To see onboarding again in development, clear site data for localhost (Application → Storage → Clear site data).
 
@@ -64,9 +64,10 @@ pnpm preview   # Nitro Node server (applies COEP to HTML + /assets)
 | ------------------------ | ----------------------------------------------------- |
 | `src/app/`               | App shell: gate, nav, theme, onboarding               |
 | `src/routes/`            | Screens: Overview, Ledger, Recurring, Savings, Categories |
+| `src/features/`          | Domain UI (ledger, overview, recurring, categories, savings, settings, shared) |
 | `src/components/ui/`     | shadcn primitives                                     |
 | `src/components/layout/` | Page shell, header, month nav, empty / loading        |
-| `src/components/`        | Shared widgets (charts, stats, dialogs, tour)         |
+| `src/components/landing/`| Marketing site pages                                  |
 | `src/data/`              | Public `repository.ts` barrel, seed, sample ledger    |
 | `src/data/repo/`         | Entity modules (settings, transactions, savings, …)   |
 | `src/db/`                | Drizzle schema + browser SQLite client + migrator     |
@@ -74,7 +75,7 @@ pnpm preview   # Nitro Node server (applies COEP to HTML + /assets)
 | `src/lib/`               | Domain helpers (`finance/`, forms, savings, motion)   |
 | `src/lib/query/`         | Query keys, invalidation, route prefetch              |
 | `src/styles/`            | Ordered CSS modules (`00`–`70`); entry is `styles.css`|
-| `src/components/local-data.tsx` | Persistence callout + backup UI                |
+| `src/features/shared/local-data.tsx` | Persistence callout + backup UI            |
 | `src/data/backup.ts`     | Export / restore SQLite file                          |
 | `server/plugins/`        | Nitro plugins (cross-origin isolation headers)        |
 | `public/`                | PWA manifest + icons                                  |

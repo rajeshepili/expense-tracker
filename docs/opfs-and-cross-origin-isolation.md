@@ -89,7 +89,7 @@ Phone install and Android notes: [mobile.md](./mobile.md).
 - **Export / restore** (`BackupPanel` in Overview → Budget): download a `.sqlite3` file, or restore one (replaces all local data and reloads).
 - **Backup reminder** if no export in ~14 days (snooze for 7 days).
 
-Code: `src/components/local-data.tsx`, `src/data/backup.ts`, `src/lib/backup.ts`. No automatic browser/OPFS detection — copy + backups only.
+Code: `src/features/shared/local-data.tsx`, `src/data/backup.ts`, `src/lib/backup.ts`. No automatic browser/OPFS detection — copy + backups only.
 
 ## Troubleshooting
 

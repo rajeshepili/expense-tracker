@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { LedgerFilterChip } from '#/components/ledger/ledger-filters'
+import type { LedgerFilterChip } from '#/features/ledger/ledger-filters'
 import type { LedgerTransaction, TransactionType } from '#/lib/types'
 import { currentYearMonth } from '#/lib/finance'
 
