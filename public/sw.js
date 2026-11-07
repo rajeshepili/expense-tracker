@@ -1,32 +1,39 @@
 /**
  * Service Worker for Pocketbook PWA
- * Caches shell assets for offline use.
+ * Offline support: precaches the shell, runtime-caches same-origin assets,
+ * and falls back to the cached shell for navigations while offline.
  */
 
-// Versioned per release so deploys cleanly replace old caches.
-const SW_VERSION = '2026-11-05.1'
+// Bump per release so deploys cleanly replace old caches.
+const SW_VERSION = '2026-11-07.1'
 const CACHE_NAME = `expense-tracker-${SW_VERSION}`
-const STATIC_ASSETS = [
+const PRECACHE = [
   '/',
   '/manifest.webmanifest',
+  '/icons/icon-192.png',
+  '/icons/apple-touch-icon.png',
 ]
 
-// Install: cache static assets
+// Install: cache the shell, then activate immediately.
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)),
   )
   self.skipWaiting()
 })
 
-// Activate: clean old caches
+// Activate: drop old caches and take control of open clients.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)),
+        ),
+      )
+      .then(() => self.clients.claim()),
   )
-  self.clients.claim()
 })
 
 // Notifications: tapping a bill reminder opens (or focuses) the app on Bills.
@@ -43,24 +50,50 @@ self.addEventListener('notificationclick', (event) => {
           }
         }
         return clients.openWindow('/recurring')
-      })
+      }),
   )
 })
 
-// Fetch: network-first for navigation, cache-first for static assets
+// Fetch handling. Only same-origin GETs; everything else goes to the network.
 self.addEventListener('fetch', (event) => {
   const { request } = event
+  if (request.method !== 'GET') return
+  const url = new URL(request.url)
+  if (url.origin !== self.location.origin) return
 
-  // Navigation requests: network-first with offline fallback
+  // Navigations: network-first, keep the cached shell fresh while online,
+  // fall back to the cached shell when offline.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/'))
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put('/', copy))
+          }
+          return response
+        })
+        .catch(() =>
+          caches.match(request).then(
+            (cached) => cached || caches.match('/'),
+          ),
+        ),
     )
     return
   }
 
-  // Static assets: cache-first
+  // Static assets (JS/CSS/fonts/icons): cache-first, populate cache from
+  // network on miss so the next offline load works.
   event.respondWith(
-    caches.match(request).then((cached) => cached || fetch(request))
+    caches.match(request).then((cached) => {
+      if (cached) return cached
+      return fetch(request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone()
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy))
+        }
+        return response
+      })
+    }),
   )
 })
