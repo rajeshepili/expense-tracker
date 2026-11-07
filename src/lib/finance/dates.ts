@@ -41,6 +41,23 @@ export function shiftYearMonth(yearMonth: string, deltaMonths: number) {
   return currentYearMonth(date)
 }
 
+/**
+ * Inclusive start / exclusive end ISO dates bounding a `YYYY-MM` month or
+ * `YYYY` year. Range predicates (`>=` / `<`) are sargable and use
+ * idx_transactions_date, unlike `LIKE 'YYYY-MM%'` which forces a scan.
+ */
+export function yearMonthRange(yearMonth: string): {
+  from: string
+  to: string
+} {
+  const next = shiftYearMonth(yearMonth, 1)
+  return { from: `${yearMonth}-01`, to: `${next}-01` }
+}
+
+export function yearRange(year: string): { from: string; to: string } {
+  return { from: `${year}-01-01`, to: `${Number(year) + 1}-01-01` }
+}
+
 export function formatYearMonth(yearMonth: string) {
   const [year, month] = yearMonth.split('-').map(Number)
   if (!year || !month) return yearMonth

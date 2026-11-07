@@ -1,5 +1,5 @@
 import type { Db } from './repository'
-import { and, eq, like, desc, sql } from 'drizzle-orm'
+import { and, eq, desc, sql, gte, lt } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import {
   transactions,
@@ -9,7 +9,7 @@ import {
   monthlyBudgets,
   savingsGoals,
 } from '#/db/schema'
-import { isYearMonth } from '#/lib/finance'
+import { isYearMonth, yearMonthRange } from '#/lib/finance'
 import type { TransactionType } from '#/lib/types'
 import { transactionSelect, recurringSelect, savingsGoalSelect } from './selectors'
 
@@ -28,7 +28,10 @@ export function buildTransactionFilters(
   const conditions: SQL[] = []
 
   if (filters.month && filters.month !== 'all' && isYearMonth(filters.month)) {
-    conditions.push(like(transactions.transactionDate, `${filters.month}%`))
+    // Range predicate: sargable, uses idx_transactions_date (LIKE prefix scans).
+    const { from, to } = yearMonthRange(filters.month)
+    conditions.push(gte(transactions.transactionDate, from))
+    conditions.push(lt(transactions.transactionDate, to))
   }
   if (filters.categoryId) {
     conditions.push(eq(transactions.categoryId, filters.categoryId))
@@ -87,6 +90,41 @@ export function monthBudgetQuery(db: Db, yearMonth: string) {
     .select()
     .from(monthlyBudgets)
     .where(eq(monthlyBudgets.yearMonth, yearMonth))
+}
+
+/**
+ * SQL sum of signed balance deltas per account, matching `signedDelta` in
+ * `#/lib/finance/accounts` (linear, so summing in SQL equals summing rows).
+ * Requires `accounts` to be joined on `transactions.accountId`.
+ */
+export function accountDeltaSumSql() {
+  return sql<number>`sum(
+    case
+      when ${transactions.type} = 'transfer' then
+        case when ${accounts.type} = 'asset'
+          then case when ${transactions.transferDirection} = 'in' then ${transactions.amount} else -${transactions.amount} end
+          else case when ${transactions.transferDirection} = 'out' then ${transactions.amount} else -${transactions.amount} end
+        end
+      else
+        case when ${accounts.type} = 'asset'
+          then case when ${transactions.type} = 'income' then ${transactions.amount} else -${transactions.amount} end
+          else case when ${transactions.type} = 'income' then -${transactions.amount} else ${transactions.amount} end
+        end
+    end
+  )`
+}
+
+/** One row per account: signed delta of all its transactions. */
+export function accountDeltasQuery(db: Db) {
+  return db
+    .select({
+      accountId: transactions.accountId,
+      delta: accountDeltaSumSql().mapWith(Number),
+    })
+    .from(transactions)
+    .innerJoin(accounts, eq(transactions.accountId, accounts.id))
+    .where(sql`${transactions.accountId} is not null`)
+    .groupBy(transactions.accountId)
 }
 
 export function buildTextSearch(

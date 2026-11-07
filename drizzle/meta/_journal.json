@@ -29,6 +29,20 @@
       "when": 1793825307027,
       "tag": "0003_absurd_genesis",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1794045987611,
+      "tag": "0004_nifty_harry_osborn",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794048825227,
+      "tag": "0005_parched_tiger_shark",
+      "breakpoints": true
     }
   ]
 }

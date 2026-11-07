@@ -1,4 +1,4 @@
-import { and, eq, like, sql } from 'drizzle-orm'
+import { and, eq, sql, gte, lt } from 'drizzle-orm'
 import {
   accounts,
   categories,
@@ -7,14 +7,13 @@ import {
   settings,
   transactions, savingsGoals 
 } from '#/db/schema'
-import { baseTransactionQuery } from '#/data/query-builders'
+import { accountDeltasQuery, baseTransactionQuery } from '#/data/query-builders'
 import {
   DUE_RECURRING_LIMIT,
   RECENT_TRANSACTION_LIMIT,
   UPCOMING_RECURRING_LIMIT,
 } from '#/lib/app-config'
 import {
-  accountBalance,
   categoryBudgetBreakdown,
   currentYearMonth,
   dueStatus,
@@ -25,13 +24,13 @@ import {
   resolveMonthBudget,
   shiftYearMonth,
   todayIso,
+  yearMonthRange,
+  yearRange,
 } from '#/lib/finance'
 import type {
   AppSettings,
   MonthBudget,
   RecurringExpenseRow,
-  TransactionType,
-  TransferDirection,
 } from '#/lib/types'
 import { withDb } from '#/data/repo/db'
 import type { Db } from '#/data/repo/db'
@@ -48,7 +47,11 @@ export type YearOverview = {
 
 /** Per-month income/expense totals + top categories for a calendar year. */
 export async function getYearOverview(year: string): Promise<YearOverview> {
-  const prefix = `${year}-`
+  const { from, to } = yearRange(year)
+  const dateInYear = and(
+    gte(transactions.transactionDate, from),
+    lt(transactions.transactionDate, to),
+  )
   return withDb(async (db) => {
     const [monthlyRows, categoryRows, goalRows] = await Promise.all([
       db
@@ -58,7 +61,7 @@ export async function getYearOverview(year: string): Promise<YearOverview> {
           expenses: sql<number>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amount} else 0 end), 0)`.mapWith(Number),
         })
         .from(transactions)
-        .where(like(transactions.transactionDate, `${prefix}%`))
+        .where(dateInYear)
         .groupBy(sql`substr(${transactions.transactionDate}, 1, 7)`)
         .orderBy(sql`substr(${transactions.transactionDate}, 1, 7)`),
       db
@@ -69,7 +72,7 @@ export async function getYearOverview(year: string): Promise<YearOverview> {
         })
         .from(transactions)
         .innerJoin(categories, eq(transactions.categoryId, categories.id))
-        .where(and(eq(transactions.type, 'expense'), like(transactions.transactionDate, `${prefix}%`)))
+        .where(and(eq(transactions.type, 'expense'), dateInYear))
         .groupBy(categories.id, categories.name)
         .orderBy(sql`sum(${transactions.amount}) desc`)
         .limit(5),
@@ -94,7 +97,8 @@ export async function getYearOverview(year: string): Promise<YearOverview> {
   })
 }
 
-function monthSummarySelect(db: Db, monthPrefix: string) {
+function monthSummarySelect(db: Db, yearMonth: string) {
+  const { from, to } = yearMonthRange(yearMonth)
   return db
     .select({
       income:
@@ -107,7 +111,12 @@ function monthSummarySelect(db: Db, monthPrefix: string) {
         ),
     })
     .from(transactions)
-    .where(like(transactions.transactionDate, monthPrefix))
+    .where(
+      and(
+        gte(transactions.transactionDate, from),
+        lt(transactions.transactionDate, to),
+      ),
+    )
 }
 
 async function openAccountsWithBalances(db: Db) {
@@ -117,57 +126,28 @@ async function openAccountsWithBalances(db: Db) {
       .from(accounts)
       .where(eq(accounts.closed, false))
       .orderBy(accounts.name),
-    db
-      .select({
-        accountId: transactions.accountId,
-        type: transactions.type,
-        amount: transactions.amount,
-        transferDirection: transactions.transferDirection,
-      })
-      .from(transactions)
-      .where(sql`${transactions.accountId} is not null`),
+    accountDeltasQuery(db),
   ])
 
-  const rowsByAccount = new Map<
-    string,
-    Array<{
-      type: TransactionType
-      amount: number
-      transferDirection: TransferDirection | null
-    }>
-  >()
-  for (const delta of deltas) {
-    if (!delta.accountId) continue
-    const list = rowsByAccount.get(delta.accountId) ?? []
-    list.push({
-      type: delta.type,
-      amount: delta.amount,
-      transferDirection: delta.transferDirection,
-    })
-    rowsByAccount.set(delta.accountId, list)
-  }
+  const deltaByAccount = new Map(
+    deltas
+      .filter((row) => row.accountId)
+      .map((row) => [row.accountId!, row.delta ?? 0]),
+  )
 
-  return rows.map((row) => {
-    const balance = accountBalance(
-      row.startingBalance,
-      rowsByAccount.get(row.id) ?? [],
-      row.type,
-    )
-    return {
-      id: row.id,
-      name: row.name,
-      type: row.type,
-      balance,
-    }
-  })
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    balance: row.startingBalance + (deltaByAccount.get(row.id) ?? 0),
+  }))
 }
 
 export async function getOverview(yearMonth = currentYearMonth()) {
   return withDb(async (db) => {
     const month = isYearMonth(yearMonth) ? yearMonth : currentYearMonth()
-    const monthPrefix = `${month}%`
     const priorMonth = shiftYearMonth(month, -1)
-    const priorPrefix = `${priorMonth}%`
+    const monthDates = yearMonthRange(month)
     const [
       settingsRows,
       monthBudgetRows,
@@ -192,8 +172,8 @@ export async function getOverview(yearMonth = currentYearMonth()) {
         .from(monthlyBudgets)
         .where(eq(monthlyBudgets.yearMonth, month))
         .limit(1),
-      monthSummarySelect(db, monthPrefix),
-      monthSummarySelect(db, priorPrefix),
+      monthSummarySelect(db, month),
+      monthSummarySelect(db, priorMonth),
       db
         .select({
           categoryId: categories.id,
@@ -207,13 +187,19 @@ export async function getOverview(yearMonth = currentYearMonth()) {
         .where(
           and(
             eq(transactions.type, 'expense'),
-            like(transactions.transactionDate, monthPrefix),
+            gte(transactions.transactionDate, monthDates.from),
+            lt(transactions.transactionDate, monthDates.to),
           ),
         )
         .groupBy(categories.id, categories.name)
         .orderBy(sql`sum(${transactions.amount}) desc`),
       baseTransactionQuery(db)
-        .where(like(transactions.transactionDate, monthPrefix))
+        .where(
+          and(
+            gte(transactions.transactionDate, monthDates.from),
+            lt(transactions.transactionDate, monthDates.to),
+          ),
+        )
         .limit(RECENT_TRANSACTION_LIMIT),
       recurringQuery(db)
         .where(eq(recurringExpenses.active, true))

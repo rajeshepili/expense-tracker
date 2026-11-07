@@ -12,7 +12,7 @@ import {
 
 test.describe('backup restore smoke @smoke', () => {
   test('export → mutate → restore brings data back', async ({ page }) => {
-    await completeOnboarding(page, { mode: 'empty', budget: '2000' })
+    await completeOnboarding(page, { budget: '2000' })
     await addLedgerExpense(page, {
       description: 'Restore marker',
       amount: '12.34',
@@ -37,7 +37,7 @@ test.describe('backup restore smoke @smoke', () => {
   })
 
   test('rejects invalid restore file', async ({ page }) => {
-    await completeOnboarding(page, { mode: 'empty', budget: '2000' })
+    await completeOnboarding(page, { budget: '2000' })
     const junk = await writeTempFile(
       'not-a-db.sqlite3',
       'this is not sqlite\n',

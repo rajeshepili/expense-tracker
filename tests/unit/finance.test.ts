@@ -21,6 +21,8 @@ import {
   resolveMonthBudget,
   shiftYearMonth,
   summarizeTransactions,
+  yearMonthRange,
+  yearRange,
 } from '#/lib/finance'
 
 describe('money', () => {
@@ -44,6 +46,19 @@ describe('dates and months', () => {
     expect(isYearMonth('2026-13')).toBe(false)
     expect(shiftYearMonth('2026-10', -1)).toBe('2026-09')
     expect(shiftYearMonth('2026-12', 1)).toBe('2027-01')
+  })
+
+  it('builds sargable month/year ranges (from inclusive, to exclusive)', () => {
+    expect(yearMonthRange('2026-11')).toEqual({
+      from: '2026-11-01',
+      to: '2026-12-01',
+    })
+    // December rolls into the next year
+    expect(yearMonthRange('2026-12')).toEqual({
+      from: '2026-12-01',
+      to: '2027-01-01',
+    })
+    expect(yearRange('2026')).toEqual({ from: '2026-01-01', to: '2027-01-01' })
   })
 
   it('ranks due status and picks a record date', () => {

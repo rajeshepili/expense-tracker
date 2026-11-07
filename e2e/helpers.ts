@@ -8,37 +8,58 @@ import { tmpdir } from 'node:os'
 export async function waitForAppReady(page: Page) {
   await page.goto('/')
   await expect(
-    page.getByRole('heading', { name: 'Set up this device' }).or(
-      page.getByRole('navigation', { name: 'Primary' }),
-    ),
+    page
+      .getByRole('heading', { name: /Set up your ledger|Currency & budget/i })
+      .or(page.getByRole('navigation', { name: 'Primary' })),
   ).toBeVisible({ timeout: 60_000 })
 }
 
 export async function completeOnboarding(
   page: Page,
-  options: { mode?: 'empty' | 'sample'; budget?: string } = {},
+  options: {
+    budget?: string
+    accountName?: string
+    startingBalance?: string
+  } = {},
 ) {
-  const { mode = 'empty', budget = '2500' } = options
+  const {
+    budget = '2500',
+    accountName = 'Checking',
+    startingBalance = '0',
+  } = options
 
   await waitForAppReady(page)
 
-  const setup = page.getByRole('heading', { name: 'Set up this device' })
-  if (!(await setup.isVisible().catch(() => false))) {
+  const welcome = page.getByRole('heading', { name: 'Set up your ledger' })
+  const money = page.getByRole('heading', { name: 'Currency & budget' })
+  if (
+    !(await welcome.isVisible().catch(() => false)) &&
+    !(await money.isVisible().catch(() => false))
+  ) {
     // Already seeded in this browser context.
     return
   }
 
-  // Landing hero sits above setup — ensure the form is in view before filling.
-  await page.getByRole('button', { name: 'Get started' }).click()
-  await expect(setup).toBeInViewport()
+  if (await welcome.isVisible().catch(() => false)) {
+    await page.getByRole('button', { name: 'Continue' }).click()
+  }
 
+  await expect(money).toBeVisible()
   await page.getByLabel(/Default monthly budget/i).fill(budget)
-  await page
-    .getByRole('button', {
-      name: mode === 'sample' ? /Load sample data/i : /Start empty/i,
-    })
-    .click()
   await page.getByRole('button', { name: 'Continue' }).click()
+
+  await expect(
+    page.getByRole('heading', { name: 'First account' }),
+  ).toBeVisible()
+  await page.getByLabel(/^Name$/i).fill(accountName)
+  await page.getByLabel(/Starting balance/i).fill(startingBalance)
+  await page.getByRole('button', { name: 'Continue' }).click()
+
+  await expect(
+    page.getByRole('heading', { name: 'Categories' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Select common' }).click()
+  await page.getByRole('button', { name: 'Finish setup' }).click()
 
   await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible({
     timeout: 60_000,
@@ -191,7 +212,7 @@ export async function restoreBackupFromFile(page: Page, filePath: string) {
 
   const ready = page
     .getByRole('navigation', { name: 'Primary' })
-    .or(page.getByRole('heading', { name: 'Set up this device' }))
+    .or(page.getByRole('heading', { name: /Set up your ledger|Currency & budget/i }))
 
   try {
     await expect(ready).toBeVisible({ timeout: 45_000 })

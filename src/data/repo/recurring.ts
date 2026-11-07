@@ -150,30 +150,43 @@ export async function recordRecurringPayment(
     }
 
     const settlement = settleRecurringPayment(due, amount)
-    const [tx] = await db
-      .insert(transactions)
-      .values(
-        transactionValues({
-          description: bill.name,
-          amount,
-          type: bill.kind,
-          date: recordDate,
-          categoryId: bill.categoryId,
-          accountId:
-            overrides.paymentMethodId !== undefined
-              ? overrides.paymentMethodId
-              : bill.accountId,
-          sourceRecurringId: id,
-        }),
-      )
-      .returning({ id: transactions.id })
+    const nextDate =
+      settlement.kind === 'partial'
+        ? bill.nextDate
+        : advanceRecurringDate(recordDate, bill.cadence)
 
-    if (settlement.kind === 'partial') {
-      await db
+    const [tx] = await db.transaction(async (txDb) => {
+      const [row] = await txDb
+        .insert(transactions)
+        .values(
+          transactionValues({
+            description: bill.name,
+            amount,
+            type: bill.kind,
+            date: recordDate,
+            categoryId: bill.categoryId,
+            accountId:
+              overrides.paymentMethodId !== undefined
+                ? overrides.paymentMethodId
+                : bill.accountId,
+            sourceRecurringId: id,
+          }),
+        )
+        .returning({ id: transactions.id })
+
+      await txDb
         .update(recurringExpenses)
-        .set({ remainingAmount: settlement.remaining })
+        .set(
+          settlement.kind === 'partial'
+            ? { remainingAmount: settlement.remaining }
+            : { nextDate, remainingAmount: null },
+        )
         .where(eq(recurringExpenses.id, id))
 
+      return [row] as const
+    })
+
+    if (settlement.kind === 'partial') {
       return {
         ok: true,
         transactionId: tx.id,
@@ -183,12 +196,6 @@ export async function recordRecurringPayment(
         remainingAmount: settlement.remaining,
       }
     }
-
-    const nextDate = advanceRecurringDate(recordDate, bill.cadence)
-    await db
-      .update(recurringExpenses)
-      .set({ nextDate, remainingAmount: null })
-      .where(eq(recurringExpenses.id, id))
 
     return {
       ok: true,

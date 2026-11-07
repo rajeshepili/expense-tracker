@@ -1,5 +1,6 @@
-import { and, count, eq, lte, sql } from 'drizzle-orm'
+import { and, count, eq, lte } from 'drizzle-orm'
 import { accounts, recurringExpenses, transactions } from '#/db/schema'
+import { accountDeltasQuery } from '#/data/query-builders'
 import {
   ConflictError,
   NotFoundError,
@@ -16,8 +17,6 @@ import type {
   AccountType,
   AccountUpdate,
   PaymentMethodRow,
-  TransferDirection,
-  TransactionType,
 } from '#/lib/types'
 import { withDb } from '#/data/repo/db'
 import type { Db } from '#/data/repo/db'
@@ -104,15 +103,7 @@ export async function listAccountsWithBalances(): Promise<AccountRow[]> {
         })
         .from(recurringExpenses)
         .groupBy(recurringExpenses.accountId),
-      db
-        .select({
-          accountId: transactions.accountId,
-          type: transactions.type,
-          amount: transactions.amount,
-          transferDirection: transactions.transferDirection,
-        })
-        .from(transactions)
-        .where(sql`${transactions.accountId} is not null`),
+      accountDeltasQuery(db),
     ])
 
     const txByAccount = new Map(
@@ -125,24 +116,11 @@ export async function listAccountsWithBalances(): Promise<AccountRow[]> {
         .filter((row) => row.accountId)
         .map((row) => [row.accountId!, row.value ?? 0]),
     )
-    const rowsByAccount = new Map<
-      string,
-      Array<{
-        type: TransactionType
-        amount: number
-        transferDirection: TransferDirection | null
-      }>
-    >()
-    for (const delta of deltas) {
-      if (!delta.accountId) continue
-      const list = rowsByAccount.get(delta.accountId) ?? []
-      list.push({
-        type: delta.type,
-        amount: delta.amount,
-        transferDirection: delta.transferDirection,
-      })
-      rowsByAccount.set(delta.accountId, list)
-    }
+    const deltaByAccount = new Map(
+      deltas
+        .filter((row) => row.accountId)
+        .map((row) => [row.accountId!, row.delta ?? 0]),
+    )
 
     return rows.map((row) => ({
       id: row.id,
@@ -152,11 +130,7 @@ export async function listAccountsWithBalances(): Promise<AccountRow[]> {
       closed: row.closed,
       transactionCount: txByAccount.get(row.id) ?? 0,
       recurringCount: recByAccount.get(row.id) ?? 0,
-      balance: accountBalance(
-        row.startingBalance,
-        rowsByAccount.get(row.id) ?? [],
-        row.type,
-      ),
+      balance: row.startingBalance + (deltaByAccount.get(row.id) ?? 0),
     }))
   })
 }

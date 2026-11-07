@@ -11,7 +11,17 @@ test.describe('ledger transfers @smoke', () => {
   test('create transfer pair → edit note → delete both legs', async ({
     page,
   }) => {
-    await completeOnboarding(page, { mode: 'empty', budget: '2000' })
+    await completeOnboarding(page, { budget: '2000' })
+
+    // Transfers need 2+ accounts — onboarding only creates one.
+    await goToNav(page, 'Categories')
+    await page.getByRole('button', { name: /Add account/i }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Add account' }),
+    ).toBeVisible()
+    await page.locator('#account-name').fill('Cash')
+    await dialogSave(page)
+    await expect(tableCell(page, 'Cash')).toBeVisible()
 
     await goToNav(page, 'Ledger')
     await expect(page.getByRole('heading', { name: 'Ledger' })).toBeVisible()
@@ -30,7 +40,7 @@ test.describe('ledger transfers @smoke', () => {
 
     await page.locator('#ledger-amount').fill('75.00')
     await page.locator('#ledger-description').fill('E2E pocket move')
-    await selectOption(page, 'ledger-from-account', 'Debit card')
+    await selectOption(page, 'ledger-from-account', 'Checking')
     await selectOption(page, 'ledger-to-account', 'Cash')
     await dialogSave(page)
 

@@ -11,6 +11,7 @@ import { useOptimisticMutation } from '#/hooks/use-optimistic-mutation'
 import { invalidateAfter } from '#/lib/query/invalidation'
 import { makeMutationErrorHandler } from '#/lib/errors'
 import { rememberTransactionDefaults } from '#/lib/transaction-defaults'
+import { soleAccountId } from '#/lib/sole-account'
 
 export type RecurringFormState = {
   name: string
@@ -77,6 +78,7 @@ interface UseRecurringFormArgs {
   setSaveError: (error: string | null) => void
   setDeleting: (item: RecurringExpenseRow | null) => void
   deleting: RecurringExpenseRow | null
+  paymentMethods: ReadonlyArray<{ id: string }>
 }
 
 export function useRecurringForm({
@@ -89,6 +91,7 @@ export function useRecurringForm({
   setSaveError,
   setDeleting,
   deleting,
+  paymentMethods,
 }: UseRecurringFormArgs) {
   const queryClient = useQueryClient()
 
@@ -182,9 +185,11 @@ export function useRecurringForm({
 
   function openCreate() {
     reset()
+    const sole = soleAccountId(paymentMethods)
     setForm((current) => ({
       ...current,
       active: true,
+      paymentMethodId: sole ?? current.paymentMethodId,
     }))
     setComposerOpen(true)
   }

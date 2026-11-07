@@ -1,27 +1,29 @@
 import { count, eq } from 'drizzle-orm'
 import { getDb } from '#/db/index'
-import {
-  accounts,
-  categories,
-  recurringExpenses,
-  savingsGoals,
-  settings,
-  transactions,
-} from '#/db/schema'
-import {
-  expenseCategories,
-  ledgerTransactions,
-  paymentMethods as samplePaymentMethods,
-  recurringExpenses as sampleRecurring,
-  sampleSavingsGoal,
-  sampleTransfers,
-} from '#/data/sample-ledger'
-import { inferAccountTypeFromName } from '#/lib/finance'
+import { accounts, categories, settings } from '#/db/schema'
+import { expenseCategories } from '#/data/sample-ledger'
+import type { AccountType } from '#/lib/types'
+
+const PRESET_EXPENSE = new Set<string>(expenseCategories)
+
+/** One-tap preset for the Categories wizard step. */
+export const COMMON_EXPENSE_CATEGORIES = [
+  'Food',
+  'Housing',
+  'Transport',
+  'Other',
+] as const satisfies ReadonlyArray<(typeof expenseCategories)[number]>
 
 export type OnboardingInput = {
   budget: number
   currency: string
-  loadSample: boolean
+  primaryAccount: {
+    name: string
+    type: AccountType
+    startingBalance: number
+  }
+  /** Subset of expenseCategories; may be empty (Income still seeded). */
+  expenseCategoryNames: string[]
 }
 
 export async function ensureSettingsRow() {
@@ -65,10 +67,22 @@ export async function needsOnboarding() {
   return true
 }
 
-async function insertDefaultCatalog() {
+function normalizeExpenseNames(names: string[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const raw of names) {
+    const name = raw.trim()
+    if (!name || !PRESET_EXPENSE.has(name) || seen.has(name)) continue
+    seen.add(name)
+    out.push(name)
+  }
+  return out
+}
+
+async function insertSelectedCategories(expenseNames: string[]) {
   const db = await getDb()
   const categoryRows = [
-    ...expenseCategories.map((name) => ({
+    ...normalizeExpenseNames(expenseNames).map((name) => ({
       id: crypto.randomUUID(),
       name,
       type: 'expense' as const,
@@ -80,105 +94,7 @@ async function insertDefaultCatalog() {
     },
   ]
   await db.insert(categories).values(categoryRows)
-
-  // Starting balances: demo-friendly stock so net worth is non-zero with sample data.
-  const startingByName: Record<string, number> = {
-    'Debit card': 1200,
-    'Credit card': 0,
-    Cash: 80,
-    'Bank transfer': 2400,
-    'Direct deposit': 0,
-  }
-  const methodRows = samplePaymentMethods.map((name) => ({
-    id: crypto.randomUUID(),
-    name,
-    type: inferAccountTypeFromName(name),
-    startingBalance: startingByName[name] ?? 0,
-    closed: false,
-  }))
-  await db.insert(accounts).values(methodRows)
-
-  return {
-    categoryByName: Object.fromEntries(
-      categoryRows.map((row) => [row.name, row.id]),
-    ),
-    methodByName: Object.fromEntries(
-      methodRows.map((row) => [row.name, row.id]),
-    ),
-  }
-}
-
-async function insertSampleActivity(
-  categoryByName: Record<string, string>,
-  methodByName: Record<string, string>,
-) {
-  const db = await getDb()
-  await db.insert(transactions).values(
-    ledgerTransactions.map((row) => ({
-      id: crypto.randomUUID(),
-      description: row.description,
-      amount: row.amount,
-      type: row.type,
-      transactionDate: row.date,
-      categoryId: categoryByName[row.category],
-      accountId: methodByName[row.paymentMethod] ?? null,
-    })),
-  )
-
-  for (const transfer of sampleTransfers) {
-    const fromId = methodByName[transfer.fromAccount]
-    const toId = methodByName[transfer.toAccount]
-    if (!fromId || !toId) continue
-    const outId = crypto.randomUUID()
-    const inId = crypto.randomUUID()
-    await db.insert(transactions).values([
-      {
-        id: outId,
-        description: transfer.description,
-        amount: transfer.amount,
-        type: 'transfer',
-        transactionDate: transfer.date,
-        categoryId: null,
-        accountId: fromId,
-        transferId: inId,
-        transferDirection: 'out',
-      },
-      {
-        id: inId,
-        description: transfer.description,
-        amount: transfer.amount,
-        type: 'transfer',
-        transactionDate: transfer.date,
-        categoryId: null,
-        accountId: toId,
-        transferId: outId,
-        transferDirection: 'in',
-      },
-    ])
-  }
-
-  await db.insert(recurringExpenses).values(
-    sampleRecurring.map((row) => ({
-      id: crypto.randomUUID(),
-      name: row.name,
-      kind: row.kind ?? 'expense',
-      amount: row.amount,
-      cadence: row.cadence,
-      nextDate: row.nextDate,
-      active: row.active,
-      categoryId: categoryByName[row.category],
-      accountId: methodByName[row.paymentMethod] ?? null,
-    })),
-  )
-
-  await db.insert(savingsGoals).values({
-    id: crypto.randomUUID(),
-    name: sampleSavingsGoal.name,
-    targetAmount: sampleSavingsGoal.targetAmount,
-    currentAmount: sampleSavingsGoal.currentAmount,
-    targetDate: sampleSavingsGoal.targetDate,
-    categoryId: categoryByName[sampleSavingsGoal.category] ?? null,
-  })
+  return categoryRows
 }
 
 export async function completeOnboarding(input: OnboardingInput) {
@@ -186,10 +102,29 @@ export async function completeOnboarding(input: OnboardingInput) {
   const row = await ensureSettingsRow()
   if (row.seededAt) return { alreadyDone: true as const }
 
-  const catalog = await insertDefaultCatalog()
-  if (input.loadSample) {
-    await insertSampleActivity(catalog.categoryByName, catalog.methodByName)
+  const name = input.primaryAccount.name.trim()
+  if (!name) throw new Error('Enter an account name')
+  if (
+    input.primaryAccount.type !== 'asset' &&
+    input.primaryAccount.type !== 'liability'
+  ) {
+    throw new Error('Choose a valid account type')
   }
+  if (
+    !Number.isFinite(input.primaryAccount.startingBalance) ||
+    input.primaryAccount.startingBalance < 0
+  ) {
+    throw new Error('Enter a valid starting balance (0 or more)')
+  }
+
+  await insertSelectedCategories(input.expenseCategoryNames ?? [])
+  await db.insert(accounts).values({
+    id: crypto.randomUUID(),
+    name,
+    type: input.primaryAccount.type,
+    startingBalance: input.primaryAccount.startingBalance,
+    closed: false,
+  })
 
   await db
     .update(settings)

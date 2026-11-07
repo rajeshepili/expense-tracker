@@ -23,7 +23,7 @@ async function dismissTourIfOpen(page: Page) {
 
 test.describe('motion system smoke @smoke', () => {
   test('month change does not enter page/settle phases', async ({ page }) => {
-    await completeOnboarding(page, { mode: 'sample' })
+    await completeOnboarding(page)
     await goToNav(page, 'Overview')
     await dismissTourIfOpen(page)
     await expect(page.locator('.month-view')).toBeVisible()
@@ -64,7 +64,7 @@ test.describe('motion system smoke @smoke', () => {
   test('theme toggle returns to idle without trapping page-content', async ({
     page,
   }) => {
-    await completeOnboarding(page, { mode: 'empty' })
+    await completeOnboarding(page)
     await goToNav(page, 'Overview')
     await dismissTourIfOpen(page)
 
@@ -97,7 +97,7 @@ test.describe('motion system smoke @smoke', () => {
     // Phone + tablet use drawers (useIsCompact ≤1023). Start compact so onboarding
     // and ledger composer mount the Vaul path, not the desktop dialog.
     await page.setViewportSize({ width: 390, height: 844 })
-    await completeOnboarding(page, { mode: 'empty' })
+    await completeOnboarding(page)
     await goToNav(page, 'Overview')
     await dismissTourIfOpen(page)
 
@@ -123,7 +123,7 @@ test.describe('motion system smoke @smoke', () => {
 
   test('reduced motion skips route view-transition types', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await completeOnboarding(page, { mode: 'empty' })
+    await completeOnboarding(page)
     await goToNav(page, 'Overview')
     await dismissTourIfOpen(page)
 

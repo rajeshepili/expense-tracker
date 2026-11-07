@@ -165,32 +165,34 @@ export async function updateTransfer(legId: string, patch: TransferUpdate) {
       }
     }
 
-    await db
-      .update(transactions)
-      .set({
-        description: outDescription,
-        amount,
-        transactionDate: date,
-        categoryId: null,
-        accountId: from.id,
-        type: 'transfer',
-        transferDirection: 'out',
-        transferId: pair.in.id,
-      })
-      .where(eq(transactions.id, pair.out.id))
-    await db
-      .update(transactions)
-      .set({
-        description: inDescription,
-        amount,
-        transactionDate: date,
-        categoryId: null,
-        accountId: to.id,
-        type: 'transfer',
-        transferDirection: 'in',
-        transferId: pair.out.id,
-      })
-      .where(eq(transactions.id, pair.in.id))
+    await db.transaction(async (tx) => {
+      await tx
+        .update(transactions)
+        .set({
+          description: outDescription,
+          amount,
+          transactionDate: date,
+          categoryId: null,
+          accountId: from.id,
+          type: 'transfer',
+          transferDirection: 'out',
+          transferId: pair.in.id,
+        })
+        .where(eq(transactions.id, pair.out.id))
+      await tx
+        .update(transactions)
+        .set({
+          description: inDescription,
+          amount,
+          transactionDate: date,
+          categoryId: null,
+          accountId: to.id,
+          type: 'transfer',
+          transferDirection: 'in',
+          transferId: pair.out.id,
+        })
+        .where(eq(transactions.id, pair.in.id))
+    })
 
     return { success: true as const, outId: pair.out.id, inId: pair.in.id }
   })
@@ -249,24 +251,26 @@ export async function linkAsTransfer(outTxId: string, inTxId: string) {
       throw new ValidationError('Transfer legs must have the same amount')
     }
 
-    await db
-      .update(transactions)
-      .set({
-        type: 'transfer',
-        categoryId: null,
-        transferId: inRow.id,
-        transferDirection: 'out',
-      })
-      .where(eq(transactions.id, outRow.id))
-    await db
-      .update(transactions)
-      .set({
-        type: 'transfer',
-        categoryId: null,
-        transferId: outRow.id,
-        transferDirection: 'in',
-      })
-      .where(eq(transactions.id, inRow.id))
+    await db.transaction(async (tx) => {
+      await tx
+        .update(transactions)
+        .set({
+          type: 'transfer',
+          categoryId: null,
+          transferId: inRow.id,
+          transferDirection: 'out',
+        })
+        .where(eq(transactions.id, outRow.id))
+      await tx
+        .update(transactions)
+        .set({
+          type: 'transfer',
+          categoryId: null,
+          transferId: outRow.id,
+          transferDirection: 'in',
+        })
+        .where(eq(transactions.id, inRow.id))
+    })
 
     return { success: true as const, outId: outRow.id, inId: inRow.id }
   })
@@ -285,8 +289,12 @@ export async function repairOrphanTransfers() {
       .where(eq(transactions.type, 'transfer'))
 
     const orphans = orphanTransferIds(transferRows)
-    for (const id of orphans) {
-      await db.delete(transactions).where(eq(transactions.id, id))
+    if (orphans.length > 0) {
+      await db.transaction(async (tx) => {
+        for (const id of orphans) {
+          await tx.delete(transactions).where(eq(transactions.id, id))
+        }
+      })
     }
     return { repaired: orphans.length }
   })

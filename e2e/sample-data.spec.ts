@@ -1,22 +1,20 @@
 import { expect, test } from '@playwright/test'
-import { completeOnboarding, goToNav, tableCell } from './helpers'
+import {
+  addLedgerExpense,
+  completeOnboarding,
+  goToNav,
+  tableCell,
+} from './helpers'
 
-test.describe('sample data smoke @smoke', () => {
-  test('sample onboard seeds ledger and recurring', async ({ page }) => {
-    await completeOnboarding(page, { mode: 'sample', budget: '2500' })
-
-    // Overview shows month activity (sample ledger has income + expenses).
-    await expect(page.getByText('Income').first()).toBeVisible()
-    await expect(page.getByText('Expenses').first()).toBeVisible()
-
+test.describe('ledger after empty onboard @smoke', () => {
+  test('empty onboard then add expense appears in ledger', async ({ page }) => {
+    await completeOnboarding(page, { budget: '2500', accountName: 'Checking' })
+    await addLedgerExpense(page, {
+      description: 'Grocery run',
+      amount: '42.50',
+    })
     await goToNav(page, 'Ledger')
     await expect(page.getByRole('heading', { name: 'Ledger' })).toBeVisible()
-    // Seeded descriptions from sample-ledger.ts (relative to today → current month).
     await expect(tableCell(page, 'Grocery run')).toBeVisible()
-    await expect(tableCell(page, 'Top up spending card')).toHaveCount(2)
-
-    await goToNav(page, 'Bills')
-    await expect(page.getByRole('heading', { name: 'Bills' })).toBeVisible()
-    await expect(page.locator('table tbody tr').first()).toBeVisible()
   })
 })

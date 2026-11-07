@@ -63,7 +63,6 @@ async function legacyBridgeToInit(client: SqlClient) {
   for (const statement of [
     `CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date, created_at)`,
     `CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type)`,
     `CREATE INDEX IF NOT EXISTS idx_transactions_category_date ON transactions(category_id, transaction_date)`,
     `CREATE INDEX IF NOT EXISTS idx_transactions_source_recurring ON transactions(source_recurring_id)`,
     `CREATE INDEX IF NOT EXISTS idx_transactions_method_date ON transactions(payment_method_id, transaction_date)`,
@@ -78,10 +77,19 @@ async function legacyBridgeToInit(client: SqlClient) {
 async function applyEntry(client: SqlClient, entry: JournalEntry) {
   const body = bundled.migrations[migrationKey(entry.idx)]
   if (!body) throw new Error(`Missing migration: ${entry.tag}`)
-  for (const statement of body.split('--> statement-breakpoint')) {
-    await execSql(client, statement)
+  // SQLite DDL is transactional: run each migration atomically so a crash
+  // mid-migration rolls back instead of leaving a half-applied schema.
+  await execSql(client, 'BEGIN')
+  try {
+    for (const statement of body.split('--> statement-breakpoint')) {
+      await execSql(client, statement)
+    }
+    await stamp(client, entry)
+    await execSql(client, 'COMMIT')
+  } catch (error) {
+    await execSql(client, 'ROLLBACK').catch(() => {})
+    throw error
   }
-  await stamp(client, entry)
 }
 
 export async function migrateSchema(client: SqlClient) {
@@ -113,6 +121,9 @@ export async function migrateSchema(client: SqlClient) {
     await applyEntry(client, entry)
     appliedWhen = entry.when
   }
+
+  // Refresh planner statistics so the new indexes are used well.
+  await execSql(client, 'ANALYZE')
 }
 
 export function listMigrationTags() {

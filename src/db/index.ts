@@ -1,5 +1,6 @@
 import type { SqliteRemoteDatabase } from 'drizzle-orm/sqlite-proxy'
 import type { SQLocalDrizzle } from 'sqlocal/drizzle'
+import { SITE_MODE } from '#/lib/brand'
 import { migrateSchema } from './migrate'
 import * as schema from './schema'
 
@@ -30,6 +31,10 @@ async function openDatabase() {
 
   const next = new SQLocalDrizzle({ databasePath: DATABASE_PATH })
   await next.sql`SELECT 1`
+  // Enforce FK declarations and use WAL so reads don't block writers.
+  await next.sql`PRAGMA foreign_keys = ON`
+  await next.sql`PRAGMA journal_mode = WAL`
+  await next.sql`PRAGMA synchronous = NORMAL`
   await migrateSchema(next)
 
   client = next
@@ -71,8 +76,8 @@ export async function importDatabaseFile(file: File) {
   reset()
 }
 
-// Auto-warm only where OPFS exists (Chromium). In jsdom/tests or non-OPFS
-// contexts SQLocal would fall back to an uninitialized memory driver.
+// Auto-warm only in the app personality where OPFS exists (Chromium).
+// Marketing builds must never import this module; the SITE_MODE guard is belt-and-braces.
 function hasOpfs(): boolean {
   return (
     typeof navigator !== 'undefined' &&
@@ -81,6 +86,6 @@ function hasOpfs(): boolean {
   )
 }
 
-if (typeof window !== 'undefined' && hasOpfs()) {
+if (typeof window !== 'undefined' && SITE_MODE === 'app' && hasOpfs()) {
   warmDatabase()
 }

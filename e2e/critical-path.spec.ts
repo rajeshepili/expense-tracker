@@ -14,7 +14,7 @@ test.describe('critical path smoke @smoke', () => {
   test('onboard → ledger CRUD → recurring record → backup export', async ({
     page,
   }) => {
-    await completeOnboarding(page, { mode: 'empty', budget: '2000' })
+    await completeOnboarding(page, { budget: '2000' })
 
     // ——— Add transaction ———
     await goToNav(page, 'Ledger')
