@@ -1,11 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useRouter } from '@tanstack/react-router'
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  ChartPie,
-  Wallet,
-} from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, ChartPie, Wallet } from 'lucide-react'
 import { Badge } from '#/components/ui/badge'
 import { Progress } from '#/components/ui/progress'
 import { StatTile } from '#/features/shared/stat-tile'
@@ -87,7 +82,9 @@ export function OverviewMonthStats({
         <span className="inline-flex flex-wrap items-center gap-1.5">
           of {money(effectiveBudget, currency)}
           {monthBudget.isCustom ? (
-            <Badge variant="outline" className="h-5 px-1.5 text-[10px]">Custom</Badge>
+            <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+              Custom
+            </Badge>
           ) : null}
           {projectedRemaining !== undefined ? (
             <span className="text-muted-foreground">
@@ -150,7 +147,9 @@ export function OverviewMonthStats({
                   isCompact ? 'text-xl' : 'text-xl md:text-2xl',
                 )}
               >
-                {stat.isPercent ? `${stat.value.toFixed(1)}%` : money(stat.value, currency)}
+                {stat.isPercent
+                  ? `${stat.value.toFixed(1)}%`
+                  : money(stat.value, currency)}
               </span>
             }
             hint={stat.delta}

@@ -18,12 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '#/components/ui/alert-dialog'
-import {
-  amountDue,
-  canOneTapRecord,
-  formatIsoDate,
-  money,
-} from '#/lib/finance'
+import { amountDue, canOneTapRecord, formatIsoDate, money } from '#/lib/finance'
 import type { useRecordRecurring } from '#/hooks/use-record-recurring'
 
 type PaymentMethod = { id: string; name: string }

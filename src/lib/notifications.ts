@@ -69,11 +69,7 @@ export function dueSoonReminders(
     .sort((a, b) => compareIsoDate(a.nextDate, b.nextDate))
 }
 
-/**
- * Shows local notifications for active recurring items due within the window.
- * No-op without permission or when reminders are disabled in settings.
- * Returns the reminders that were (or would be) shown.
- */
+/** Due-soon bill notifications (needs permission + setting). */
 export async function scheduleBillReminders(
   opts: { windowDays?: number; force?: boolean } = {},
 ): Promise<BillReminder[]> {
@@ -111,10 +107,11 @@ export async function scheduleBillReminders(
       icon: '/icons/icon-192.png',
     }
     try {
-      if (registration) await registration.showNotification(`${label} due ${when}`, options)
+      if (registration)
+        await registration.showNotification(`${label} due ${when}`, options)
       else new Notification(`${label} due ${when}`, options)
     } catch {
-      // Notification API can throw in odd contexts; never break the app.
+      // ignore Notification throws
     }
   }
   return reminders

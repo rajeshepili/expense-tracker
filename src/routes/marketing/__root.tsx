@@ -76,10 +76,7 @@ const NotFoundPage = lazy(() =>
   })),
 )
 
-/**
- * Marketing shell only — no product gate, no DB, no app SW, no product chrome.
- * Unlocks body scroll for long pages (product shell locks h-dvh).
- */
+/** Marketing layout (scrollable; no app gate/DB). */
 function MarketingShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     document.body.classList.add('mkt-page-scroll')

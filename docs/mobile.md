@@ -27,12 +27,12 @@ Expense Tracker is a **local-only** web app. On Android, use **Chrome** and inst
 
 Navigation splits at `md` (768px) via `useIsMobile` / Tailwind `md:`. Lists and composers stay compact until `lg` (1024px) via `useIsCompact`:
 
-|            | Phone (`<768`)                                                     | Tablet (`768–1023`)      | Desktop (`≥1024`)      |
-| ---------- | ------------------------------------------------------------------ | ------------------------ | ---------------------- |
-| Navigation | Bottom tabs (Overview / Ledger / Bills / Goals / Categories)       | Top bar                  | Top bar                |
-| Lists      | Card rows                                                          | Card rows                | Dense tables           |
-| Forms      | Vaul drawer (sheet), sticky footer                                 | Vaul drawer              | Centered dialog        |
-| Overview   | Page scroll; month stats in a 2×2 grid                             | Same single column       | Multi-column dashboard |
+|            | Phone (`<768`)                                               | Tablet (`768–1023`) | Desktop (`≥1024`)      |
+| ---------- | ------------------------------------------------------------ | ------------------- | ---------------------- |
+| Navigation | Bottom tabs (Overview / Ledger / Bills / Goals / Categories) | Top bar             | Top bar                |
+| Lists      | Card rows                                                    | Card rows           | Dense tables           |
+| Forms      | Vaul drawer (sheet), sticky footer                           | Vaul drawer         | Centered dialog        |
+| Overview   | Page scroll; month stats in a 2×2 grid                       | Same single column  | Multi-column dashboard |
 
 Same local SQLite database either way. Composers use `ResponsiveModal` (Drawer below `lg`, Dialog from `lg` up). Drawers set `repositionInputs={false}` so the keyboard does not shove the sheet off-screen; Save/Cancel stay in a sticky footer.
 

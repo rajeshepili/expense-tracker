@@ -13,7 +13,9 @@ import {
   ResponsiveModalTrigger,
 } from '#/components/ui/responsive-modal'
 
-type TriggerElement = React.ReactElement<{ ref?: ForwardedRef<HTMLButtonElement> }>
+type TriggerElement = React.ReactElement<{
+  ref?: ForwardedRef<HTMLButtonElement>
+}>
 
 type ComposerFormModalProps = {
   open: boolean
@@ -38,7 +40,9 @@ type ComposerFormModalProps = {
 
 function focusFirstInput(content: HTMLElement | null) {
   if (!content) return
-  const input = content.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+  const input = content.querySelector<
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  >(
     'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled])',
   )
   input?.focus()
@@ -88,10 +92,13 @@ export function ComposerFormModal({
   const triggerButton = trigger ? (
     <ResponsiveModalTrigger asChild>
       {isValidElement(trigger)
-        ? cloneElement(trigger as React.ReactElement<React.ComponentProps<'button'>>, {
-            ref: triggerRef as React.Ref<HTMLButtonElement>,
-            type: 'button',
-          })
+        ? cloneElement(
+            trigger as React.ReactElement<React.ComponentProps<'button'>>,
+            {
+              ref: triggerRef as React.Ref<HTMLButtonElement>,
+              type: 'button',
+            },
+          )
         : trigger}
     </ResponsiveModalTrigger>
   ) : null
@@ -137,7 +144,9 @@ export function ComposerFormModal({
               ) : null}
             </ResponsiveModalHeader>
             {children}
-            {error ? <FieldError className="px-0 pt-2">{error}</FieldError> : null}
+            {error ? (
+              <FieldError className="px-0 pt-2">{error}</FieldError>
+            ) : null}
             <ResponsiveModalFooter>
               <Button
                 type="button"

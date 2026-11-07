@@ -2,7 +2,12 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { TransactionType } from '#/lib/types'
 import { queryKeys } from '#/lib/query/keys'
-import { listTransactions, getSettings, listCategories, listAccounts } from '#/data/repository'
+import {
+  listTransactions,
+  getSettings,
+  listCategories,
+  listAccounts,
+} from '#/data/repository'
 import { formatQueryError } from '#/lib/errors'
 import { currentYearMonth } from '#/lib/finance'
 
@@ -19,9 +24,7 @@ interface UseLedgerListArgs {
 
 export function useLedgerList({ search, filter, query }: UseLedgerListArgs) {
   const viewingMonth =
-    search.month === 'all'
-      ? null
-      : search.month ?? currentYearMonth()
+    search.month === 'all' ? null : (search.month ?? currentYearMonth())
 
   const listFilters = useMemo(
     () => ({

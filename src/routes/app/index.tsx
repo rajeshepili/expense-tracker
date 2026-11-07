@@ -19,11 +19,7 @@ import {
 import { useCreateHotkey } from '#/hooks/use-create-hotkey'
 import { useRecordRecurring } from '#/hooks/use-record-recurring'
 import { formatQueryError } from '#/lib/errors'
-import {
-  currentYearMonth,
-  formatYearMonth,
-  isYearMonth,
-} from '#/lib/finance'
+import { currentYearMonth, formatYearMonth, isYearMonth } from '#/lib/finance'
 import { readCategoryView } from '#/lib/overview-helpers'
 import type { CategoryView } from '#/lib/overview-helpers'
 import { invalidateAfter } from '#/lib/query/invalidation'
@@ -40,7 +36,6 @@ import { BackupModal } from '#/features/settings/backup-modal'
 import { BudgetModal } from '#/features/settings/budget-modal'
 import type { LedgerTransaction } from '#/lib/types'
 import { motion, resolveMonthDirection } from '#/lib/motion'
-
 
 type OverviewSearch = {
   month?: string
@@ -122,17 +117,25 @@ function Home() {
     },
   })
 
-  useCreateHotkey(() => {
-    void navigateAfterPrefetch(router, queryClient, {
-      to: '/ledger',
-      search: { new: true, month: yearMonth },
-      month: yearMonth,
-    })
-  }, settingsOpen || backupOpen || Boolean(deleting) || !motion.can('hotkey'))
+  useCreateHotkey(
+    () => {
+      void navigateAfterPrefetch(router, queryClient, {
+        to: '/ledger',
+        search: { new: true, month: yearMonth },
+        month: yearMonth,
+      })
+    },
+    settingsOpen || backupOpen || Boolean(deleting) || !motion.can('hotkey'),
+  )
 
   if (overviewQuery.isPending) {
     return (
-      <PageShell scroll="page" aria-busy="true" aria-live="polite" aria-label="Loading overview…">
+      <PageShell
+        scroll="page"
+        aria-busy="true"
+        aria-live="polite"
+        aria-label="Loading overview…"
+      >
         <span className="sr-only">Loading overview…</span>
         <PageHeader
           title="Overview"
@@ -188,8 +191,7 @@ function Home() {
   } = overviewQuery.data
   const monthLabel = formatYearMonth(monthBudget.yearMonth)
   const paymentMethods = methodsQuery.data ?? []
-  const monthFetching =
-    overviewQuery.isFetching && !overviewQuery.isPending
+  const monthFetching = overviewQuery.isFetching && !overviewQuery.isPending
 
   return (
     <PageShell scroll="page">
@@ -232,8 +234,8 @@ function Home() {
           projectionNet={projection.net}
         />
 
-      <section className="grid shrink-0 gap-3 md:gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(16rem,1fr)]">
-        <div className="flex min-w-0 flex-col gap-3 md:gap-4">
+        <section className="grid shrink-0 gap-3 md:gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(16rem,1fr)]">
+          <div className="flex min-w-0 flex-col gap-3 md:gap-4">
             <OverviewRecentTransactions
               yearMonth={yearMonth}
               currency={settings.currency}
@@ -244,14 +246,14 @@ function Home() {
               }}
             />
             <SavingsSummary />
-          <OverviewAccountsPanel
-            currency={settings.currency}
-            accounts={overviewAccounts}
-            netWorth={netWorth}
-          />
-        </div>
+            <OverviewAccountsPanel
+              currency={settings.currency}
+              accounts={overviewAccounts}
+              netWorth={netWorth}
+            />
+          </div>
 
-        <div className="flex min-w-0 flex-col gap-3 md:gap-4">
+          <div className="flex min-w-0 flex-col gap-3 md:gap-4">
             <OverviewCategoryBudget
               yearMonth={yearMonth}
               monthLabel={monthLabel}
@@ -268,20 +270,24 @@ function Home() {
               upcomingRecurring={upcomingRecurring}
               recorder={recorder}
             />
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {upcomingRecurring.length > 0 && (
-        <RecordRecurringControls
-          recorder={recorder}
-          paymentMethods={paymentMethods}
-          currencyHint={settings.currency}
-        />
-      )}
+        {upcomingRecurring.length > 0 && (
+          <RecordRecurringControls
+            recorder={recorder}
+            paymentMethods={paymentMethods}
+            currencyHint={settings.currency}
+          />
+        )}
       </div>
 
       <BackupModal open={backupOpen} onOpenChange={setBackupOpen} />
-      <BudgetModal open={settingsOpen} onOpenChange={setSettingsOpen} yearMonth={yearMonth} />
+      <BudgetModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        yearMonth={yearMonth}
+      />
 
       <ConfirmDeleteDialog
         open={Boolean(deleting)}

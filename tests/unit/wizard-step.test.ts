@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const animateChromeMock = vi.hoisted(() =>
-  vi.fn(() => ({ stop: vi.fn() })),
-)
+const animateChromeMock = vi.hoisted(() => vi.fn(() => ({ stop: vi.fn() })))
 
 vi.mock('#/lib/motion/animate-chrome', () => ({
   animateChrome: animateChromeMock,

@@ -7,7 +7,8 @@
     animation-iteration-count: 1 !important;
     transition-duration: var(--duration-reduced) !important;
     /* Omit border-color — prevents table-row shimmer under PRM. */
-    transition-property: opacity, color, background-color, fill, stroke !important;
+    transition-property:
+      opacity, color, background-color, fill, stroke !important;
     scroll-behavior: auto !important;
   }
 

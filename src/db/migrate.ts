@@ -50,9 +50,14 @@ async function legacyBridgeToInit(client: SqlClient) {
     const rows =
       table === 'transactions'
         ? await client.sql<{ name: string }>`PRAGMA table_info(transactions)`
-        : await client.sql<{ name: string }>`PRAGMA table_info(recurring_expenses)`
+        : await client.sql<{
+            name: string
+          }>`PRAGMA table_info(recurring_expenses)`
     if (rows.some((row) => row.name === column)) return
-    await execSql(client, `ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`)
+    await execSql(
+      client,
+      `ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`,
+    )
   }
 
   await ensureColumn('transactions', 'payment_method_id', 'TEXT')
@@ -122,7 +127,7 @@ export async function migrateSchema(client: SqlClient) {
     appliedWhen = entry.when
   }
 
-  // Refresh planner statistics so the new indexes are used well.
+  // ANALYZE after migrations.
   await execSql(client, 'ANALYZE')
 }
 

@@ -1,5 +1,9 @@
 import { MONEY_EPSILON, todayIso } from './finance'
-import type { SavingsGoalInput, SavingsGoalRow, SavingsGoalUpdate } from './types'
+import type {
+  SavingsGoalInput,
+  SavingsGoalRow,
+  SavingsGoalUpdate,
+} from './types'
 
 export type SavingsGoalAmounts = Pick<
   SavingsGoalRow,

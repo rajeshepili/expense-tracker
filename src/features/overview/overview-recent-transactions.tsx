@@ -38,7 +38,10 @@ function recentCategoryBadge(transaction: LedgerTransaction) {
           ? 'Transfer out'
           : 'Transfer'
     return (
-      <Badge variant="outline" className={transferBadgeClass(transaction.transferDirection)}>
+      <Badge
+        variant="outline"
+        className={transferBadgeClass(transaction.transferDirection)}
+      >
         {label}
       </Badge>
     )
@@ -86,7 +89,15 @@ export function OverviewRecentTransactions({
   const onLedgerLinkClick =
     (search: { month?: string; edit?: string; new?: boolean }) =>
     (event: React.MouseEvent<HTMLAnchorElement>) => {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return
       event.preventDefault()
       void navigateAfterPrefetch(router, queryClient, {
         to: '/ledger',
@@ -106,7 +117,9 @@ export function OverviewRecentTransactions({
           <Link
             to="/ledger"
             search={{ new: true, month: yearMonth }}
-            onMouseEnter={() => prefetchRoute(queryClient, '/ledger', { month: yearMonth })}
+            onMouseEnter={() =>
+              prefetchRoute(queryClient, '/ledger', { month: yearMonth })
+            }
             onClick={onLedgerLinkClick({ new: true, month: yearMonth })}
           >
             <Plus data-icon="inline-start" />
@@ -194,7 +207,9 @@ export function OverviewRecentTransactions({
                   />
                 }
                 onClick={
-                  state === 'exit' ? undefined : () => openInLedger(transaction.id)
+                  state === 'exit'
+                    ? undefined
+                    : () => openInLedger(transaction.id)
                 }
                 actions={
                   state === 'exit' ? null : (

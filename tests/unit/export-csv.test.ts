@@ -24,7 +24,10 @@ function tx(overrides: Partial<LedgerTransaction>): LedgerTransaction {
 
 describe('transactionsToCsv', () => {
   it('emits a header row and one line per transaction', () => {
-    const csv = transactionsToCsv([tx({}), tx({ id: 't2', description: 'Rent', amount: 1200 })])
+    const csv = transactionsToCsv([
+      tx({}),
+      tx({ id: 't2', description: 'Rent', amount: 1200 }),
+    ])
     const lines = csv.trimEnd().split('\n')
     expect(lines[0]).toBe('date,type,description,category,account,amount')
     expect(lines).toHaveLength(3)
@@ -39,11 +42,17 @@ describe('transactionsToCsv', () => {
   })
 
   it('handles empty input', () => {
-    expect(transactionsToCsv([])).toBe('date,type,description,category,account,amount\n')
+    expect(transactionsToCsv([])).toBe(
+      'date,type,description,category,account,amount\n',
+    )
   })
 
   it('uses null-safe fallbacks for missing category/account', () => {
-    const csv = transactionsToCsv([tx({ category: null, account: null, paymentMethod: null })])
-    expect(csv.trimEnd().split('\n')[1]).toBe('2026-11-04,expense,Coffee,,,6.75')
+    const csv = transactionsToCsv([
+      tx({ category: null, account: null, paymentMethod: null }),
+    ])
+    expect(csv.trimEnd().split('\n')[1]).toBe(
+      '2026-11-04,expense,Coffee,,,6.75',
+    )
   })
 })

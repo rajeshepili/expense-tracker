@@ -173,9 +173,7 @@ export function VirtualizedTable<T>({
             </>
           ) : (
             items.map((item, index) => (
-              <Fragment
-                key={getItemKey ? getItemKey(item, index) : index}
-              >
+              <Fragment key={getItemKey ? getItemKey(item, index) : index}>
                 {children(item, index)}
               </Fragment>
             ))

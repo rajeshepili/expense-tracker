@@ -51,9 +51,9 @@ export function isErrorCode(err: unknown, code: AppError['code']): boolean {
   return AppError.isAppError(err) && err.code === code
 }
 
-export function safe<T extends (...args: Parameters<T>) => Promise<ReturnType<T>>>(
-  fn: T,
-): T {
+export function safe<
+  T extends (...args: Parameters<T>) => Promise<ReturnType<T>>,
+>(fn: T): T {
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args)

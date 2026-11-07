@@ -138,8 +138,7 @@ export async function recordRecurringPayment(
     const hasPaymentThisCycle = Boolean(
       priorLinked[0] && priorLinked[0].date >= bill.nextDate,
     )
-    const cycleOpen =
-      bill.remainingAmount !== null && bill.remainingAmount > 0
+    const cycleOpen = bill.remainingAmount !== null && bill.remainingAmount > 0
     const alreadyRecorded = hasPaymentThisCycle && !cycleOpen
     if (alreadyRecorded && !overrides.force) {
       return {

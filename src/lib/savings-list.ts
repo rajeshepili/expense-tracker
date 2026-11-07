@@ -1,7 +1,11 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '#/lib/query/keys'
-import { listSavingsGoals, getSettings, listCategories } from '#/data/repository'
+import {
+  listSavingsGoals,
+  getSettings,
+  listCategories,
+} from '#/data/repository'
 import { formatQueryError } from '#/lib/errors'
 import { partitionSavingsGoals, savingsProgressPercent } from '#/lib/savings'
 

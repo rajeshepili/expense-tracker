@@ -67,6 +67,10 @@ async function requireClient() {
   return client
 }
 
+export async function requireClientForMerge() {
+  return requireClient()
+}
+
 export async function exportDatabaseFile() {
   return (await requireClient()).getDatabaseFile()
 }
@@ -76,8 +80,7 @@ export async function importDatabaseFile(file: File) {
   reset()
 }
 
-// Auto-warm only in the app personality where OPFS exists (Chromium).
-// Marketing builds must never import this module; the SITE_MODE guard is belt-and-braces.
+// Warm when SITE_MODE=app and OPFS exists.
 function hasOpfs(): boolean {
   return (
     typeof navigator !== 'undefined' &&

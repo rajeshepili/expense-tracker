@@ -6,8 +6,12 @@ test.describe('marketing pages @smoke', () => {
     await expect(
       page.getByRole('heading', { name: /Everything a ledger needs/i }),
     ).toBeVisible()
-    await expect(page.getByRole('navigation', { name: 'Marketing' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Privacy' }).first()).toBeVisible()
+    await expect(
+      page.getByRole('navigation', { name: 'Marketing' }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'Privacy' }).first(),
+    ).toBeVisible()
     await expect(page.getByText(/Data stays in this browser/i)).toBeVisible()
   })
 
@@ -21,7 +25,10 @@ test.describe('marketing pages @smoke', () => {
 
   test('topbar links navigate between marketing pages', async ({ page }) => {
     await page.goto('/features')
-    await page.getByRole('navigation', { name: 'Marketing' }).getByRole('link', { name: 'Privacy' }).click()
+    await page
+      .getByRole('navigation', { name: 'Marketing' })
+      .getByRole('link', { name: 'Privacy' })
+      .click()
     await expect(page).toHaveURL(/\/privacy/)
     await expect(
       page.getByRole('heading', { name: /never leaves your device/i }),
@@ -45,9 +52,7 @@ test.describe('marketing pages @smoke', () => {
   test('wrong-host bounce helper fires under portless hostnames', async ({
     page,
   }) => {
-    // Unit-level redirect logic is covered in site-mode.test.ts; this smoke
-    // check stubs location.hostname to a known app host and asserts the
-    // gate would navigate to the marketing URL for /features.
+    // Inline redirect check; logic covered in site-mode.test.ts.
     await page.goto('/')
     const result = await page.evaluate(() => {
       const appUrl = 'https://app.pocketbook.localhost'
@@ -55,7 +60,6 @@ test.describe('marketing pages @smoke', () => {
       const hostname = 'app.pocketbook.localhost'
       const pathname = '/features'
       const mode = 'app' as const
-      // Mirror pathMatchesRoute + redirectForCurrentRoute for /features.
       const marketingPaths = ['/features', '/privacy']
       const matches = marketingPaths.some(
         (p) => pathname === p || pathname.startsWith(`${p}/`),

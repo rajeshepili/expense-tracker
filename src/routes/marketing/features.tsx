@@ -28,15 +28,32 @@ function LedgerVisual() {
     <div className="mkt-section-visual" aria-hidden>
       <ul className="mkt-list">
         {[
-          { name: 'Grocery run', meta: 'Food · Today', amount: '−$64.20', tone: 'text-expense' },
-          { name: 'Monthly salary', meta: 'Income · Yesterday', amount: '+$4,200.00', tone: 'text-income' },
-          { name: 'Top up spending card', meta: 'Transfer · 2 legs', amount: '$200.00', tone: '' },
+          {
+            name: 'Grocery run',
+            meta: 'Food · Today',
+            amount: '−$64.20',
+            tone: 'text-expense',
+          },
+          {
+            name: 'Monthly salary',
+            meta: 'Income · Yesterday',
+            amount: '+$4,200.00',
+            tone: 'text-income',
+          },
+          {
+            name: 'Top up spending card',
+            meta: 'Transfer · 2 legs',
+            amount: '$200.00',
+            tone: '',
+          },
         ].map((row) => (
           <li key={row.name} className="mkt-list-row">
             <span>
               {row.name} <span className="mkt-list-meta">· {row.meta}</span>
             </span>
-            <span className={`mkt-list-amount tabular-nums ${row.tone}`}>{row.amount}</span>
+            <span className={`mkt-list-amount tabular-nums ${row.tone}`}>
+              {row.amount}
+            </span>
           </li>
         ))}
       </ul>
@@ -66,7 +83,9 @@ function BillsVisual() {
             <span>
               {row.name} <span className="mkt-list-meta">· {row.meta}</span>
             </span>
-            <span className="mkt-list-amount tabular-nums text-expense">{row.amount}</span>
+            <span className="mkt-list-amount tabular-nums text-expense">
+              {row.amount}
+            </span>
           </li>
         ))}
       </ul>
@@ -95,7 +114,8 @@ function YearVisual() {
             className="w-full rounded-t-sm"
             style={{
               height: `${h}%`,
-              background: 'color-mix(in oklch, var(--ring) 55%, var(--foreground))',
+              background:
+                'color-mix(in oklch, var(--ring) 55%, var(--foreground))',
             }}
           />
         ))}

@@ -10,7 +10,11 @@ function fillYear(year: string, rows: MonthlyRow[]) {
   return Array.from({ length: 12 }, (_, i) => {
     const ym = `${year}-${String(i + 1).padStart(2, '0')}`
     const found = byKey.get(ym)
-    return { yearMonth: ym, income: found?.income ?? 0, expenses: found?.expenses ?? 0 }
+    return {
+      yearMonth: ym,
+      income: found?.income ?? 0,
+      expenses: found?.expenses ?? 0,
+    }
   })
 }
 
@@ -21,9 +25,17 @@ describe('year overview month filling', () => {
       { yearMonth: '2026-11', income: 4200, expenses: 1600 },
     ])
     expect(months).toHaveLength(12)
-    expect(months[0]).toEqual({ yearMonth: '2026-01', income: 4200, expenses: 1500 })
+    expect(months[0]).toEqual({
+      yearMonth: '2026-01',
+      income: 4200,
+      expenses: 1500,
+    })
     expect(months[5]).toEqual({ yearMonth: '2026-06', income: 0, expenses: 0 })
-    expect(months[10]).toEqual({ yearMonth: '2026-11', income: 4200, expenses: 1600 })
+    expect(months[10]).toEqual({
+      yearMonth: '2026-11',
+      income: 4200,
+      expenses: 1600,
+    })
   })
 
   it('totals match the sum of months', () => {

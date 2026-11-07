@@ -46,16 +46,48 @@ export function LedgerScreen() {
   }
 
   const {
-    descriptionRef, filter, setFilter, query, setQuery,
-    fundOffer, setFundOffer,
-    editing, form, saveError, composerOpen, setForm,
-    openEdit, bindOpenChange,
-    monthFilter, categoryFilter, methodFilter, viewingMonth,
-    categories, methods, filteredCategories, rows, totals, currency,
-    monthFetching, listMode, filterChips,
-    saveMutation, deleteMutation, transferMutation, openCreateInContext, openDuplicate,
-    goMonth, clearFilters, clearChip, setSearchFilter, filterByMethod, setType,
-    submitForm, askDelete, deleting, setDeleting,
+    descriptionRef,
+    filter,
+    setFilter,
+    query,
+    setQuery,
+    fundOffer,
+    setFundOffer,
+    editing,
+    form,
+    saveError,
+    composerOpen,
+    setForm,
+    openEdit,
+    bindOpenChange,
+    monthFilter,
+    categoryFilter,
+    methodFilter,
+    viewingMonth,
+    categories,
+    methods,
+    filteredCategories,
+    rows,
+    totals,
+    currency,
+    monthFetching,
+    listMode,
+    filterChips,
+    saveMutation,
+    deleteMutation,
+    transferMutation,
+    openCreateInContext,
+    openDuplicate,
+    goMonth,
+    clearFilters,
+    clearChip,
+    setSearchFilter,
+    filterByMethod,
+    setType,
+    submitForm,
+    askDelete,
+    deleting,
+    setDeleting,
   } = ledger
 
   const emptyLedger = (
@@ -72,7 +104,8 @@ export function LedgerScreen() {
             Add your first expense or income to start tracking.
           </p>
           <p className="hidden text-xs text-muted-foreground lg:block">
-            Press <Kbd className="mx-1">N</Kbd> or use the button below to begin.
+            Press <Kbd className="mx-1">N</Kbd> or use the button below to
+            begin.
           </p>
         </>
       }
@@ -178,9 +211,13 @@ export function LedgerScreen() {
           <CardTitle className="text-base">Transactions</CardTitle>
           <CardDescription>
             {rows.length} {rows.length === 1 ? 'entry' : 'entries'} ·{' '}
-            <span className="tabular-nums">{money(totals.expenses, currency)}</span>{' '}
+            <span className="tabular-nums">
+              {money(totals.expenses, currency)}
+            </span>{' '}
             spent ·{' '}
-            <span className="tabular-nums">{money(totals.income, currency)}</span>{' '}
+            <span className="tabular-nums">
+              {money(totals.income, currency)}
+            </span>{' '}
             income
           </CardDescription>
         </CardHeader>

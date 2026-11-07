@@ -1,7 +1,13 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '#/lib/query/keys'
-import { listRecurring, getSettings, getMonthBudget, listCategories, listAccounts } from '#/data/repository'
+import {
+  listRecurring,
+  getSettings,
+  getMonthBudget,
+  listCategories,
+  listAccounts,
+} from '#/data/repository'
 import { sortRecurring } from '#/lib/recurring-form'
 import { formatQueryError } from '#/lib/errors'
 
@@ -36,7 +42,8 @@ export function useRecurringList() {
     [recurringQuery.data],
   )
 
-  const monthlyBudget = monthBudgetQuery.data?.budget ?? settingsQuery.data?.budget ?? 0
+  const monthlyBudget =
+    monthBudgetQuery.data?.budget ?? settingsQuery.data?.budget ?? 0
   const currency = settingsQuery.data?.currency ?? 'USD'
   const expenseCategories = (categoriesQuery.data ?? []).filter(
     (c) => c.type === 'expense',
@@ -48,10 +55,16 @@ export function useRecurringList() {
     .filter((account) => !account.closed)
     .map((account) => ({ id: account.id, name: account.name }))
 
-  const isLoading = recurringQuery.isPending || settingsQuery.isPending || monthBudgetQuery.isPending
-  const isError = recurringQuery.isError || settingsQuery.isError || monthBudgetQuery.isError
+  const isLoading =
+    recurringQuery.isPending ||
+    settingsQuery.isPending ||
+    monthBudgetQuery.isPending
+  const isError =
+    recurringQuery.isError || settingsQuery.isError || monthBudgetQuery.isError
   const errorMessage = isError
-    ? formatQueryError(recurringQuery.error ?? settingsQuery.error ?? monthBudgetQuery.error)
+    ? formatQueryError(
+        recurringQuery.error ?? settingsQuery.error ?? monthBudgetQuery.error,
+      )
     : null
 
   return {

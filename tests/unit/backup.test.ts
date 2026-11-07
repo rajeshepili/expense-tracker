@@ -50,7 +50,9 @@ describe('backup prefs', () => {
     hideBackupReminderForever()
     expect(shouldShowBackupReminder(now)).toBe(false)
     // even with no export and no snooze, and far in the future
-    expect(shouldShowBackupReminder(now + 365 * 24 * 60 * 60 * 1000)).toBe(false)
+    expect(shouldShowBackupReminder(now + 365 * 24 * 60 * 60 * 1000)).toBe(
+      false,
+    )
   })
 
   it('tracks the local-data callout opt-out', () => {

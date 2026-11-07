@@ -36,8 +36,8 @@ import { invalidateAfter } from '#/lib/query/invalidation'
 import { queryKeys } from '#/lib/query/keys'
 import type { AccountRow, AccountType } from '#/lib/types'
 import { toast } from 'sonner'
-import { emptyForm, formFromRow  } from './account-form'
-import type {FormState} from './account-form';
+import { emptyForm, formFromRow } from './account-form'
+import type { FormState } from './account-form'
 import { AccountsList } from './accounts-list'
 
 export function AccountsPanel() {

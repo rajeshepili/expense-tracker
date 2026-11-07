@@ -63,7 +63,10 @@ describe('findPossibleDuplicate', () => {
   })
 
   it('prefers the most recent match', () => {
-    const rows = [tx({ id: 'old', date: '2026-11-02' }), tx({ id: 'new', date: '2026-11-03' })]
+    const rows = [
+      tx({ id: 'old', date: '2026-11-02' }),
+      tx({ id: 'new', date: '2026-11-03' }),
+    ]
     expect(findPossibleDuplicate(rows, candidate)?.id).toBe('new')
   })
 })

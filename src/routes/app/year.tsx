@@ -16,12 +16,28 @@ import { CategorySpendChart } from '#/features/overview/category-spend-chart'
 export const Route = createFileRoute('/year')({
   validateSearch: (search: Record<string, unknown>) => {
     const year = typeof search.year === 'string' ? search.year : undefined
-    return { year: year && /^\d{4}$/.test(year) ? year : String(new Date().getFullYear()) }
+    return {
+      year:
+        year && /^\d{4}$/.test(year) ? year : String(new Date().getFullYear()),
+    }
   },
   component: YearPage,
 })
 
-const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const MONTH_LABELS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+]
 
 function YearBarChart({
   months,
@@ -40,7 +56,10 @@ function YearBarChart({
         style={{ height: 160 }}
       >
         {months.map((m) => (
-          <div key={m.yearMonth} className="flex h-full flex-col items-center justify-end gap-1">
+          <div
+            key={m.yearMonth}
+            className="flex h-full flex-col items-center justify-end gap-1"
+          >
             <div className="flex h-full w-full items-end gap-[2px]">
               <div
                 className="w-1/2 rounded-t-sm bg-emerald-500/70"
@@ -68,10 +87,12 @@ function YearBarChart({
       </div>
       <div className="flex items-center gap-4 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <span className="size-2 rounded-sm bg-emerald-500/70" aria-hidden /> Income
+          <span className="size-2 rounded-sm bg-emerald-500/70" aria-hidden />{' '}
+          Income
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="size-2 rounded-sm bg-red-500/70" aria-hidden /> Expenses
+          <span className="size-2 rounded-sm bg-red-500/70" aria-hidden />{' '}
+          Expenses
         </span>
       </div>
     </div>
@@ -133,43 +154,87 @@ function YearPage() {
             >
               <ChevronRight />
             </Button>
-            <Button asChild variant="outline" size="sm" className="min-h-11 md:min-h-8">
-              <Link to="/" search={{}}>Overview</Link>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="min-h-11 md:min-h-8"
+            >
+              <Link to="/" search={{}}>
+                Overview
+              </Link>
             </Button>
           </div>
         }
       />
 
-      <section className="grid shrink-0 grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4" role="region" aria-label="Year summary">
-        <StatTile label="Income" tone="income" value={<span className="text-xl font-semibold tabular-nums md:text-2xl">{money(data.totalIncome, currency)}</span>} />
-        <StatTile label="Expenses" tone="expense" value={<span className="text-xl font-semibold tabular-nums md:text-2xl">{money(data.totalExpenses, currency)}</span>} />
+      <section
+        className="grid shrink-0 grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4"
+        role="region"
+        aria-label="Year summary"
+      >
+        <StatTile
+          label="Income"
+          tone="income"
+          value={
+            <span className="text-xl font-semibold tabular-nums md:text-2xl">
+              {money(data.totalIncome, currency)}
+            </span>
+          }
+        />
+        <StatTile
+          label="Expenses"
+          tone="expense"
+          value={
+            <span className="text-xl font-semibold tabular-nums md:text-2xl">
+              {money(data.totalExpenses, currency)}
+            </span>
+          }
+        />
         <StatTile
           label="Saved this year"
-          value={<span className="text-xl font-semibold tabular-nums md:text-2xl">{money(data.totalIncome - data.totalExpenses, currency)}</span>}
+          value={
+            <span className="text-xl font-semibold tabular-nums md:text-2xl">
+              {money(data.totalIncome - data.totalExpenses, currency)}
+            </span>
+          }
         />
         <StatTile
           label="Toward goals"
-          value={<span className="text-xl font-semibold tabular-nums md:text-2xl">{money(data.savingsSaved, currency)}</span>}
+          value={
+            <span className="text-xl font-semibold tabular-nums md:text-2xl">
+              {money(data.savingsSaved, currency)}
+            </span>
+          }
         />
       </section>
 
       <section className="flex flex-col rounded-xl border border-border/60 bg-card p-4 md:p-5">
         <h2 className="text-sm font-semibold">Monthly flow</h2>
-        <p className="mb-3 text-xs text-muted-foreground">Income vs expenses per month.</p>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Income vs expenses per month.
+        </p>
         <YearBarChart months={data.months} currency={currency} />
       </section>
 
       <section className="flex flex-col rounded-xl border border-border/60 bg-card p-4 md:p-5">
         <h2 className="text-sm font-semibold">Top categories</h2>
-        <p className="mb-3 text-xs text-muted-foreground">Where the money went in {yearState}.</p>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Where the money went in {yearState}.
+        </p>
         {data.topCategories.length > 0 ? (
           <CategorySpendChart
-            categories={data.topCategories.map((c) => ({ name: c.name, amount: c.amount }))}
+            categories={data.topCategories.map((c) => ({
+              name: c.name,
+              amount: c.amount,
+            }))}
             budget={data.totalExpenses}
             currency={currency}
           />
         ) : (
-          <p className="text-sm text-muted-foreground">No expenses recorded in {yearState}.</p>
+          <p className="text-sm text-muted-foreground">
+            No expenses recorded in {yearState}.
+          </p>
         )}
       </section>
     </PageShell>

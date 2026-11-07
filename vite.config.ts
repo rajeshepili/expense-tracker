@@ -60,7 +60,10 @@ const config = defineConfig({
       name: 'mirror-route-tree',
       buildStart() {
         // Write only when content changed so the watcher doesn't churn CSS HMR.
-        if (existsSync(genTree) && readFileSync(genTree, 'utf8') !== readFileSync(activeTree, 'utf8')) {
+        if (
+          existsSync(genTree) &&
+          readFileSync(genTree, 'utf8') !== readFileSync(activeTree, 'utf8')
+        ) {
           copyFileSync(genTree, activeTree)
         }
       },

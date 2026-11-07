@@ -45,7 +45,9 @@ export function MobileListRow({
   className,
   onClick,
   flip,
-}: MobileListRowProps & { flip?: { key: string; state?: 'enter' | 'exit'; index?: number } }) {
+}: MobileListRowProps & {
+  flip?: { key: string; state?: 'enter' | 'exit'; index?: number }
+}) {
   return (
     <Item
       variant="default"
@@ -55,7 +57,9 @@ export function MobileListRow({
       data-flip-exit={flip?.state === 'exit' ? '' : undefined}
       style={
         flip?.state === 'enter'
-          ? { ['--flip-enter-delay' as string]: `${Math.min(flip.index ?? 0, 8) * 40}ms` }
+          ? {
+              ['--flip-enter-delay' as string]: `${Math.min(flip.index ?? 0, 8) * 40}ms`,
+            }
           : undefined
       }
       className={cn(

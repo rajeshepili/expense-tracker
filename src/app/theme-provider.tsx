@@ -189,12 +189,15 @@ export function ThemeProvider({
     const onChange = () => {
       const next = resolveTheme('system')
       const prev: ResolvedTheme = next === 'dark' ? 'light' : 'dark'
-      withThemeTransition(() => {
-        applyTheme('system')
-        setResolvedTheme(next)
-      }, {
-        motion: motionFor(prev, next),
-      })
+      withThemeTransition(
+        () => {
+          applyTheme('system')
+          setResolvedTheme(next)
+        },
+        {
+          motion: motionFor(prev, next),
+        },
+      )
     }
     media.addEventListener('change', onChange)
     return () => media.removeEventListener('change', onChange)

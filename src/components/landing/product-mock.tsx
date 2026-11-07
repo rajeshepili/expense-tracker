@@ -2,10 +2,30 @@ import type { CSSProperties } from 'react'
 import { cn } from 'cn'
 
 const ROWS = [
-  { name: 'Payroll', meta: 'Income · Today', amount: '+$3,200.00', tone: 'income' as const },
-  { name: 'Studio rent', meta: 'Housing · Mar 1', amount: '−$1,200.00', tone: 'expense' as const },
-  { name: 'Groceries', meta: 'Food · Mar 3', amount: '−$84.20', tone: 'expense' as const },
-  { name: 'Transit pass', meta: 'Transport · Mar 5', amount: '−$89.00', tone: 'expense' as const },
+  {
+    name: 'Payroll',
+    meta: 'Income · Today',
+    amount: '+$3,200.00',
+    tone: 'income' as const,
+  },
+  {
+    name: 'Studio rent',
+    meta: 'Housing · Mar 1',
+    amount: '−$1,200.00',
+    tone: 'expense' as const,
+  },
+  {
+    name: 'Groceries',
+    meta: 'Food · Mar 3',
+    amount: '−$84.20',
+    tone: 'expense' as const,
+  },
+  {
+    name: 'Transit pass',
+    meta: 'Transport · Mar 5',
+    amount: '−$89.00',
+    tone: 'expense' as const,
+  },
 ]
 
 /** Decorative Overview chrome — not live data. */

@@ -2,16 +2,10 @@ import { APP_URL, MARKETING_URL, SITE_MODE } from '#/lib/brand'
 
 export type SiteMode = 'app' | 'marketing'
 
-/**
- * Marketing-owned paths (marketing route tree only).
- * Kept as a plain list so this module does not depend on either generated tree.
- */
+/** Marketing-only routes. */
 export const MARKETING_ROUTE_PATHS = ['/features', '/privacy'] as const
 
-/**
- * App-owned paths that must redirect away from the marketing host.
- * Index (`/`) is shared (landing on marketing, overview on app).
- */
+/** App-only routes (marketing host redirects these away). */
 export const APP_ROUTE_PATHS = [
   '/ledger',
   '/recurring',
@@ -45,10 +39,7 @@ function hostnameOf(url: string): string | null {
   }
 }
 
-/**
- * Which SITE_MODE this hostname should be serving.
- * Returns null for unknown/custom hosts (no hard fail — allow preview aliases).
- */
+/** Expected SITE_MODE for host; null if unknown/preview. */
 export function expectedModeForHost(
   hostname: string,
   appUrl = APP_URL,
@@ -66,10 +57,7 @@ export type ModeConsistency =
   | { ok: true; expected: SiteMode | null }
   | { ok: false; expected: SiteMode; actual: SiteMode; message: string }
 
-/**
- * Compare build-time SITE_MODE against the host we are running on.
- * Mismatch = wrong Vercel project env var or custom domain pointed at the wrong project.
- */
+/** Host vs baked VITE_SITE_MODE. */
 export function checkModeConsistency(
   hostname: string,
   mode: SiteMode = SITE_MODE,
@@ -91,17 +79,10 @@ export type RedirectOpts = {
   mode?: SiteMode
   appUrl?: string
   marketingUrl?: string
-  /** When set, redirects only fire if this host is part of the two-host split. */
   hostname?: string
 }
 
-/**
- * Where a wrong-host pathname should bounce.
- * Returns null when the current mode already owns the path, or when the
- * hostname is not part of the two-host split (plain `localhost` / `pnpm dev`
- * single-origin fallback — redirects only fire under portless `.localhost`
- * names or the production hosts).
- */
+/** Cross-origin redirect URL for a wrong-host path, or null. */
 export function redirectForCurrentRoute(
   pathname: string,
   opts: RedirectOpts = {},

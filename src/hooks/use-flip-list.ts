@@ -15,9 +15,7 @@ export type FlipListOptions = {
 }
 
 function flipNodes(container: HTMLElement) {
-  return Array.from(
-    container.querySelectorAll<HTMLElement>('[data-flip-key]'),
-  )
+  return Array.from(container.querySelectorAll<HTMLElement>('[data-flip-key]'))
 }
 
 export function useFlipList<T>(
@@ -33,9 +31,7 @@ export function useFlipList<T>(
   const primed = useRef(false)
   const animations = useRef<Animation[]>([])
   const [exiting, setExiting] = useState<ExitEntry[]>([])
-  const [enteringKeys, setEnteringKeys] = useState<Set<string>>(
-    () => new Set(),
-  )
+  const [enteringKeys, setEnteringKeys] = useState<Set<string>>(() => new Set())
 
   const keys = items.map((item, i) => getKey(item, i))
   const keySet = new Set(keys)
@@ -71,9 +67,7 @@ export function useFlipList<T>(
       added.length > BULK_ENTER_THRESHOLD ||
       (added.length > 0 && added.length === keys.length && prev.size === 0)
 
-    setEnteringKeys(
-      !enters || bulkReplace ? new Set() : new Set(added),
-    )
+    setEnteringKeys(!enters || bulkReplace ? new Set() : new Set(added))
 
     if (gone.length > 0) {
       setExiting((cur) => {

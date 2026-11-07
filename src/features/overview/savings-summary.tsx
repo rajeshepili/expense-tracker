@@ -12,7 +12,10 @@ import {
   CardTitle,
 } from '#/components/ui/card'
 import { EmptyState } from '#/components/layout/empty-state'
-import { CompletedGoalRow, SavingsGoalCard } from '#/features/savings/savings-goal-card'
+import {
+  CompletedGoalRow,
+  SavingsGoalCard,
+} from '#/features/savings/savings-goal-card'
 import { percent } from '#/lib/finance'
 import { useSavingsList } from '#/lib/savings-list'
 
@@ -26,7 +29,9 @@ export function SavingsSummary() {
       <Card className="gap-0 py-0">
         <CardHeader className="border-b py-3">
           <CardTitle className="text-base">Savings goals</CardTitle>
-          <CardDescription>Track progress toward specific targets.</CardDescription>
+          <CardDescription>
+            Track progress toward specific targets.
+          </CardDescription>
           <CardAction>
             <Button asChild size="sm">
               <Link
@@ -68,7 +73,8 @@ export function SavingsSummary() {
 
   const totalTarget = goals.reduce((sum, g) => sum + g.targetAmount, 0)
   const totalCurrent = goals.reduce((sum, g) => sum + g.currentAmount, 0)
-  const overallProgress = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0
+  const overallProgress =
+    totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0
 
   return (
     <Card className="gap-0 py-0">
@@ -76,8 +82,12 @@ export function SavingsSummary() {
         <CardTitle className="text-base">Savings goals</CardTitle>
         <CardDescription>
           {activeGoals.length} active
-          {completedGoals.length > 0 ? ` · ${completedGoals.length} completed` : ''}
-          {goals.length > 0 ? ` · ${percent(overallProgress / 100)} overall` : ''}
+          {completedGoals.length > 0
+            ? ` · ${completedGoals.length} completed`
+            : ''}
+          {goals.length > 0
+            ? ` · ${percent(overallProgress / 100)} overall`
+            : ''}
         </CardDescription>
         <CardAction>
           <Button asChild variant="ghost" size="sm">
@@ -145,11 +155,7 @@ export function SavingsSummary() {
                 key={goal.id}
                 goal={goal}
                 action={
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    asChild
-                  >
+                  <Button size="sm" variant="ghost" asChild>
                     <Link
                       to="/savings"
                       onMouseEnter={prefetchSavings}

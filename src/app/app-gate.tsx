@@ -28,9 +28,7 @@ export function AppGate({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const [state, setState] = useState<GateState>({ status: 'loading' })
 
-  // Cross-host redirect for the two-project split (client-only, post-mount).
-  // Edge redirects in vercel.*.json handle the common case in production;
-  // this is the fallback for previews and local portless.
+  // Client redirect fallback (previews / portless).
   useEffect(() => {
     const consistency = checkModeConsistency(window.location.hostname)
     if (!consistency.ok) {
@@ -59,9 +57,7 @@ export function AppGate({ children }: { children: ReactNode }) {
 
     const init = async () => {
       try {
-        // App tree only — marketing builds never mount AppGate.
-        // Best-effort durable storage: Chromium often denies until the PWA is
-        // installed or engagement is high. OPFS still works either way.
+        // persist() often denied pre-install; non-fatal.
         try {
           if (navigator.storage?.persist) {
             const already = (await navigator.storage.persisted?.()) ?? false
@@ -109,7 +105,6 @@ export function AppGate({ children }: { children: ReactNode }) {
     }
   }, [queryClient])
 
-  // Local bill reminders: once on ready, then on each return to the tab.
   useEffect(() => {
     if (state.status !== 'ready') return
     let cancelled = false
@@ -175,10 +170,14 @@ export function AppGate({ children }: { children: ReactNode }) {
           {APP_NAME}
         </p>
         <p className="text-sm font-medium">Wrong host for this build</p>
-        <p className="max-w-md text-sm text-muted-foreground">{state.message}</p>
+        <p className="max-w-md text-sm text-muted-foreground">
+          {state.message}
+        </p>
         <p className="max-w-md text-xs text-muted-foreground">
           Check Vercel project env: marketing host needs{' '}
-          <code className="rounded bg-muted px-1">VITE_SITE_MODE=marketing</code>
+          <code className="rounded bg-muted px-1">
+            VITE_SITE_MODE=marketing
+          </code>
           , app host needs{' '}
           <code className="rounded bg-muted px-1">VITE_SITE_MODE=app</code>.
         </p>
@@ -233,9 +232,11 @@ export function AppGate({ children }: { children: ReactNode }) {
                     queryKeys.overviewMonth(yearMonth),
                     overview,
                   )
-                  queryClient.setQueryData(queryKeys.settings, overview.settings)
+                  queryClient.setQueryData(
+                    queryKeys.settings,
+                    overview.settings,
+                  )
                 } catch {
-                  // Overview will load via route queries.
                 }
               })()
               setState({ status: 'ready' })

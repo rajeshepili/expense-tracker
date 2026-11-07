@@ -9,7 +9,8 @@ const EXIT_MS = 160
 export function InstallNudge() {
   const [show, setShow] = useState(false)
   const [phase, setPhase] = useState<'in' | 'out'>('in')
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null)
 
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
@@ -33,7 +34,10 @@ export function InstallNudge() {
     window.addEventListener('beforeinstallprompt', handler as EventListener)
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handler as EventListener)
+      window.removeEventListener(
+        'beforeinstallprompt',
+        handler as EventListener,
+      )
     }
   }, [])
 
@@ -45,7 +49,6 @@ export function InstallNudge() {
     window.setTimeout(() => setShow(false), EXIT_MS)
   }
 
-  // Only surface when the browser can actually install (beforeinstallprompt).
   if (!show || !deferredPrompt) return null
 
   return (

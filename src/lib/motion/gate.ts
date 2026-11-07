@@ -8,22 +8,12 @@ import {
 import type { MonthDirection } from './directions'
 
 export type MotionPhase =
-  | 'idle'
-  | 'page'
-  | 'month'
-  | 'theme'
-  | 'settle'
-  | 'overlay'
+  'idle' | 'page' | 'month' | 'theme' | 'settle' | 'overlay'
 
 export type MotionBlocker = 'modal' | 'drawer' | 'alert' | 'tour' | 'busy'
 
 export type MotionKind =
-  | 'pageEnter'
-  | 'overlay'
-  | 'listFlip'
-  | 'dataTween'
-  | 'hotkey'
-  | 'navigate'
+  'pageEnter' | 'overlay' | 'listFlip' | 'dataTween' | 'hotkey' | 'navigate'
 
 const SETTLE_BUDGET_MS = 420
 const SAFETY_MS = 1200
@@ -180,10 +170,7 @@ export const motion = {
     }, SAFETY_MS)
   },
 
-  /**
-   * In-place month change. Sets `data-motion=month` so `.page-content` drops
-   * its VT name (no horizontal shell slide). Does NOT enter settle.
-   */
+  /** Month change without the route shell slide. */
   month(
     update: () => void,
     direction: MonthDirection,

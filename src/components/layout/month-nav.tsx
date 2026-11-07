@@ -1,7 +1,11 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import { Spinner } from '#/components/ui/spinner'
-import { currentYearMonth, formatYearMonth, shiftYearMonth } from '#/lib/finance'
+import {
+  currentYearMonth,
+  formatYearMonth,
+  shiftYearMonth,
+} from '#/lib/finance'
 import { cn } from 'cn'
 
 type MonthNavProps = {
@@ -19,7 +23,8 @@ export function MonthNav({
   onGoMonth,
   fetching = false,
 }: MonthNavProps) {
-  const isCurrentMonth = viewingMonth !== null && viewingMonth === currentYearMonth()
+  const isCurrentMonth =
+    viewingMonth !== null && viewingMonth === currentYearMonth()
   return (
     <span
       className="inline-flex flex-wrap items-center gap-2"
@@ -33,7 +38,9 @@ export function MonthNav({
           className="min-h-11 min-w-11 touch-manipulation md:min-h-8 md:min-w-8"
           aria-label="Previous month"
           disabled={monthFilter === 'all' || fetching}
-          onClick={() => onGoMonth(shiftYearMonth(viewingMonth ?? currentYearMonth(), -1))}
+          onClick={() =>
+            onGoMonth(shiftYearMonth(viewingMonth ?? currentYearMonth(), -1))
+          }
         >
           <ChevronLeft />
         </Button>
@@ -57,7 +64,9 @@ export function MonthNav({
           className="min-h-11 min-w-11 touch-manipulation md:min-h-8 md:min-w-8"
           aria-label="Next month"
           disabled={monthFilter === 'all' || fetching}
-          onClick={() => onGoMonth(shiftYearMonth(viewingMonth ?? currentYearMonth(), 1))}
+          onClick={() =>
+            onGoMonth(shiftYearMonth(viewingMonth ?? currentYearMonth(), 1))
+          }
         >
           <ChevronRight />
         </Button>

@@ -7,16 +7,54 @@ import { ModeToggle } from '#/app/mode-toggle'
 import { useMediaQuery } from '#/hooks/use-media-query'
 import { NAV_PATHS } from '#/lib/app-config'
 import { navigateAfterPrefetch } from '#/lib/navigate-after-prefetch'
-import { animateChrome, motion, prefersReducedMotion, snapChrome } from '#/lib/motion'
+import {
+  animateChrome,
+  motion,
+  prefersReducedMotion,
+  snapChrome,
+} from '#/lib/motion'
 import { APP_NAME } from '#/lib/brand'
 import { prefetchRoute } from '#/lib/query/prefetch'
 
-const linkMeta: Record<(typeof NAV_PATHS)[number], { label: string; shortLabel: string; icon: typeof LayoutDashboard; exact: boolean }> = {
-  '/': { label: 'Overview', shortLabel: 'Overview', icon: LayoutDashboard, exact: true },
-  '/ledger': { label: 'Ledger', shortLabel: 'Ledger', icon: Receipt, exact: false },
-  '/recurring': { label: 'Bills', shortLabel: 'Bills', icon: Repeat, exact: false },
-  '/categories': { label: 'Categories', shortLabel: 'Categories', icon: Tags, exact: false },
-  '/savings': { label: 'Goals', shortLabel: 'Goals', icon: Target, exact: false },
+const linkMeta: Record<
+  (typeof NAV_PATHS)[number],
+  {
+    label: string
+    shortLabel: string
+    icon: typeof LayoutDashboard
+    exact: boolean
+  }
+> = {
+  '/': {
+    label: 'Overview',
+    shortLabel: 'Overview',
+    icon: LayoutDashboard,
+    exact: true,
+  },
+  '/ledger': {
+    label: 'Ledger',
+    shortLabel: 'Ledger',
+    icon: Receipt,
+    exact: false,
+  },
+  '/recurring': {
+    label: 'Bills',
+    shortLabel: 'Bills',
+    icon: Repeat,
+    exact: false,
+  },
+  '/categories': {
+    label: 'Categories',
+    shortLabel: 'Categories',
+    icon: Tags,
+    exact: false,
+  },
+  '/savings': {
+    label: 'Goals',
+    shortLabel: 'Goals',
+    icon: Target,
+    exact: false,
+  },
 }
 
 const links = NAV_PATHS.map((to) => ({ to, ...linkMeta[to] }))
@@ -41,7 +79,10 @@ const desktopLinkClass = cn(
 
 type PillMetrics = { left: number; width: number; height: number; top: number }
 
-function useNavPill<T extends HTMLElement>(activeIndex: number, visible: boolean) {
+function useNavPill<T extends HTMLElement>(
+  activeIndex: number,
+  visible: boolean,
+) {
   const containerRef = useRef<T | null>(null)
   const itemRefs = useRef<(HTMLElement | null)[]>([])
   const pillRef = useRef<HTMLSpanElement | null>(null)
@@ -110,12 +151,22 @@ export function AppNav() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
-  const onLinkClick = (to: (typeof NAV_PATHS)[number]) => (event: React.MouseEvent<HTMLAnchorElement>) => {
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-    if (!motion.can('navigate')) return
-    event.preventDefault()
-    void navigateAfterPrefetch(router, queryClient, { to })
-  }
+  const onLinkClick =
+    (to: (typeof NAV_PATHS)[number]) =>
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return
+      if (!motion.can('navigate')) return
+      event.preventDefault()
+      void navigateAfterPrefetch(router, queryClient, { to })
+    }
   const activeIndex = Math.max(
     0,
     links.findIndex((link) => isActive(pathname, link)),

@@ -1,4 +1,3 @@
-
 export type { Db } from '#/data/repo/db'
 export { bootstrapApp, bootstrapDatabase } from '#/data/repo/db'
 

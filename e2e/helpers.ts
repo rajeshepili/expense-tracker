@@ -55,9 +55,7 @@ export async function completeOnboarding(
   await page.getByLabel(/Starting balance/i).fill(startingBalance)
   await page.getByRole('button', { name: 'Continue' }).click()
 
-  await expect(
-    page.getByRole('heading', { name: 'Categories' }),
-  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible()
   await page.getByRole('button', { name: 'Select common' }).click()
   await page.getByRole('button', { name: 'Finish setup' }).click()
 
@@ -70,7 +68,9 @@ export async function completeOnboarding(
 
   // Tour auto-starts ~600ms after Overview with an inert full-screen blocker.
   // Close it before the backup nudge, or Later stays unclickable.
-  const closeTour = page.getByRole('button', { name: /Skip|Close tour|Got it/i })
+  const closeTour = page.getByRole('button', {
+    name: /Skip|Close tour|Got it/i,
+  })
   try {
     await closeTour.waitFor({ state: 'visible', timeout: 5_000 })
     await closeTour.click()
@@ -92,7 +92,6 @@ export async function goToNav(
   page: Page,
   label: 'Ledger' | 'Bills' | 'Overview' | 'Categories' | 'Goals',
 ) {
-  // Ensure app is ready (handles post-restore reload)
   await waitForAppReady(page)
   const nav = page.getByRole('navigation', { name: 'Primary' })
   const link = nav.getByRole('link', { name: label })
@@ -125,7 +124,7 @@ export async function dialogSave(page: Page) {
 
 export async function openBackupModal(page: Page) {
   await goToNav(page, 'Overview')
-  await page.getByRole('button', { name: /Backup/i }).click()
+  await page.getByRole('button', { name: 'Backup', exact: true }).click()
   await expect(
     page.getByRole('heading', { name: 'Local backup' }),
   ).toBeVisible()
@@ -197,22 +196,32 @@ export async function addLedgerExpense(
   await expect(tableCell(page, opts.description)).toBeVisible()
 }
 
-export async function restoreBackupFromFile(page: Page, filePath: string) {
+export async function restoreBackupFromFile(
+  page: Page,
+  filePath: string,
+  mode: 'merge' | 'replace' = 'merge',
+) {
   await openBackupModal(page)
   await page.locator('input[type="file"]').setInputFiles(filePath)
   await expect(page.getByText(/Selected:/)).toBeVisible()
 
+  if (mode === 'replace') {
+    await page.getByRole('radio', { name: /Replace all/i }).click()
+  }
+
+  const submitName =
+    mode === 'replace' ? 'Replace all & reload' : 'Merge & reload'
+
   await Promise.all([
     page.waitForLoadState('load'),
-    page
-      .getByRole('dialog')
-      .getByRole('button', { name: 'Restore & reload' })
-      .click(),
+    page.getByRole('dialog').getByRole('button', { name: submitName }).click(),
   ])
 
-  const ready = page
-    .getByRole('navigation', { name: 'Primary' })
-    .or(page.getByRole('heading', { name: /Set up your ledger|Currency & budget/i }))
+  const ready = page.getByRole('navigation', { name: 'Primary' }).or(
+    page.getByRole('heading', {
+      name: /Set up your ledger|Currency & budget/i,
+    }),
+  )
 
   try {
     await expect(ready).toBeVisible({ timeout: 45_000 })

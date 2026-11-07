@@ -3,11 +3,24 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import { ConfirmDeleteDialog } from '#/features/shared/confirm-delete-dialog'
 import { Button } from '#/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '#/components/ui/card'
 import { Input } from '#/components/ui/input'
 import { Field, FieldGroup, FieldLabel } from '#/components/ui/field'
 import { ComposerFormModal } from '#/features/shared/composer-form-modal'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '#/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { PageHeader } from '#/components/layout/page-header'
 import { PageError, PageLoading } from '#/components/layout/page-query-state'
@@ -222,9 +235,7 @@ export function CategoriesScreen() {
         <CardContent className="flex flex-col gap-3 px-3 py-3 md:gap-4 md:px-4 md:py-4">
           <Tabs
             value={filter}
-            onValueChange={(value) =>
-              setFilter(value as 'all' | CategoryType)
-            }
+            onValueChange={(value) => setFilter(value as 'all' | CategoryType)}
             className="shrink-0"
           >
             <TabsList className="w-full sm:w-auto">
@@ -279,8 +290,7 @@ export function CategoriesScreen() {
         confirmLabel={deletingInUse ? 'Reassign & delete' : 'Delete'}
         pending={deleteMutation.isPending}
         confirmDisabled={
-          deletingInUse &&
-          (!replacementId || replacementOptions.length === 0)
+          deletingInUse && (!replacementId || replacementOptions.length === 0)
         }
         error={deleteMutation.error?.message ?? null}
         onConfirm={() => deleteMutation.mutate()}

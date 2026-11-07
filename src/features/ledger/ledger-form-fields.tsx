@@ -3,10 +3,7 @@ import { cn } from 'cn'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
-import {
-  AccountSelect,
-  CategorySelect,
-} from '#/features/shared/entity-selects'
+import { AccountSelect, CategorySelect } from '#/features/shared/entity-selects'
 import type { LedgerFormState } from '#/lib/ledger-form'
 import { canTransferBetweenAccounts } from '#/lib/sole-account'
 import type { TransactionType } from '#/lib/types'
@@ -33,18 +30,18 @@ export function LedgerFormFields({
   const isTransfer = form.type === 'transfer'
   const showTransfer = canTransferBetweenAccounts(methods)
   const soleAccount = methods.length === 1
-  const fromOptions = methods.filter((account) => account.id !== form.toAccountId)
-  const toOptions = methods.filter((account) => account.id !== form.fromAccountId)
-
-  const typeOptions = (
-    [
-      { id: 'expense' as const, label: 'Expense' },
-      { id: 'income' as const, label: 'Income' },
-      ...(showTransfer
-        ? [{ id: 'transfer' as const, label: 'Transfer' }]
-        : []),
-    ] as const
+  const fromOptions = methods.filter(
+    (account) => account.id !== form.toAccountId,
   )
+  const toOptions = methods.filter(
+    (account) => account.id !== form.fromAccountId,
+  )
+
+  const typeOptions = [
+    { id: 'expense' as const, label: 'Expense' },
+    { id: 'income' as const, label: 'Income' },
+    ...(showTransfer ? [{ id: 'transfer' as const, label: 'Transfer' }] : []),
+  ] as const
 
   return (
     <div className="grid gap-4 py-2">

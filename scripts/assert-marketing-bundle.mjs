@@ -20,7 +20,10 @@ function stripComments(src) {
 }
 
 const FORBIDDEN = [
-  { label: 'sqlocal package', re: /from["']sqlocal|require\(["']sqlocal|sqlocal\/drizzle/ },
+  {
+    label: 'sqlocal package',
+    re: /from["']sqlocal|require\(["']sqlocal|sqlocal\/drizzle/,
+  },
   { label: 'sqlite db path', re: /expense-tracker\.sqlite3/ },
   { label: 'warmDatabase call', re: /warmDatabase\s*\(/ },
   { label: 'AppGate component', re: /\bAppGate\b/ },
@@ -57,9 +60,7 @@ for (const file of files) {
   const text = stripComments(readFileSync(file, 'utf8'))
   for (const rule of FORBIDDEN) {
     if (rule.re.test(text)) {
-      console.error(
-        `FAIL  ${rule.label} found in ${path.relative(root, file)}`,
-      )
+      console.error(`FAIL  ${rule.label} found in ${path.relative(root, file)}`)
       failures++
     }
   }

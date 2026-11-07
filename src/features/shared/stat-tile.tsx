@@ -32,7 +32,9 @@ export function StatTile({
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground">{label}</p>
+        <p className="text-xs font-medium tracking-wide text-muted-foreground">
+          {label}
+        </p>
         {linked ? (
           <ArrowUpRight
             aria-hidden

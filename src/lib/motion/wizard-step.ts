@@ -7,10 +7,7 @@ export type WizardStepDirection = 'forward' | 'back'
  * Interruptible wizard step enter (critically damped chrome spring).
  * Rapid retargets cancel the previous run via animateChrome.
  */
-export function animateWizardStep(
-  el: Element,
-  direction: WizardStepDirection,
-) {
+export function animateWizardStep(el: Element, direction: WizardStepDirection) {
   if (prefersReducedMotion()) {
     return animateChrome(el, { opacity: [0, 1], transform: 'none' })
   }

@@ -47,11 +47,7 @@ export function CategoryLists({
   const empty = (
     <EmptyState
       icon={<Tags />}
-      title={
-        filteredEmpty
-          ? `No ${filter} categories`
-          : 'No categories yet'
-      }
+      title={filteredEmpty ? `No ${filter} categories` : 'No categories yet'}
       description={
         filteredEmpty
           ? `Switch to All, or add a new ${filter} category.`

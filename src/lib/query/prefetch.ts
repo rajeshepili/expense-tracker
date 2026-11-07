@@ -15,8 +15,18 @@ async function routeQueryPromises(
   to: string,
   opts: PrefetchRouteOptions = {},
 ): Promise<Promise<unknown>[]> {
-  const { getOverview, getSettings, getMonthBudget, listCategories, listPaymentMethods, listRecurring, listSavingsGoals, listTransactions, listCategoriesWithUsage, listPaymentMethodsWithUsage } =
-    await repo()
+  const {
+    getOverview,
+    getSettings,
+    getMonthBudget,
+    listCategories,
+    listPaymentMethods,
+    listRecurring,
+    listSavingsGoals,
+    listTransactions,
+    listCategoriesWithUsage,
+    listPaymentMethodsWithUsage,
+  } = await repo()
 
   if (to === '/') {
     const yearMonth = opts.month ?? currentYearMonth()
@@ -45,7 +55,10 @@ async function routeQueryPromises(
         queryFn: () => listTransactions(filters),
       }),
       queryClient.query({ queryKey: queryKeys.settings, queryFn: getSettings }),
-      queryClient.query({ queryKey: queryKeys.categories, queryFn: listCategories }),
+      queryClient.query({
+        queryKey: queryKeys.categories,
+        queryFn: listCategories,
+      }),
       queryClient.query({
         queryKey: queryKeys.paymentMethods,
         queryFn: listPaymentMethods,
@@ -55,13 +68,19 @@ async function routeQueryPromises(
 
   if (to === '/recurring') {
     return [
-      queryClient.query({ queryKey: queryKeys.recurring, queryFn: listRecurring }),
+      queryClient.query({
+        queryKey: queryKeys.recurring,
+        queryFn: listRecurring,
+      }),
       queryClient.query({ queryKey: queryKeys.settings, queryFn: getSettings }),
       queryClient.query({
         queryKey: [...queryKeys.settings, 'month-budget'] as const,
         queryFn: () => getMonthBudget(),
       }),
-      queryClient.query({ queryKey: queryKeys.categories, queryFn: listCategories }),
+      queryClient.query({
+        queryKey: queryKeys.categories,
+        queryFn: listCategories,
+      }),
       queryClient.query({
         queryKey: queryKeys.paymentMethods,
         queryFn: listPaymentMethods,
@@ -89,14 +108,21 @@ async function routeQueryPromises(
         queryFn: listSavingsGoals,
       }),
       queryClient.query({ queryKey: queryKeys.settings, queryFn: getSettings }),
-      queryClient.query({ queryKey: queryKeys.categories, queryFn: listCategories }),
+      queryClient.query({
+        queryKey: queryKeys.categories,
+        queryFn: listCategories,
+      }),
     ]
   }
 
   return []
 }
 
-export function prefetchRoute(queryClient: QueryClient, to: string, opts?: PrefetchRouteOptions) {
+export function prefetchRoute(
+  queryClient: QueryClient,
+  to: string,
+  opts?: PrefetchRouteOptions,
+) {
   void routeQueryPromises(queryClient, to, opts)
 }
 

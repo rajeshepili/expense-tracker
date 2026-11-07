@@ -5,7 +5,8 @@ import {
   monthlyBudgets,
   recurringExpenses,
   settings,
-  transactions, savingsGoals 
+  transactions,
+  savingsGoals,
 } from '#/db/schema'
 import { accountDeltasQuery, baseTransactionQuery } from '#/data/query-builders'
 import {
@@ -27,11 +28,7 @@ import {
   yearMonthRange,
   yearRange,
 } from '#/lib/finance'
-import type {
-  AppSettings,
-  MonthBudget,
-  RecurringExpenseRow,
-} from '#/lib/types'
+import type { AppSettings, MonthBudget, RecurringExpenseRow } from '#/lib/types'
 import { withDb } from '#/data/repo/db'
 import type { Db } from '#/data/repo/db'
 import { recurringQuery } from '#/data/repo/recurring'
@@ -45,7 +42,6 @@ export type YearOverview = {
   savingsSaved: number
 }
 
-/** Per-month income/expense totals + top categories for a calendar year. */
 export async function getYearOverview(year: string): Promise<YearOverview> {
   const { from, to } = yearRange(year)
   const dateInYear = and(
@@ -57,8 +53,14 @@ export async function getYearOverview(year: string): Promise<YearOverview> {
       db
         .select({
           yearMonth: sql<string>`substr(${transactions.transactionDate}, 1, 7)`,
-          income: sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amount} else 0 end), 0)`.mapWith(Number),
-          expenses: sql<number>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amount} else 0 end), 0)`.mapWith(Number),
+          income:
+            sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amount} else 0 end), 0)`.mapWith(
+              Number,
+            ),
+          expenses:
+            sql<number>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amount} else 0 end), 0)`.mapWith(
+              Number,
+            ),
         })
         .from(transactions)
         .where(dateInYear)
@@ -68,7 +70,9 @@ export async function getYearOverview(year: string): Promise<YearOverview> {
         .select({
           categoryId: categories.id,
           name: categories.name,
-          amount: sql<number>`coalesce(sum(${transactions.amount}), 0)`.mapWith(Number),
+          amount: sql<number>`coalesce(sum(${transactions.amount}), 0)`.mapWith(
+            Number,
+          ),
         })
         .from(transactions)
         .innerJoin(categories, eq(transactions.categoryId, categories.id))
@@ -83,7 +87,11 @@ export async function getYearOverview(year: string): Promise<YearOverview> {
     const months = Array.from({ length: 12 }, (_, i) => {
       const ym = `${year}-${String(i + 1).padStart(2, '0')}`
       const found = monthsByKey.get(ym)
-      return { yearMonth: ym, income: found?.income ?? 0, expenses: found?.expenses ?? 0 }
+      return {
+        yearMonth: ym,
+        income: found?.income ?? 0,
+        expenses: found?.expenses ?? 0,
+      }
     })
 
     return {

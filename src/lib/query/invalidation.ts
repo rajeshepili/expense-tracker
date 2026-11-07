@@ -53,7 +53,9 @@ export async function invalidateAfter(
     )
   }
   if (set.has('savingsGoals')) {
-    tasks.push(queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals }))
+    tasks.push(
+      queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals }),
+    )
   }
   if (
     set.has('overview') ||

@@ -20,10 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
-import {
-  listSavingsGoals,
-  recordSavingsContribution,
-} from '#/data/repository'
+import { listSavingsGoals, recordSavingsContribution } from '#/data/repository'
 import { money } from '#/lib/finance'
 import { invalidateAfter } from '#/lib/query/invalidation'
 import { queryKeys } from '#/lib/query/keys'
@@ -80,9 +77,7 @@ export function FundGoalDialog({
   const categoryId = offer?.categoryId ?? ''
   const ranked = useMemo(
     () =>
-      offer
-        ? rankOpenSavingsGoals(goalsQuery.data ?? [], categoryId)
-        : [],
+      offer ? rankOpenSavingsGoals(goalsQuery.data ?? [], categoryId) : [],
     [goalsQuery.data, offer, categoryId],
   )
 
@@ -211,11 +206,11 @@ export function FundGoalDialog({
         <div className="grid gap-3 py-1">
           <Field>
             <FieldLabel htmlFor="fund-goal">Goal</FieldLabel>
-            <Select
-              value={selected?.goal.id ?? ''}
-              onValueChange={selectGoal}
-            >
-              <SelectTrigger id="fund-goal" className="min-h-11 w-full md:min-h-9">
+            <Select value={selected?.goal.id ?? ''} onValueChange={selectGoal}>
+              <SelectTrigger
+                id="fund-goal"
+                className="min-h-11 w-full md:min-h-9"
+              >
                 <SelectValue placeholder="Choose goal" />
               </SelectTrigger>
               <SelectContent>

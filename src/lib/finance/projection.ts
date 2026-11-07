@@ -21,11 +21,7 @@ function monthOf(isoDate: string) {
   return isoDate.slice(0, 7)
 }
 
-/**
- * Sum of recurring occurrences that fall between `fromDate` (inclusive) and
- * the end of its calendar month, advancing `nextDate` by cadence. Only active
- * rows count. Occurrences after the month end are not included.
- */
+/** Recurring amounts still due in `fromDate`'s month. */
 export function projectRestOfMonth(
   rows: RecurringProjectionRow[],
   fromDate = todayIso(),
@@ -37,7 +33,7 @@ export function projectRestOfMonth(
   for (const row of rows) {
     if (!row.active) continue
     let cursor = row.nextDate
-    // Guard against corrupt data looping forever.
+    // iteration cap
     let iterations = 0
     while (compareIsoDate(cursor, fromDate) >= 0 && monthOf(cursor) === month) {
       if (row.kind === 'income') upcomingIncome += row.amount

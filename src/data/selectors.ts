@@ -1,4 +1,10 @@
-import { transactions, categories, accounts, recurringExpenses, savingsGoals } from '#/db/schema'
+import {
+  transactions,
+  categories,
+  accounts,
+  recurringExpenses,
+  savingsGoals,
+} from '#/db/schema'
 
 export const transactionSelect = {
   id: transactions.id,

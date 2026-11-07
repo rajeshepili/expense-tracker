@@ -1,11 +1,7 @@
 import { and, count, eq, lte } from 'drizzle-orm'
 import { accounts, recurringExpenses, transactions } from '#/db/schema'
 import { accountDeltasQuery } from '#/data/query-builders'
-import {
-  ConflictError,
-  NotFoundError,
-  ValidationError,
-} from '#/lib/errors'
+import { ConflictError, NotFoundError, ValidationError } from '#/lib/errors'
 import {
   accountBalance,
   inferAccountTypeFromName,
@@ -37,7 +33,11 @@ async function usageCounts(db: Db, accountId: string) {
 }
 
 async function loadAccountOrThrow(db: Db, id: string) {
-  const [row] = await db.select().from(accounts).where(eq(accounts.id, id)).limit(1)
+  const [row] = await db
+    .select()
+    .from(accounts)
+    .where(eq(accounts.id, id))
+    .limit(1)
   if (!row) throw new NotFoundError('Account')
   return row
 }
@@ -266,7 +266,9 @@ export async function listPaymentMethods() {
 }
 
 /** @deprecated */
-export async function listPaymentMethodsWithUsage(): Promise<PaymentMethodRow[]> {
+export async function listPaymentMethodsWithUsage(): Promise<
+  PaymentMethodRow[]
+> {
   const rows = await listAccountsWithBalances()
   return rows.map((row) => ({
     id: row.id,

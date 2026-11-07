@@ -84,16 +84,26 @@ afterEach(() => {
 })
 
 function seedBasics(db: InstanceType<typeof Database>) {
-  db.prepare(`
+  db.prepare(
+    `
     INSERT OR REPLACE INTO settings (id, budget, currency)
     VALUES ('default', 2000, 'USD')
-  `).run()
+  `,
+  ).run()
 
   const catId = 'cat-food'
-  db.prepare(`INSERT INTO categories (id, name, type) VALUES (?, ?, ?)`).run(catId, 'Food', 'expense')
+  db.prepare(`INSERT INTO categories (id, name, type) VALUES (?, ?, ?)`).run(
+    catId,
+    'Food',
+    'expense',
+  )
 
   const catSalary = 'cat-salary'
-  db.prepare(`INSERT INTO categories (id, name, type) VALUES (?, ?, ?)`).run(catSalary, 'Salary', 'income')
+  db.prepare(`INSERT INTO categories (id, name, type) VALUES (?, ?, ?)`).run(
+    catSalary,
+    'Salary',
+    'income',
+  )
 
   const methodId = 'method-cash'
   db.prepare(
@@ -101,10 +111,12 @@ function seedBasics(db: InstanceType<typeof Database>) {
   ).run(methodId, 'Cash')
 
   const billId = 'bill-1'
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO recurring_expenses (id, name, amount, cadence, next_date, active, category_id, payment_method_id)
     VALUES (?, ?, ?, ?, ?, 1, ?, ?)
-  `).run(billId, 'Rent', 1200, 'monthly', '2026-03-15', catId, methodId)
+  `,
+  ).run(billId, 'Rent', 1200, 'monthly', '2026-03-15', catId, methodId)
 
   return { catId, catSalary, methodId, billId }
 }
@@ -135,7 +147,9 @@ function advanceRecurringDate(isoDate: string, cadence: string) {
     const targetDay = day
     date.setUTCDate(1)
     date.setUTCMonth(date.getUTCMonth() + 1)
-    const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate()
+    const lastDay = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0),
+    ).getUTCDate()
     date.setUTCDate(Math.min(targetDay, lastDay))
   }
   return date.toISOString().slice(0, 10)
@@ -152,13 +166,19 @@ function amountDue(bill: { amount: number; remaining_amount: number | null }) {
 
 // --- record recurring payment logic ---
 
-function recordRecurringPayment(db: InstanceType<typeof Database>, id: string, overrides: {
-  amount?: number
-  date?: string
-  paymentMethodId?: string | null
-  force?: boolean
-} = {}) {
-  const bill = db.prepare(`SELECT * FROM recurring_expenses WHERE id = ?`).get(id) as RecurringBillRow | undefined
+function recordRecurringPayment(
+  db: InstanceType<typeof Database>,
+  id: string,
+  overrides: {
+    amount?: number
+    date?: string
+    paymentMethodId?: string | null
+    force?: boolean
+  } = {},
+) {
+  const bill = db
+    .prepare(`SELECT * FROM recurring_expenses WHERE id = ?`)
+    .get(id) as RecurringBillRow | undefined
 
   if (!bill) throw new Error('Recurring bill not found')
   if (!bill.active) throw new Error('This bill is paused')
@@ -170,48 +190,97 @@ function recordRecurringPayment(db: InstanceType<typeof Database>, id: string, o
     throw new Error('Enter a valid amount (0 or more)')
   }
 
-  const priorLinked = db.prepare(`
+  const priorLinked = db
+    .prepare(
+      `
     SELECT transaction_date as date FROM transactions
     WHERE source_recurring_id = ?
     ORDER BY transaction_date DESC
     LIMIT 1
-  `).get(id) as { date: string } | undefined
+  `,
+    )
+    .get(id) as { date: string } | undefined
 
-  const hasPaymentThisCycle = Boolean(priorLinked && priorLinked.date >= bill.next_date)
+  const hasPaymentThisCycle = Boolean(
+    priorLinked && priorLinked.date >= bill.next_date,
+  )
   const cycleOpen = bill.remaining_amount !== null && bill.remaining_amount > 0
   const alreadyRecorded = hasPaymentThisCycle && !cycleOpen
   if (alreadyRecorded && !overrides.force) {
-    return { ok: false as const, reason: 'already_recorded' as const, nextDate: bill.next_date }
+    return {
+      ok: false as const,
+      reason: 'already_recorded' as const,
+      nextDate: bill.next_date,
+    }
   }
 
   const settlement = settleRecurringPayment(due, amount)
 
   const txId = `tx-${crypto.randomUUID()}`
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO transactions (id, description, amount, type, transaction_date, category_id, payment_method_id, source_recurring_id, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(txId, bill.name, amount, 'expense', recordDate, bill.category_id, overrides.paymentMethodId ?? bill.payment_method_id, id, Date.now())
+  `,
+  ).run(
+    txId,
+    bill.name,
+    amount,
+    'expense',
+    recordDate,
+    bill.category_id,
+    overrides.paymentMethodId ?? bill.payment_method_id,
+    id,
+    Date.now(),
+  )
 
   if (settlement.kind === 'partial') {
-    db.prepare(`UPDATE recurring_expenses SET remaining_amount = ? WHERE id = ?`).run(settlement.remaining, id)
-    return { ok: true as const, transactionId: txId, nextDate: bill.next_date, alreadyRecorded: false, partial: true, remainingAmount: settlement.remaining }
+    db.prepare(
+      `UPDATE recurring_expenses SET remaining_amount = ? WHERE id = ?`,
+    ).run(settlement.remaining, id)
+    return {
+      ok: true as const,
+      transactionId: txId,
+      nextDate: bill.next_date,
+      alreadyRecorded: false,
+      partial: true,
+      remainingAmount: settlement.remaining,
+    }
   }
 
   const nextDate = advanceRecurringDate(recordDate, bill.cadence)
-  db.prepare(`UPDATE recurring_expenses SET next_date = ?, remaining_amount = NULL WHERE id = ?`).run(nextDate, id)
-  return { ok: true as const, transactionId: txId, nextDate, alreadyRecorded: false, partial: false, remainingAmount: null }
+  db.prepare(
+    `UPDATE recurring_expenses SET next_date = ?, remaining_amount = NULL WHERE id = ?`,
+  ).run(nextDate, id)
+  return {
+    ok: true as const,
+    transactionId: txId,
+    nextDate,
+    alreadyRecorded: false,
+    partial: false,
+    remainingAmount: null,
+  }
 }
 
 // --- skip recurring ---
 
-function skipRecurringOccurrence(db: InstanceType<typeof Database>, id: string) {
-  const bill = db.prepare(`SELECT * FROM recurring_expenses WHERE id = ?`).get(id) as {
-    next_date: string
-    cadence: string
-  } | undefined
+function skipRecurringOccurrence(
+  db: InstanceType<typeof Database>,
+  id: string,
+) {
+  const bill = db
+    .prepare(`SELECT * FROM recurring_expenses WHERE id = ?`)
+    .get(id) as
+    | {
+        next_date: string
+        cadence: string
+      }
+    | undefined
   if (!bill) throw new Error('Recurring bill not found')
   const nextDate = advanceRecurringDate(bill.next_date, bill.cadence)
-  db.prepare(`UPDATE recurring_expenses SET next_date = ?, remaining_amount = NULL WHERE id = ?`).run(nextDate, id)
+  db.prepare(
+    `UPDATE recurring_expenses SET next_date = ?, remaining_amount = NULL WHERE id = ?`,
+  ).run(nextDate, id)
   return { nextDate }
 }
 
@@ -220,17 +289,25 @@ function skipRecurringOccurrence(db: InstanceType<typeof Database>, id: string) 
 function getOverview(db: InstanceType<typeof Database>, yearMonth: string) {
   const monthPrefix = `${yearMonth}%`
 
-  const summary = db.prepare(`
+  const summary = db
+    .prepare(
+      `
     SELECT
       COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as income,
       COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as expenses
     FROM transactions
     WHERE transaction_date LIKE ?
-  `).get(monthPrefix) as { income: number; expenses: number }
+  `,
+    )
+    .get(monthPrefix) as { income: number; expenses: number }
 
-  const settings = db.prepare(`SELECT * FROM settings WHERE id = 'default'`).get() as { budget: number; currency: string } | undefined
+  const settings = db
+    .prepare(`SELECT * FROM settings WHERE id = 'default'`)
+    .get() as { budget: number; currency: string } | undefined
 
-  const monthBudget = db.prepare(`SELECT * FROM monthly_budgets WHERE year_month = ?`).get(yearMonth) as { budget: number } | undefined
+  const monthBudget = db
+    .prepare(`SELECT * FROM monthly_budgets WHERE year_month = ?`)
+    .get(yearMonth) as { budget: number } | undefined
 
   return {
     summary,
@@ -244,16 +321,25 @@ function getOverview(db: InstanceType<typeof Database>, yearMonth: string) {
   }
 }
 
-function setMonthBudget(db: InstanceType<typeof Database>, yearMonth: string, budget: number) {
-  db.prepare(`
+function setMonthBudget(
+  db: InstanceType<typeof Database>,
+  yearMonth: string,
+  budget: number,
+) {
+  db.prepare(
+    `
     INSERT INTO monthly_budgets (year_month, budget)
     VALUES (?, ?)
     ON CONFLICT(year_month) DO UPDATE SET budget = excluded.budget
-  `).run(yearMonth, budget)
+  `,
+  ).run(yearMonth, budget)
   return getOverview(db, yearMonth).monthBudget
 }
 
-function clearMonthBudget(db: InstanceType<typeof Database>, yearMonth: string) {
+function clearMonthBudget(
+  db: InstanceType<typeof Database>,
+  yearMonth: string,
+) {
   db.prepare(`DELETE FROM monthly_budgets WHERE year_month = ?`).run(yearMonth)
   return getOverview(db, yearMonth).monthBudget
 }
@@ -264,9 +350,17 @@ function monthBudgetMatchesDefault(monthBudget: number, defaultBudget: number) {
 
 // --- delete category ---
 
-function deleteCategory(db: InstanceType<typeof Database>, id: string, replacementId: string) {
-  db.prepare(`UPDATE transactions SET category_id = ? WHERE category_id = ?`).run(replacementId, id)
-  db.prepare(`UPDATE recurring_expenses SET category_id = ? WHERE category_id = ?`).run(replacementId, id)
+function deleteCategory(
+  db: InstanceType<typeof Database>,
+  id: string,
+  replacementId: string,
+) {
+  db.prepare(
+    `UPDATE transactions SET category_id = ? WHERE category_id = ?`,
+  ).run(replacementId, id)
+  db.prepare(
+    `UPDATE recurring_expenses SET category_id = ? WHERE category_id = ?`,
+  ).run(replacementId, id)
   db.prepare(`DELETE FROM categories WHERE id = ?`).run(id)
 }
 
@@ -275,18 +369,27 @@ describe('recordRecurringPayment (SQL)', () => {
     const db = client(CURRENT_SCHEMA)
     seedBasics(db)
 
-    const result = recordRecurringPayment(db, 'bill-1', { amount: 1200, date: '2026-03-15', paymentMethodId: 'method-cash' })
+    const result = recordRecurringPayment(db, 'bill-1', {
+      amount: 1200,
+      date: '2026-03-15',
+      paymentMethodId: 'method-cash',
+    })
 
     expect(result.ok).toBe(true)
     expect(result.partial).toBe(false)
     expect(result.remainingAmount).toBeNull()
     expect(result.nextDate).toBe('2026-04-15')
 
-    const tx = db.prepare(`SELECT * FROM transactions WHERE source_recurring_id = ?`).get('bill-1') as { amount: number } | undefined
+    const tx = db
+      .prepare(`SELECT * FROM transactions WHERE source_recurring_id = ?`)
+      .get('bill-1') as { amount: number } | undefined
     expect(tx).toBeDefined()
     expect(tx?.amount).toBe(1200)
 
-    const bill = db.prepare(`SELECT * FROM recurring_expenses WHERE id = ?`).get('bill-1') as { next_date: string; remaining_amount: number | null } | undefined
+    const bill = db
+      .prepare(`SELECT * FROM recurring_expenses WHERE id = ?`)
+      .get('bill-1') as
+      { next_date: string; remaining_amount: number | null } | undefined
     expect(bill?.next_date).toBe('2026-04-15')
     expect(bill?.remaining_amount).toBeNull()
   })
@@ -295,13 +398,19 @@ describe('recordRecurringPayment (SQL)', () => {
     const db = client(CURRENT_SCHEMA)
     seedBasics(db)
 
-    const result = recordRecurringPayment(db, 'bill-1', { amount: 500, date: '2026-03-15' })
+    const result = recordRecurringPayment(db, 'bill-1', {
+      amount: 500,
+      date: '2026-03-15',
+    })
 
     expect(result.ok).toBe(true)
     expect(result.partial).toBe(true)
     expect(result.remainingAmount).toBe(700)
 
-    const bill = db.prepare(`SELECT * FROM recurring_expenses WHERE id = ?`).get('bill-1') as { remaining_amount: number | null; next_date: string } | undefined
+    const bill = db
+      .prepare(`SELECT * FROM recurring_expenses WHERE id = ?`)
+      .get('bill-1') as
+      { remaining_amount: number | null; next_date: string } | undefined
     expect(bill?.remaining_amount).toBe(700)
     expect(bill?.next_date).toBe('2026-03-15')
   })
@@ -314,7 +423,10 @@ describe('recordRecurringPayment (SQL)', () => {
     recordRecurringPayment(db, 'bill-1', { amount: 500, date: '2026-03-15' })
 
     // Second payment in same cycle (next_date still 2026-03-15) - should succeed because cycle is open
-    const result = recordRecurringPayment(db, 'bill-1', { amount: 700, date: '2026-03-15' })
+    const result = recordRecurringPayment(db, 'bill-1', {
+      amount: 700,
+      date: '2026-03-15',
+    })
 
     expect(result.ok).toBe(true)
     expect(result.partial).toBe(false)
@@ -338,7 +450,11 @@ describe('recordRecurringPayment (SQL)', () => {
 
     expect(result.ok).toBe(true)
 
-    const count = db.prepare(`SELECT COUNT(*) as c FROM transactions WHERE source_recurring_id = ?`).get('bill-1') as { c: number } | undefined
+    const count = db
+      .prepare(
+        `SELECT COUNT(*) as c FROM transactions WHERE source_recurring_id = ?`,
+      )
+      .get('bill-1') as { c: number } | undefined
     expect(count?.c).toBe(2)
   })
 })
@@ -348,13 +464,18 @@ describe('skipRecurringOccurrence (SQL)', () => {
     const db = client(CURRENT_SCHEMA)
     seedBasics(db)
 
-    db.prepare(`UPDATE recurring_expenses SET remaining_amount = ? WHERE id = ?`).run(700, 'bill-1')
+    db.prepare(
+      `UPDATE recurring_expenses SET remaining_amount = ? WHERE id = ?`,
+    ).run(700, 'bill-1')
 
     const result = skipRecurringOccurrence(db, 'bill-1')
 
     expect(result.nextDate).toBe('2026-04-15')
 
-    const bill = db.prepare(`SELECT * FROM recurring_expenses WHERE id = ?`).get('bill-1') as { next_date: string; remaining_amount: number | null } | undefined
+    const bill = db
+      .prepare(`SELECT * FROM recurring_expenses WHERE id = ?`)
+      .get('bill-1') as
+      { next_date: string; remaining_amount: number | null } | undefined
     expect(bill?.next_date).toBe('2026-04-15')
     expect(bill?.remaining_amount).toBeNull()
   })
@@ -365,26 +486,74 @@ describe('getOverview month summaries (SQL)', () => {
     const db = client(CURRENT_SCHEMA)
     seedBasics(db)
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO transactions (id, description, amount, type, transaction_date, category_id, payment_method_id, source_recurring_id, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run('tx-1', 'Salary', 3000, 'income', '2026-03-01', 'cat-salary', 'method-cash', null, 1709251200000)
+    `,
+    ).run(
+      'tx-1',
+      'Salary',
+      3000,
+      'income',
+      '2026-03-01',
+      'cat-salary',
+      'method-cash',
+      null,
+      1709251200000,
+    )
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO transactions (id, description, amount, type, transaction_date, category_id, payment_method_id, source_recurring_id, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run('tx-2', 'Food', 150, 'expense', '2026-03-10', 'cat-food', 'method-cash', null, 1709337600000)
+    `,
+    ).run(
+      'tx-2',
+      'Food',
+      150,
+      'expense',
+      '2026-03-10',
+      'cat-food',
+      'method-cash',
+      null,
+      1709337600000,
+    )
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO transactions (id, description, amount, type, transaction_date, category_id, payment_method_id, source_recurring_id, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run('tx-3', 'Rent from bill', 1200, 'expense', '2026-03-15', 'cat-food', 'method-cash', 'bill-1', 1709424000000)
+    `,
+    ).run(
+      'tx-3',
+      'Rent from bill',
+      1200,
+      'expense',
+      '2026-03-15',
+      'cat-food',
+      'method-cash',
+      'bill-1',
+      1709424000000,
+    )
 
     // April transaction (should not count)
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO transactions (id, description, amount, type, transaction_date, category_id, payment_method_id, source_recurring_id, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run('tx-4', 'April food', 200, 'expense', '2026-04-01', 'cat-food', 'method-cash', null, 1711843200000)
+    `,
+    ).run(
+      'tx-4',
+      'April food',
+      200,
+      'expense',
+      '2026-04-01',
+      'cat-food',
+      'method-cash',
+      null,
+      1711843200000,
+    )
 
     const overview = getOverview(db, '2026-03')
 
@@ -396,7 +565,9 @@ describe('getOverview month summaries (SQL)', () => {
     const db = client(CURRENT_SCHEMA)
     seedBasics(db)
 
-    db.prepare(`INSERT INTO monthly_budgets (year_month, budget) VALUES (?, ?)`).run('2026-03', 2500)
+    db.prepare(
+      `INSERT INTO monthly_budgets (year_month, budget) VALUES (?, ?)`,
+    ).run('2026-03', 2500)
 
     const overview = getOverview(db, '2026-03')
 
@@ -418,7 +589,9 @@ describe('month budget override (SQL)', () => {
     expect(result.defaultBudget).toBe(2000)
     expect(result.yearMonth).toBe('2026-05')
 
-    const row = db.prepare(`SELECT * FROM monthly_budgets WHERE year_month = ?`).get('2026-05') as { year_month: string; budget: number } | undefined
+    const row = db
+      .prepare(`SELECT * FROM monthly_budgets WHERE year_month = ?`)
+      .get('2026-05') as { year_month: string; budget: number } | undefined
     expect(row?.budget).toBe(3000)
   })
 
@@ -426,14 +599,18 @@ describe('month budget override (SQL)', () => {
     const db = client(CURRENT_SCHEMA)
     seedBasics(db)
 
-    db.prepare(`INSERT INTO monthly_budgets (year_month, budget) VALUES (?, ?)`).run('2026-03', 2500)
+    db.prepare(
+      `INSERT INTO monthly_budgets (year_month, budget) VALUES (?, ?)`,
+    ).run('2026-03', 2500)
 
     const result = setMonthBudget(db, '2026-03', 3500)
 
     expect(result.budget).toBe(3500)
     expect(result.isCustom).toBe(true)
 
-    const row = db.prepare(`SELECT * FROM monthly_budgets WHERE year_month = ?`).get('2026-03') as { budget: number } | undefined
+    const row = db
+      .prepare(`SELECT * FROM monthly_budgets WHERE year_month = ?`)
+      .get('2026-03') as { budget: number } | undefined
     expect(row?.budget).toBe(3500)
   })
 
@@ -441,7 +618,9 @@ describe('month budget override (SQL)', () => {
     const db = client(CURRENT_SCHEMA)
     seedBasics(db)
 
-    db.prepare(`INSERT INTO monthly_budgets (year_month, budget) VALUES (?, ?)`).run('2026-03', 2500)
+    db.prepare(
+      `INSERT INTO monthly_budgets (year_month, budget) VALUES (?, ?)`,
+    ).run('2026-03', 2500)
 
     const before = getOverview(db, '2026-03')
     expect(before.monthBudget.budget).toBe(2500)
@@ -454,7 +633,9 @@ describe('month budget override (SQL)', () => {
     expect(after.monthBudget.isCustom).toBe(false)
     expect(after.monthBudget.defaultBudget).toBe(2000)
 
-    const row = db.prepare(`SELECT * FROM monthly_budgets WHERE year_month = ?`).get('2026-03')
+    const row = db
+      .prepare(`SELECT * FROM monthly_budgets WHERE year_month = ?`)
+      .get('2026-03')
     expect(row).toBeUndefined()
   })
 
@@ -481,22 +662,42 @@ describe('category delete with reassignment (SQL)', () => {
     seedBasics(db)
 
     const catId2 = 'cat-transport'
-    db.prepare(`INSERT INTO categories (id, name, type) VALUES (?, ?, ?)`).run(catId2, 'Transport', 'expense')
+    db.prepare(`INSERT INTO categories (id, name, type) VALUES (?, ?, ?)`).run(
+      catId2,
+      'Transport',
+      'expense',
+    )
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO transactions (id, description, amount, type, transaction_date, category_id, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run('tx-1', 'Food', 100, 'expense', '2026-03-01', 'cat-food', 1709251200000)
+    `,
+    ).run(
+      'tx-1',
+      'Food',
+      100,
+      'expense',
+      '2026-03-01',
+      'cat-food',
+      1709251200000,
+    )
 
     deleteCategory(db, 'cat-food', catId2)
 
-    const tx = db.prepare(`SELECT category_id FROM transactions WHERE id = ?`).get('tx-1') as { category_id: string } | undefined
+    const tx = db
+      .prepare(`SELECT category_id FROM transactions WHERE id = ?`)
+      .get('tx-1') as { category_id: string } | undefined
     expect(tx?.category_id).toBe(catId2)
 
-    const bill = db.prepare(`SELECT category_id FROM recurring_expenses WHERE id = ?`).get('bill-1') as { category_id: string } | undefined
+    const bill = db
+      .prepare(`SELECT category_id FROM recurring_expenses WHERE id = ?`)
+      .get('bill-1') as { category_id: string } | undefined
     expect(bill?.category_id).toBe(catId2)
 
-    const cat = db.prepare(`SELECT * FROM categories WHERE id = ?`).get('cat-food')
+    const cat = db
+      .prepare(`SELECT * FROM categories WHERE id = ?`)
+      .get('cat-food')
     expect(cat).toBeUndefined()
   })
 })
@@ -515,10 +716,12 @@ function createSavingsGoal(
   },
 ) {
   const values = normalizeSavingsGoalCreate(input)
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO savings_goals (id, name, target_amount, current_amount, target_date, category_id)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(
+  `,
+  ).run(
     input.id,
     values.name,
     values.targetAmount,
@@ -560,9 +763,15 @@ function updateSavingsGoal(
 
   // Apply only provided fields (same shape repository sets).
   if (updates.name !== undefined) {
-    db.prepare(`UPDATE savings_goals SET name = ? WHERE id = ?`).run(updates.name, id)
+    db.prepare(`UPDATE savings_goals SET name = ? WHERE id = ?`).run(
+      updates.name,
+      id,
+    )
   }
-  if (updates.targetAmount !== undefined || updates.currentAmount !== undefined) {
+  if (
+    updates.targetAmount !== undefined ||
+    updates.currentAmount !== undefined
+  ) {
     db.prepare(
       `UPDATE savings_goals SET target_amount = ?, current_amount = ? WHERE id = ?`,
     ).run(next.targetAmount, next.currentAmount, id)
@@ -748,13 +957,15 @@ describe('accounts and transfers (SQL)', () => {
   ) {
     const outId = `tx-out-${crypto.randomUUID()}`
     const inId = `tx-in-${crypto.randomUUID()}`
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO transactions (
         id, description, amount, type, transaction_date, category_id,
         payment_method_id, transfer_id, transfer_direction, created_at
       ) VALUES (?, ?, ?, 'transfer', ?, NULL, ?, ?, 'out', ?),
                (?, ?, ?, 'transfer', ?, NULL, ?, ?, 'in', ?)
-    `).run(
+    `,
+    ).run(
       outId,
       'Transfer out',
       input.amount,
@@ -773,10 +984,7 @@ describe('accounts and transfers (SQL)', () => {
     return { outId, inId }
   }
 
-  function deleteTransferLeg(
-    db: InstanceType<typeof Database>,
-    legId: string,
-  ) {
+  function deleteTransferLeg(db: InstanceType<typeof Database>, legId: string) {
     const leg = db
       .prepare(`SELECT id, transfer_id FROM transactions WHERE id = ?`)
       .get(legId) as { id: string; transfer_id: string | null } | undefined
@@ -833,12 +1041,14 @@ describe('accounts and transfers (SQL)', () => {
       `INSERT INTO payment_methods (id, name, type, starting_balance, closed) VALUES (?, ?, 'liability', 0, 0)`,
     ).run('method-card', 'Credit card')
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO transactions (
         id, description, amount, type, transaction_date, category_id,
         payment_method_id, created_at
       ) VALUES (?, ?, ?, 'expense', ?, ?, ?, ?)
-    `).run(
+    `,
+    ).run(
       'tx-card-purchase',
       'Groceries',
       50,
@@ -940,8 +1150,7 @@ describe('accounts and transfers (SQL)', () => {
         `SELECT name, starting_balance, closed FROM payment_methods WHERE id = ?`,
       )
       .get(id) as
-      | { name: string; starting_balance: number; closed: number }
-      | undefined
+      { name: string; starting_balance: number; closed: number } | undefined
     if (!account) throw new Error('Account not found')
     const txCount = (
       db
@@ -1035,14 +1244,18 @@ describe('accounts and transfers (SQL)', () => {
       date: '2026-03-01',
     })
 
-    db.prepare(`
+    db.prepare(
+      `
       UPDATE transactions SET amount = ?, transaction_date = ?, payment_method_id = ?
       WHERE id = ?
-    `).run(35, '2026-03-05', 'method-checking', outId)
-    db.prepare(`
+    `,
+    ).run(35, '2026-03-05', 'method-checking', outId)
+    db.prepare(
+      `
       UPDATE transactions SET amount = ?, transaction_date = ?, payment_method_id = ?
       WHERE id = ?
-    `).run(35, '2026-03-05', 'method-wallet', inId)
+    `,
+    ).run(35, '2026-03-05', 'method-wallet', inId)
 
     const legs = db
       .prepare(
@@ -1056,7 +1269,9 @@ describe('accounts and transfers (SQL)', () => {
     }>
     expect(legs).toHaveLength(2)
     expect(legs.every((leg) => leg.amount === 35)).toBe(true)
-    expect(legs.every((leg) => leg.transaction_date === '2026-03-05')).toBe(true)
+    expect(legs.every((leg) => leg.transaction_date === '2026-03-05')).toBe(
+      true,
+    )
     expect(accountBalanceSql(db, 'method-checking')).toBe(65)
     expect(accountBalanceSql(db, 'method-wallet')).toBe(35)
   })

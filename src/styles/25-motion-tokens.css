@@ -17,8 +17,10 @@
   --duration-icon-swap: 280ms;
 
   --animate-slide-up: slide-up var(--duration-enter) var(--ease-enter);
-  --animate-slide-down-out: slide-down-out var(--duration-exit) var(--ease-exit) forwards;
-  --animate-icon-swap: icon-swap var(--duration-icon-swap) var(--ease-theme) both;
+  --animate-slide-down-out: slide-down-out var(--duration-exit) var(--ease-exit)
+    forwards;
+  --animate-icon-swap: icon-swap var(--duration-icon-swap) var(--ease-theme)
+    both;
   --animate-delta-pop: delta-pop 2.2s cubic-bezier(0.23, 1, 0.32, 1) both;
 
   @keyframes slide-up {

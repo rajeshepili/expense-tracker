@@ -68,9 +68,7 @@ describe('accountDeltasQuery', () => {
   it('matches JS accountBalance semantics per account', async () => {
     const { raw, db } = setup()
     const deltas = await accountDeltasQuery(db)
-    const byAccount = new Map(
-      deltas.map((row) => [row.accountId!, row.delta]),
-    )
+    const byAccount = new Map(deltas.map((row) => [row.accountId!, row.delta]))
 
     const rows = raw
       .prepare(

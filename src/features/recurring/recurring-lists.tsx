@@ -372,7 +372,9 @@ export function RecurringLists(props: RecurringListsProps) {
             <TableHead className="hidden md:table-cell">Method</TableHead>
             <TableHead className="hidden lg:table-cell">Cadence</TableHead>
             <TableHead className="hidden lg:table-cell">Next</TableHead>
-            <TableHead className="text-right whitespace-nowrap">Amount</TableHead>
+            <TableHead className="text-right whitespace-nowrap">
+              Amount
+            </TableHead>
             <TableHead className="hidden text-right whitespace-nowrap md:table-cell">
               Monthly
             </TableHead>

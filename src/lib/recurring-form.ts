@@ -48,7 +48,9 @@ export function emptyRecurringForm(): RecurringFormState {
   }
 }
 
-export function formFromRecurringRow(row: RecurringExpenseRow): RecurringFormState {
+export function formFromRecurringRow(
+  row: RecurringExpenseRow,
+): RecurringFormState {
   return {
     name: row.name,
     kind: row.kind,
@@ -61,7 +63,9 @@ export function formFromRecurringRow(row: RecurringExpenseRow): RecurringFormSta
   }
 }
 
-export function sortRecurring(items: RecurringExpenseRow[]): RecurringExpenseRow[] {
+export function sortRecurring(
+  items: RecurringExpenseRow[],
+): RecurringExpenseRow[] {
   return [...items].sort((a, b) => {
     if (a.active !== b.active) return a.active ? -1 : 1
     return new Date(a.nextDate).getTime() - new Date(b.nextDate).getTime()
@@ -139,11 +143,9 @@ export function useRecurringForm({
       ])
       onClose()
     },
-    onError: makeMutationErrorHandler(
-      setSaveError,
-      'Could not save',
-      { reopenDialog: () => setComposerOpen(true) },
-    ),
+    onError: makeMutationErrorHandler(setSaveError, 'Could not save', {
+      reopenDialog: () => setComposerOpen(true),
+    }),
   })
 
   const toggleMutation = useOptimisticMutation<
@@ -177,10 +179,7 @@ export function useRecurringForm({
       setDeleting(null)
       onClose()
     },
-    onError: makeMutationErrorHandler(
-      setSaveError,
-      'Could not delete',
-    ),
+    onError: makeMutationErrorHandler(setSaveError, 'Could not delete'),
   })
 
   function openCreate() {
@@ -209,33 +208,38 @@ export function useRecurringForm({
       setSaveError('Choose a category')
       return
     }
-    if (editing) updateRecurring(editing.id, {
-      name: form.name,
-      kind: form.kind,
-      amount,
-      cadence: form.cadence,
-      nextDate: form.nextDate,
-      categoryId: form.categoryId,
-      paymentMethodId: form.paymentMethodId || null,
-      active: editing.active,
-    })
-    else createRecurring({
-      name: form.name,
-      kind: form.kind,
-      amount,
-      cadence: form.cadence,
-      nextDate: form.nextDate,
-      categoryId: form.categoryId,
-      paymentMethodId: form.paymentMethodId || null,
-      active: true,
-    })
+    if (editing)
+      updateRecurring(editing.id, {
+        name: form.name,
+        kind: form.kind,
+        amount,
+        cadence: form.cadence,
+        nextDate: form.nextDate,
+        categoryId: form.categoryId,
+        paymentMethodId: form.paymentMethodId || null,
+        active: editing.active,
+      })
+    else
+      createRecurring({
+        name: form.name,
+        kind: form.kind,
+        amount,
+        cadence: form.cadence,
+        nextDate: form.nextDate,
+        categoryId: form.categoryId,
+        paymentMethodId: form.paymentMethodId || null,
+        active: true,
+      })
   }
 
   function askDelete(item: RecurringExpenseRow) {
     setDeleting(item)
   }
 
-  const isSubmitting = saveMutation.isPending || deleteMutation.isPending || toggleMutation.isPending
+  const isSubmitting =
+    saveMutation.isPending ||
+    deleteMutation.isPending ||
+    toggleMutation.isPending
 
   return {
     saveMutation,

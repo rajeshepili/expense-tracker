@@ -10,7 +10,8 @@ import {
 } from '#/components/layout/page-skeletons'
 import type { ReactNode } from 'react'
 
-type PageLoadingVariant = 'default' | 'ledger' | 'recurring' | 'categories' | 'savings'
+type PageLoadingVariant =
+  'default' | 'ledger' | 'recurring' | 'categories' | 'savings'
 
 const skeletons: Record<PageLoadingVariant, ReactNode> = {
   default: <ListRowsSkeleton rows={6} />,

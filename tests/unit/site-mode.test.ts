@@ -99,12 +99,7 @@ describe('checkModeConsistency', () => {
   })
 
   it('fails when marketing host serves an app build', () => {
-    const result = checkModeConsistency(
-      'pocketbook.localhost',
-      'app',
-      APP,
-      MKT,
-    )
+    const result = checkModeConsistency('pocketbook.localhost', 'app', APP, MKT)
     expect(result.ok).toBe(false)
     if (!result.ok) {
       expect(result.expected).toBe('marketing')

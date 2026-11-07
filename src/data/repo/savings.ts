@@ -46,10 +46,7 @@ export async function updateSavingsGoal(id: string, input: SavingsGoalUpdate) {
     const updates = normalizeSavingsGoalUpdate(input, existing)
     if (!updates) return { success: true as const }
 
-    await db
-      .update(savingsGoals)
-      .set(updates)
-      .where(eq(savingsGoals.id, id))
+    await db.update(savingsGoals).set(updates).where(eq(savingsGoals.id, id))
     return { success: true as const }
   })
 }

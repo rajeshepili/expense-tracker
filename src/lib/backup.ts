@@ -67,7 +67,8 @@ export function isLocalDataCalloutHidden(): boolean {
 
 export function shouldShowBackupReminder(now = Date.now()): boolean {
   try {
-    if (globalThis.localStorage.getItem(REMINDER_HIDDEN_KEY) === '1') return false
+    if (globalThis.localStorage.getItem(REMINDER_HIDDEN_KEY) === '1')
+      return false
   } catch {
     // private mode / quota
   }

@@ -48,13 +48,15 @@ interface UseSavingsFormArgs {
     targetDate: string
     categoryId: string
   }
-  setForm: React.Dispatch<React.SetStateAction<{
-    name: string
-    targetAmount: string
-    currentAmount: string
-    targetDate: string
-    categoryId: string
-  }>>
+  setForm: React.Dispatch<
+    React.SetStateAction<{
+      name: string
+      targetAmount: string
+      currentAmount: string
+      targetDate: string
+      categoryId: string
+    }>
+  >
   setComposerOpen: (open: boolean) => void
   setEditing: (goal: SavingsGoalRow | null) => void
   setDeleting: (goal: SavingsGoalRow | null) => void
@@ -141,7 +143,11 @@ export function useSavingsForm({
 
   function handleSubmit() {
     const targetAmount = Number(form.targetAmount)
-    if (!form.name.trim() || !Number.isFinite(targetAmount) || targetAmount <= 0) {
+    if (
+      !form.name.trim() ||
+      !Number.isFinite(targetAmount) ||
+      targetAmount <= 0
+    ) {
       return
     }
     if (editing) updateMutation.mutate()

@@ -4,13 +4,14 @@ import { Skel } from '#/components/layout/page-skeletons'
 export function OverviewStatsSkeleton() {
   return (
     <section
-      className={cn(
-        'grid shrink-0 grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4',
-      )}
+      className={cn('grid shrink-0 grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4')}
       aria-hidden="true"
     >
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="stat-tile overflow-visible rounded-lg border px-4 py-3">
+        <div
+          key={i}
+          className="stat-tile overflow-visible rounded-lg border px-4 py-3"
+        >
           <div className="flex items-center justify-between gap-2">
             <Skel className="h-3 w-20 rounded" />
             <Skel className="h-3.5 w-3.5 rounded" />

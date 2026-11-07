@@ -40,17 +40,24 @@ test.describe('local smart features @smoke', () => {
     })
     // Income via ledger type toggle if available — expense is enough for chart.
     await page.goto('/year')
-    await expect(page.getByRole('heading', { name: /Year \d{4}/ })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: /Year \d{4}/ }),
+    ).toBeVisible()
     await expect(
       page.getByRole('img', { name: /Monthly income and expenses/i }),
     ).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Top categories' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Top categories' }),
+    ).toBeVisible()
   })
 
   test('bills composer supports income kind', async ({ page }) => {
     await completeOnboarding(page)
     await goToNav(page, 'Bills')
-    await page.getByRole('button', { name: /Add recurring/i }).first().click()
+    await page
+      .getByRole('button', { name: /Add recurring/i })
+      .first()
+      .click()
     await expect(page.getByRole('combobox', { name: 'Type' })).toBeVisible()
     await page.getByRole('combobox', { name: 'Type' }).click()
     await page.getByRole('option', { name: 'Income' }).click()
@@ -61,7 +68,11 @@ test.describe('local smart features @smoke', () => {
     await completeOnboarding(page)
     await goToNav(page, 'Overview')
     await page.getByRole('button', { name: 'Backup', exact: true }).click()
-    await expect(page.getByRole('button', { name: /Export CSV/i })).toBeVisible()
-    await expect(page.getByRole('switch', { name: /Bill reminders/i })).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: /Export CSV/i }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('switch', { name: /Bill reminders/i }),
+    ).toBeVisible()
   })
 })

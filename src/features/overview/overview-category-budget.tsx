@@ -99,7 +99,10 @@ export function OverviewCategoryBudget({
             description={`${monthLabel} expenses will show up here.`}
           />
         ) : (
-          <div key={categoryView} className="category-view-pane flex flex-col gap-3">
+          <div
+            key={categoryView}
+            className="category-view-pane flex flex-col gap-3"
+          >
             {categoryView === 'chart' ? (
               <CategorySpendChart
                 categories={categories}

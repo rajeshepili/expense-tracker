@@ -12,7 +12,7 @@ const STEPS: TourStep[] = [
   {
     title: `Welcome to ${APP_NAME}`,
     content:
-      'This URL is your ledger — everything lives only in this browser. Let\'s take a quick look around.',
+      "This URL is your ledger — everything lives only in this browser. Let's take a quick look around.",
   },
   {
     target: () =>
@@ -21,7 +21,8 @@ const STEPS: TourStep[] = [
       ) ?? null,
     side: 'top',
     title: 'Navigate',
-    content: 'Overview, Ledger, Bills, Categories, and Goals — always one tap away.',
+    content:
+      'Overview, Ledger, Bills, Categories, and Goals — always one tap away.',
   },
   {
     target: '[data-tour="stats"]',
@@ -44,7 +45,8 @@ const STEPS: TourStep[] = [
   },
   {
     title: "You're all set",
-    content: 'Data stays on this device — use Backup to export a .sqlite3 copy.',
+    content:
+      'Data stays on this device — use Backup to export a .sqlite3 copy.',
   },
 ]
 

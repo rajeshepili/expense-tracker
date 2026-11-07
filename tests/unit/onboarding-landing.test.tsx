@@ -73,7 +73,9 @@ describe('onboarding wizard', () => {
       screen.getByRole('heading', { name: 'Set up your ledger' }),
     ).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Restore a backup' })).toBeTruthy()
+    expect(
+      screen.getByRole('button', { name: 'Restore a backup' }),
+    ).toBeTruthy()
     expect(document.querySelector('.landing-mock')).toBeNull()
     expect(screen.queryByRole('link', { name: 'Features' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Privacy' })).toBeNull()
@@ -85,7 +87,9 @@ describe('onboarding wizard', () => {
     expect(
       screen.getByRole('heading', { name: 'Currency & budget' }),
     ).toBeTruthy()
-    expect(screen.getByText(/Ledger storage starts on this device/i)).toBeTruthy()
+    expect(
+      screen.getByText(/Ledger storage starts on this device/i),
+    ).toBeTruthy()
     expect(
       screen.queryByRole('heading', { name: 'Set up your ledger' }),
     ).toBeNull()

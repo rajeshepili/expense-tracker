@@ -34,7 +34,9 @@ function Progress({
         )}
         style={{
           transform: `translateX(-${100 - (value || 0)}%)`,
-          transition: snap ? 'none' : `transform var(--duration-data) var(--ease-data)`,
+          transition: snap
+            ? 'none'
+            : `transform var(--duration-data) var(--ease-data)`,
         }}
       />
     </ProgressPrimitive.Root>

@@ -74,9 +74,7 @@ self.addEventListener('fetch', (event) => {
           return response
         })
         .catch(() =>
-          caches.match(request).then(
-            (cached) => cached || caches.match('/'),
-          ),
+          caches.match(request).then((cached) => cached || caches.match('/')),
         ),
     )
     return

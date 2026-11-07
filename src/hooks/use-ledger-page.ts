@@ -34,39 +34,47 @@ type UseLedgerPageArgs = {
 
 type LedgerPageLoading = { status: 'loading' }
 type LedgerPageError = { status: 'error'; message: string; retry: () => void }
-type LedgerPageReady = { status: 'ready' } & ReturnType<typeof useLedgerForm> & ReturnType<typeof useLedgerFilters> & {
-  descriptionRef: React.RefObject<HTMLInputElement | null>
-  editing: LedgerTransaction | null
-  form: LedgerFormState
-  saveError: string | null
-  composerOpen: boolean
-  setForm: Dispatch<SetStateAction<LedgerFormState>>
-  openEdit: (row: LedgerTransaction) => void
-  bindOpenChange: (onClose?: () => void) => (open: boolean) => void
-  monthFilter: string | undefined
-  categoryFilter: string | undefined
-  methodFilter: string | undefined
-  viewingMonth: string | null
-  categories: { id: string; name: string; type: CategoryType }[]
-  methods: { id: string; name: string }[]
-  rows: LedgerTransaction[]
-  isCurrentMonth: boolean
-  listMode: 'empty' | 'filtered' | 'rows'
-  fundOffer: FundGoalOffer | null
-  setFundOffer: (offer: FundGoalOffer | null) => void
-  filteredCategories: { id: string; name: string }[]
-  currency: string
-  monthFetching: boolean
-  goMonth: (month: string) => void
-  setSearchFilter: (patch: { category?: string | null; method?: string | null; month?: string }) => void
-  filterByMethod: (methodId: string) => void
-  setType: (type: TransactionType) => void
-  deleting: LedgerTransaction | null
-  setDeleting: (tx: LedgerTransaction | null) => void
-  askDelete: (transaction: LedgerTransaction) => void
-}
+type LedgerPageReady = { status: 'ready' } & ReturnType<typeof useLedgerForm> &
+  ReturnType<typeof useLedgerFilters> & {
+    descriptionRef: React.RefObject<HTMLInputElement | null>
+    editing: LedgerTransaction | null
+    form: LedgerFormState
+    saveError: string | null
+    composerOpen: boolean
+    setForm: Dispatch<SetStateAction<LedgerFormState>>
+    openEdit: (row: LedgerTransaction) => void
+    bindOpenChange: (onClose?: () => void) => (open: boolean) => void
+    monthFilter: string | undefined
+    categoryFilter: string | undefined
+    methodFilter: string | undefined
+    viewingMonth: string | null
+    categories: { id: string; name: string; type: CategoryType }[]
+    methods: { id: string; name: string }[]
+    rows: LedgerTransaction[]
+    isCurrentMonth: boolean
+    listMode: 'empty' | 'filtered' | 'rows'
+    fundOffer: FundGoalOffer | null
+    setFundOffer: (offer: FundGoalOffer | null) => void
+    filteredCategories: { id: string; name: string }[]
+    currency: string
+    monthFetching: boolean
+    goMonth: (month: string) => void
+    setSearchFilter: (patch: {
+      category?: string | null
+      method?: string | null
+      month?: string
+    }) => void
+    filterByMethod: (methodId: string) => void
+    setType: (type: TransactionType) => void
+    deleting: LedgerTransaction | null
+    setDeleting: (tx: LedgerTransaction | null) => void
+    askDelete: (transaction: LedgerTransaction) => void
+  }
 
-export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPageLoading | LedgerPageError | LedgerPageReady {
+export function useLedgerPage({
+  search,
+  navigate,
+}: UseLedgerPageArgs): LedgerPageLoading | LedgerPageError | LedgerPageReady {
   const descriptionRef = useRef<HTMLInputElement>(null)
 
   const {
@@ -109,9 +117,7 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
           setComposerOpen(true)
         } catch (error) {
           setSaveError(
-            error instanceof Error
-              ? error.message
-              : 'Could not open transfer',
+            error instanceof Error ? error.message : 'Could not open transfer',
           )
           setComposerOpen(true)
         }
@@ -121,7 +127,9 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
     openEditRow(row)
   }
 
-  const setFormForReturn = setForm as (fn: (current: LedgerFormState) => LedgerFormState) => void
+  const setFormForReturn = setForm as (
+    fn: (current: LedgerFormState) => LedgerFormState,
+  ) => void
 
   const filterRef = useRef<'all' | TransactionType>('all')
   const queryRef = useRef('')
@@ -170,7 +178,9 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
   filterRef.current = filter
   queryRef.current = query
 
-  const setFilter: Dispatch<SetStateAction<'all' | TransactionType>> = (next) => {
+  const setFilter: Dispatch<SetStateAction<'all' | TransactionType>> = (
+    next,
+  ) => {
     const value = typeof next === 'function' ? next(filter) : next
     filterRef.current = value
     setFilterFromHook(value)
@@ -241,7 +251,9 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
   // Deep-link open (?new / ?edit): wait for the motion gate so the composer
   // doesn't animate during a page slide, then open and strip the URL params.
   useEffect(() => {
-    const row = editId ? rows.find((transaction) => transaction.id === editId) : null
+    const row = editId
+      ? rows.find((transaction) => transaction.id === editId)
+      : null
     if (!openNew && !row) return
     let cancelled = false
     void (async () => {
@@ -261,13 +273,26 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
 
   useEffect(() => {
     if (!composerOpen || editing || form.type === 'transfer') return
-    if (form.categoryId && filteredCategories.some((c) => c.id === form.categoryId)) return
+    if (
+      form.categoryId &&
+      filteredCategories.some((c) => c.id === form.categoryId)
+    )
+      return
     const preferred = readTransactionDefaults().categoryIdByType[form.type]
-    const next = filteredCategories.find((c) => c.id === preferred) ?? filteredCategories[0]
+    const next =
+      filteredCategories.find((c) => c.id === preferred) ??
+      filteredCategories[0]
     if (next) {
       setForm((current) => ({ ...current, categoryId: next.id }))
     }
-  }, [composerOpen, editing, form.categoryId, form.type, filteredCategories, setForm])
+  }, [
+    composerOpen,
+    editing,
+    form.categoryId,
+    form.type,
+    filteredCategories,
+    setForm,
+  ])
 
   useEffect(() => {
     if (!composerOpen || editing || form.type === 'transfer') return
@@ -293,10 +318,15 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
   }
 
   if (isError) {
-    return { status: 'error' as const, message: errorMessage ?? 'Unknown error', retry }
+    return {
+      status: 'error' as const,
+      message: errorMessage ?? 'Unknown error',
+      retry,
+    }
   }
 
-  const isCurrentMonth = viewingMonth !== null && viewingMonth === currentYearMonth()
+  const isCurrentMonth =
+    viewingMonth !== null && viewingMonth === currentYearMonth()
   const listMode =
     rows.length === 0
       ? narrowingFilters
@@ -356,7 +386,11 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
     },
     clearFilters,
     clearChip,
-    setSearchFilter: (patch: { category?: string | null; method?: string | null; month?: string }) => {
+    setSearchFilter: (patch: {
+      category?: string | null
+      method?: string | null
+      month?: string
+    }) => {
       navigate({
         search: (prev: LedgerSearch) => {
           const next = { ...prev }
@@ -374,7 +408,11 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
         replace: true,
       })
     },
-    filterByMethod: (methodId: string) => navigate({ search: (prev: LedgerSearch) => ({ ...prev, method: methodId }), replace: true }),
+    filterByMethod: (methodId: string) =>
+      navigate({
+        search: (prev: LedgerSearch) => ({ ...prev, method: methodId }),
+        replace: true,
+      }),
     setType: (type: TransactionType) => {
       const defaults = readTransactionDefaults()
       const sole = methods.length === 1 ? methods[0].id : null
@@ -382,13 +420,11 @@ export function useLedgerPage({ search, navigate }: UseLedgerPageArgs): LedgerPa
         ...current,
         type,
         categoryId:
-          type === 'transfer'
-            ? ''
-            : (defaults.categoryIdByType[type] ?? ''),
+          type === 'transfer' ? '' : (defaults.categoryIdByType[type] ?? ''),
         fromAccountId: type === 'transfer' ? current.fromAccountId : '',
         toAccountId: type === 'transfer' ? current.toAccountId : '',
         paymentMethodId:
-          type === 'transfer' ? '' : (current.paymentMethodId || sole || ''),
+          type === 'transfer' ? '' : current.paymentMethodId || sole || '',
       }))
     },
     submitForm,

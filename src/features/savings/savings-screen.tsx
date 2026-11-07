@@ -6,17 +6,16 @@ import { ConfirmDeleteDialog } from '#/features/shared/confirm-delete-dialog'
 import { ContributeProgressDialog } from '#/features/savings/contribute-progress-dialog'
 import { CategorySelect } from '#/features/shared/entity-selects'
 import { Button } from '#/components/ui/button'
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-} from '#/components/ui/field'
+import { Field, FieldGroup, FieldLabel } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { EmptyState } from '#/components/layout/empty-state'
 import { PageHeader } from '#/components/layout/page-header'
 import { PageError, PageLoading } from '#/components/layout/page-query-state'
 import { PageShell } from '#/components/layout/page-shell'
-import { CompletedGoalRow, SavingsGoalCard } from '#/features/savings/savings-goal-card'
+import {
+  CompletedGoalRow,
+  SavingsGoalCard,
+} from '#/features/savings/savings-goal-card'
 import { motion } from '#/lib/motion'
 import type { SavingsGoalRow } from '#/lib/types'
 import { useSavingsList } from '#/lib/savings-list'
@@ -138,7 +137,8 @@ export function SavingsScreen() {
             <>
               <p className="mb-2">Set a target amount and optional deadline.</p>
               <p className="text-xs text-muted-foreground">
-                Link an income category to get prompted when you record matching income.
+                Link an income category to get prompted when you record matching
+                income.
               </p>
             </>
           }
@@ -300,9 +300,7 @@ export function SavingsScreen() {
               id="goal-date"
               type="date"
               value={form.targetDate}
-              onChange={(e) =>
-                setForm({ ...form, targetDate: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
             />
           </Field>
           <Field>
@@ -314,9 +312,7 @@ export function SavingsScreen() {
               value={form.categoryId}
               options={incomeCategories}
               placeholder="Any income"
-              onValueChange={(categoryId) =>
-                setForm({ ...form, categoryId })
-              }
+              onValueChange={(categoryId) => setForm({ ...form, categoryId })}
             />
           </Field>
         </FieldGroup>

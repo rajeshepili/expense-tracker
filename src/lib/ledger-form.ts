@@ -1,9 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import type { FundGoalOffer } from '#/features/savings/fund-goal-dialog'
-import type {
-  LedgerTransaction,
-  SavingsGoalRow,
-} from '#/lib/types'
+import type { LedgerTransaction, SavingsGoalRow } from '#/lib/types'
 import { queryKeys } from '#/lib/query/keys'
 import {
   createTransaction,
@@ -14,11 +11,7 @@ import {
 } from '#/data/repository'
 import { useOptimisticMutation } from '#/hooks/use-optimistic-mutation'
 import { findPossibleDuplicate } from '#/lib/duplicate'
-import {
-  formatIsoDate,
-  defaultDateForMonth,
-  todayIso,
-} from '#/lib/finance'
+import { formatIsoDate, defaultDateForMonth, todayIso } from '#/lib/finance'
 import { makeMutationErrorHandler } from '#/lib/errors'
 import { rememberTransactionDefaults } from '#/lib/transaction-defaults'
 import { shouldPromptFundGoal } from '#/lib/savings'
@@ -29,11 +22,12 @@ import {
   formFromTransferLeg,
   prepareTransferEdit,
   transactionMeta,
-  transferBadgeClass
-  
-  
+  transferBadgeClass,
 } from '#/features/ledger/form-state'
-import type {LedgerFormState, LedgerSaveVars} from '#/features/ledger/form-state';
+import type {
+  LedgerFormState,
+  LedgerSaveVars,
+} from '#/features/ledger/form-state'
 
 export type { LedgerFormState, LedgerSaveVars }
 export {
@@ -123,9 +117,7 @@ export function useLedgerForm({
       queryClient.setQueryData<LedgerTransaction[]>(listQueryKey, (current) => {
         const list = current ?? []
         if (vars.editingId) {
-          return list.map((row) =>
-            row.id === vars.editingId ? nextRow : row,
-          )
+          return list.map((row) => (row.id === vars.editingId ? nextRow : row))
         }
         return [nextRow, ...list]
       })
@@ -142,12 +134,10 @@ export function useLedgerForm({
     },
     onSuccess: (result, vars, context) => {
       if (result.mode === 'create' && context?.tempId) {
-        queryClient.setQueryData<LedgerTransaction[]>(
-          listQueryKey,
-          (current) =>
-            current?.map((row) =>
-              row.id === context.tempId ? { ...row, id: result.id } : row,
-            ),
+        queryClient.setQueryData<LedgerTransaction[]>(listQueryKey, (current) =>
+          current?.map((row) =>
+            row.id === context.tempId ? { ...row, id: result.id } : row,
+          ),
         )
       }
       if (result.mode === 'create' && vars.type === 'income') {
@@ -164,7 +154,8 @@ export function useLedgerForm({
         }
       }
       if (result.mode === 'create') {
-        const cached = queryClient.getQueryData<LedgerTransaction[]>(listQueryKey)
+        const cached =
+          queryClient.getQueryData<LedgerTransaction[]>(listQueryKey)
         const dupe = cached
           ? findPossibleDuplicate(cached, {
               description: vars.description,
@@ -199,9 +190,7 @@ export function useLedgerForm({
     onMutate: (id) => {
       queryClient.setQueryData<LedgerTransaction[]>(listQueryKey, (current) => {
         const peerId = current?.find((row) => row.id === id)?.transferId
-        return current?.filter(
-          (row) => row.id !== id && row.id !== peerId,
-        )
+        return current?.filter((row) => row.id !== id && row.id !== peerId)
       })
     },
   })
@@ -243,11 +232,9 @@ export function useLedgerForm({
       setSaveError(null)
       reset()
     },
-    onError: makeMutationErrorHandler(
-      setSaveError,
-      'Could not save transfer',
-      { reopenDialog: () => setComposerOpen(true) },
-    ),
+    onError: makeMutationErrorHandler(setSaveError, 'Could not save transfer', {
+      reopenDialog: () => setComposerOpen(true),
+    }),
   })
 
   function openCreateInContext() {

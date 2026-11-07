@@ -89,7 +89,9 @@ function ResponsiveModal({
   )
 }
 
-function ResponsiveModalTrigger(props: React.ComponentProps<typeof DialogTrigger>) {
+function ResponsiveModalTrigger(
+  props: React.ComponentProps<typeof DialogTrigger>,
+) {
   return pick(<DrawerTrigger {...props} />, <DialogTrigger {...props} />)
 }
 
@@ -117,20 +119,30 @@ function ResponsiveModalContent({
     )
   }
   return (
-    <DialogContent className={className} showCloseButton={showCloseButton} {...props}>
+    <DialogContent
+      className={className}
+      showCloseButton={showCloseButton}
+      {...props}
+    >
       {children}
     </DialogContent>
   )
 }
 
-function ResponsiveModalHeader({ className, ...props }: React.ComponentProps<'div'>) {
+function ResponsiveModalHeader({
+  className,
+  ...props
+}: React.ComponentProps<'div'>) {
   return pick(
     <DrawerHeader className={cn('text-left', className)} {...props} />,
     <DialogHeader className={className} {...props} />,
   )
 }
 
-function ResponsiveModalFooter({ className, ...props }: React.ComponentProps<'div'>) {
+function ResponsiveModalFooter({
+  className,
+  ...props
+}: React.ComponentProps<'div'>) {
   return pick(
     <DrawerFooter
       className={cn(
@@ -147,8 +159,13 @@ function ResponsiveModalTitle(props: React.ComponentProps<typeof DialogTitle>) {
   return pick(<DrawerTitle {...props} />, <DialogTitle {...props} />)
 }
 
-function ResponsiveModalDescription(props: React.ComponentProps<typeof DialogDescription>) {
-  return pick(<DrawerDescription {...props} />, <DialogDescription {...props} />)
+function ResponsiveModalDescription(
+  props: React.ComponentProps<typeof DialogDescription>,
+) {
+  return pick(
+    <DrawerDescription {...props} />,
+    <DialogDescription {...props} />,
+  )
 }
 
 export {

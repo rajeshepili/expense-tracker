@@ -39,8 +39,9 @@
 [data-slot='dialog-content'][data-state='open'],
 [data-slot='alert-dialog-content'][data-state='open'],
 [data-slot='tour-popover'] {
-  transition: opacity var(--duration-enter) var(--ease-enter),
-              transform var(--duration-enter) var(--ease-enter);
+  transition:
+    opacity var(--duration-enter) var(--ease-enter),
+    transform var(--duration-enter) var(--ease-enter);
   transform-origin: center;
 }
 
@@ -53,8 +54,9 @@
 [data-radix-alert-dialog-content][data-state='closed'],
 [data-slot='dialog-content'][data-state='closed'],
 [data-slot='alert-dialog-content'][data-state='closed'] {
-  transition: opacity var(--duration-exit) var(--ease-exit),
-              transform var(--duration-exit) var(--ease-exit);
+  transition:
+    opacity var(--duration-exit) var(--ease-exit),
+    transform var(--duration-exit) var(--ease-exit);
   opacity: 0;
   transform: scale(0.92);
   transform-origin: center;
@@ -88,15 +90,19 @@
 [data-slot='tooltip-content'][data-state='open'] {
   opacity: 1;
   transform: none;
-  transition: opacity var(--duration-enter) var(--ease-enter),
-              transform var(--duration-enter) var(--ease-enter);
+  transition:
+    opacity var(--duration-enter) var(--ease-enter),
+    transform var(--duration-enter) var(--ease-enter);
   transform-origin: var(
     --radix-dropdown-menu-content-transform-origin,
     var(
       --radix-select-content-transform-origin,
       var(
         --radix-popover-content-transform-origin,
-        var(--radix-tooltip-content-transform-origin, var(--transform-origin, center))
+        var(
+          --radix-tooltip-content-transform-origin,
+          var(--transform-origin, center)
+        )
       )
     )
   );
@@ -108,8 +114,9 @@
 [data-slot='dropdown-menu-content'][data-state='closed'],
 [data-slot='popover-content'][data-state='closed'],
 [data-slot='tooltip-content'][data-state='closed'] {
-  transition: opacity var(--duration-exit) var(--ease-exit),
-              transform var(--duration-exit) var(--ease-exit);
+  transition:
+    opacity var(--duration-exit) var(--ease-exit),
+    transform var(--duration-exit) var(--ease-exit);
   opacity: 0;
   transform: scale(0.92);
 }

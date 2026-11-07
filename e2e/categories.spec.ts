@@ -12,7 +12,9 @@ test.describe('categories smoke @smoke', () => {
   test('add → edit → delete category and account', async ({ page }) => {
     await completeOnboarding(page, { budget: '2000' })
     await goToNav(page, 'Categories')
-    await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Categories' }),
+    ).toBeVisible()
 
     // ——— Add category ———
     await page.getByRole('button', { name: /Add category/i }).click()

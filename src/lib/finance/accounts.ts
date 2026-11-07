@@ -1,4 +1,8 @@
-import type { AccountType, TransactionType, TransferDirection } from '#/lib/types'
+import type {
+  AccountType,
+  TransactionType,
+  TransferDirection,
+} from '#/lib/types'
 
 export const MONEY_EPSILON = 1e-4
 

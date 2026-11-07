@@ -82,8 +82,7 @@ export const transactions = sqliteTable(
   },
   (t) => [
     index('idx_transactions_date').on(t.transactionDate, t.createdAt),
-    // Covering index for month/year summaries: date range + type + amount,
-    // so aggregates never touch the table rows.
+    // Covering index for date-range aggregates by type+amount.
     index('idx_transactions_date_type_amount').on(
       t.transactionDate,
       t.type,
@@ -92,9 +91,7 @@ export const transactions = sqliteTable(
     index('idx_transactions_category').on(t.categoryId),
     index('idx_transactions_category_date').on(t.categoryId, t.transactionDate),
     index('idx_transactions_source_recurring').on(t.sourceRecurringId),
-    index('idx_transactions_account_date').on(t.accountId,
-      t.transactionDate,
-    ),
+    index('idx_transactions_account_date').on(t.accountId, t.transactionDate),
     index('idx_transactions_transfer').on(t.transferId),
   ],
 )

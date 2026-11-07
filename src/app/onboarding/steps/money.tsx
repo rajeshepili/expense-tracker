@@ -1,10 +1,6 @@
 import { LocalDataCallout } from '#/features/shared/local-data'
 import { Button } from '#/components/ui/button'
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-} from '#/components/ui/field'
+import { Field, FieldGroup, FieldLabel } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import {
   Select,
@@ -70,10 +66,7 @@ export function MoneyStep({
         <Field>
           <FieldLabel htmlFor="onboarding-currency">Currency</FieldLabel>
           <Select value={currency} onValueChange={onCurrencyChange}>
-            <SelectTrigger
-              id="onboarding-currency"
-              className="min-h-11 w-full"
-            >
+            <SelectTrigger id="onboarding-currency" className="min-h-11 w-full">
               <SelectValue placeholder="Choose currency" />
             </SelectTrigger>
             <SelectContent>

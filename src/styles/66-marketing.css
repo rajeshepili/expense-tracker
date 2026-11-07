@@ -1,6 +1,4 @@
-/* —— Marketing pages (/features, /privacy) —— */
-/* Shares the landing's backdrop, type scale, and radius (emil-design-eng:
-   unseen details compound). One wordmark per screen, accent only on the CTA. */
+/* Marketing pages (/features, /privacy). */
 
 .mkt-page {
   min-height: 100svh;
@@ -8,9 +6,7 @@
   flex-direction: column;
 }
 
-/* Marketing routes render in a plain <main> — the app shell's fixed-height
-   body (h-dvh overflow-hidden) would clip them, so marketing pages scroll
-   the document instead. */
+/* Scroll the document; app shell locks h-dvh. */
 .mkt-page-scroll {
   height: auto;
   min-height: 100dvh;
@@ -35,7 +31,9 @@
   font-weight: 500;
   color: var(--muted-foreground);
   text-decoration: none;
-  transition: color 160ms ease-out, background-color 160ms ease-out;
+  transition:
+    color 160ms ease-out,
+    background-color 160ms ease-out;
 }
 
 .mkt-nav-link:hover {

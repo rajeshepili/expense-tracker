@@ -15,15 +15,12 @@ function normalize(text: string): string {
 }
 
 function dayDiff(a: string, b: string): number {
-  const ms = new Date(`${a}T12:00:00`).getTime() - new Date(`${b}T12:00:00`).getTime()
+  const ms =
+    new Date(`${a}T12:00:00`).getTime() - new Date(`${b}T12:00:00`).getTime()
   return Math.round(ms / (24 * 60 * 60 * 1000))
 }
 
-/**
- * Finds an existing transaction that looks like the same charge: same type,
- * same amount (within a cent), same normalized description, within ±3 days.
- * Transfers are excluded (paired legs would false-positive).
- */
+/** Same type/amount/description within ±3 days; skips transfers. */
 export function findPossibleDuplicate(
   rows: LedgerTransaction[],
   candidate: DuplicateCandidate,

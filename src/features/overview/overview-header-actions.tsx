@@ -50,11 +50,7 @@ export function OverviewHeaderActions({
             Budget
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <a
-              href={`${MARKETING_URL}/privacy`}
-              rel="noopener"
-              target="_blank"
-            >
+            <a href={`${MARKETING_URL}/privacy`} rel="noopener" target="_blank">
               <Shield aria-hidden />
               Privacy
             </a>

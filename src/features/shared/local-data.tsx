@@ -61,18 +61,18 @@ const calloutSummary = (
   </span>
 )
 
-export function LocalDataCallout({
-  className,
-}: {
-  className?: string
-}) {
+export function LocalDataCallout({ className }: { className?: string }) {
   const [open, setOpen] = useState(false)
   const [hidden, setHidden] = useState(() => isLocalDataCalloutHidden())
 
   if (hidden) return null
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className={cn('bg-muted/40', className)}>
+    <Collapsible
+      open={open}
+      onOpenChange={setOpen}
+      className={cn('bg-muted/40', className)}
+    >
       <Alert className="bg-transparent py-2 pr-2">
         <HardDrive />
         <AlertTitle className="flex min-w-0 flex-1 items-center gap-1">
@@ -85,9 +85,7 @@ export function LocalDataCallout({
                 <span className="block truncate font-medium">
                   Data stays in this browser
                 </span>
-                {!open ? (
-                  calloutSummary
-                ) : null}
+                {!open ? calloutSummary : null}
               </span>
               <ChevronDown
                 aria-hidden
@@ -144,9 +142,7 @@ export function BackupReminder({ className }: { className?: string }) {
   if (!open) return null
 
   return (
-    <Alert
-      className={cn(className, phase === 'out' && 'dismiss-fade-out')}
-    >
+    <Alert className={cn(className, phase === 'out' && 'dismiss-fade-out')}>
       <Download />
       <AlertTitle>Download a backup</AlertTitle>
       <AlertDescription>
@@ -225,7 +221,7 @@ export function BackupPanel() {
         <p className="text-sm font-medium">Local backup</p>
         <p className="text-xs text-muted-foreground">
           Download a <code className="text-[0.7rem]">.sqlite3</code> copy, or
-          restore one to replace all data on this device. {lastLabel}.
+          merge a backup into this device (keeps local rows). {lastLabel}.
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -291,17 +287,17 @@ export function BackupPanel() {
             setRestoring(false)
           }
         }}
-        title="Replace all local data?"
-        description={`Restoring “${file?.name ?? 'backup'}” overwrites every transaction, category, and setting in this browser. The page will reload.`}
-        confirmLabel="Restore & reload"
-        pendingLabel="Restoring…"
+        title="Merge backup into this device?"
+        description={`“${file?.name ?? 'backup'}” will add missing rows and update only when the backup is newer. Existing local data stays. The page will reload.`}
+        confirmLabel="Merge & reload"
+        pendingLabel="Merging…"
         pending={restoring}
         error={error}
         onConfirm={() => {
           if (!file) return
           setRestoring(true)
           setError(null)
-          void restoreBackup(file).catch((err: unknown) => {
+          void restoreBackup(file, { mode: 'merge' }).catch((err: unknown) => {
             setRestoring(false)
             const message = getErrorMessage(err, 'Could not restore backup')
             setError(message)

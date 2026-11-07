@@ -89,7 +89,9 @@ export function LedgerLists({
     if (removed.length === 0) {
       setExitingRows((current) =>
         current.some((row) => liveIds.has(row.id) || row.id.startsWith('temp-'))
-          ? current.filter((row) => !liveIds.has(row.id) && !row.id.startsWith('temp-'))
+          ? current.filter(
+              (row) => !liveIds.has(row.id) && !row.id.startsWith('temp-'),
+            )
           : current,
       )
       return
@@ -137,10 +139,7 @@ export function LedgerLists({
     return undefined
   }
 
-  function rowActions(
-    transaction: LedgerTransaction,
-    size?: 'touch',
-  ) {
+  function rowActions(transaction: LedgerTransaction, size?: 'touch') {
     if (exitingIds.has(transaction.id)) return null
     return (
       <RowActionsMenu
@@ -170,7 +169,9 @@ export function LedgerLists({
             <TableHead className="hidden md:table-cell">Account</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Type</TableHead>
-            <TableHead className="text-right whitespace-nowrap">Amount</TableHead>
+            <TableHead className="text-right whitespace-nowrap">
+              Amount
+            </TableHead>
             <TableHead className="w-10">
               <span className="sr-only">Actions</span>
             </TableHead>
@@ -197,9 +198,7 @@ export function LedgerLists({
                 transferDirection={transaction.transferDirection}
               />
             }
-            onClick={
-              state === 'exit' ? undefined : () => onEdit(transaction)
-            }
+            onClick={state === 'exit' ? undefined : () => onEdit(transaction)}
             actions={rowActions(transaction, 'touch')}
           />
         )
@@ -220,9 +219,7 @@ export function LedgerLists({
                 : undefined
             }
             className="pressable-row cursor-pointer"
-            onClick={
-              state === 'exit' ? undefined : () => onEdit(transaction)
-            }
+            onClick={state === 'exit' ? undefined : () => onEdit(transaction)}
           >
             <TableCell className="font-medium">
               {transaction.description}

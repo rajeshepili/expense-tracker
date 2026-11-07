@@ -9,13 +9,8 @@ import { money } from '#/lib/finance'
 import { animateWizardStep } from '#/lib/motion'
 import { invalidateAfter } from '#/lib/query/invalidation'
 import type { AccountType } from '#/lib/types'
-import {
-  clearFromMktParam,
-  fromMarketingHandoff,
-  stepMeta
-  
-} from './shared'
-import type {WizardStep} from './shared';
+import { clearFromMktParam, fromMarketingHandoff, stepMeta } from './shared'
+import type { WizardStep } from './shared'
 import { AccountStep } from './steps/account'
 import { CategoriesStep } from './steps/categories'
 import { MoneyStep } from './steps/money'

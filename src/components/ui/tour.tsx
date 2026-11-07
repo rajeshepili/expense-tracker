@@ -1,16 +1,16 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { createPortal } from "react-dom"
-import { Popover as PopoverPrimitive } from "@base-ui/react/popover"
-import { autoUpdate } from "@floating-ui/react-dom"
-import { XIcon } from "lucide-react"
+import * as React from 'react'
+import { createPortal } from 'react-dom'
+import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
+import { autoUpdate } from '@floating-ui/react-dom'
+import { XIcon } from 'lucide-react'
 
-import { cn } from "#/lib/utils"
-import { Button } from "#/components/ui/button"
+import { cn } from '#/lib/utils'
+import { Button } from '#/components/ui/button'
 
-type TourSide = "top" | "right" | "bottom" | "left"
-type TourAlign = "start" | "center" | "end"
+type TourSide = 'top' | 'right' | 'bottom' | 'left'
+type TourAlign = 'start' | 'center' | 'end'
 
 interface TourStepContext {
   index: number
@@ -36,7 +36,7 @@ interface TourStep {
   onEnter?: (ctx: { index: number }) => void
 }
 
-type TourEndReason = "finished" | "stopped"
+type TourEndReason = 'finished' | 'stopped'
 
 interface TourContextValue {
   active: boolean
@@ -55,17 +55,17 @@ const TourContext = React.createContext<TourContextValue | null>(null)
 function useTour() {
   const context = React.useContext(TourContext)
   if (!context) {
-    throw new Error("useTour must be used within a <TourProvider />.")
+    throw new Error('useTour must be used within a <TourProvider />.')
   }
   return context
 }
 
 function resolveTarget(step: TourStep): Element | null {
   if (!step.target) return null
-  if (typeof step.target === "string") {
+  if (typeof step.target === 'string') {
     return document.querySelector(step.target)
   }
-  if (typeof step.target === "function") {
+  if (typeof step.target === 'function') {
     return step.target()
   }
   return step.target.current
@@ -76,7 +76,7 @@ function padRect(rect: DOMRect, padding: number) {
     rect.x - padding,
     rect.y - padding,
     rect.width + padding * 2,
-    rect.height + padding * 2
+    rect.height + padding * 2,
   )
 }
 
@@ -88,7 +88,7 @@ interface TourProviderProps {
   interactive?: boolean
   scrollIntoView?: ScrollIntoViewOptions | false
   keyboard?: boolean
-  overlayClick?: "stop" | "next" | "none"
+  overlayClick?: 'stop' | 'next' | 'none'
   labels?: { back?: string; next?: string; done?: string }
   onStepChange?: (index: number, step: TourStep) => void
   onEnd?: (reason: TourEndReason) => void
@@ -100,9 +100,9 @@ function TourProvider({
   padding = 8,
   radius = 10,
   interactive = true,
-  scrollIntoView = { behavior: "smooth", block: "center", inline: "nearest" },
+  scrollIntoView = { behavior: 'smooth', block: 'center', inline: 'nearest' },
   keyboard = true,
-  overlayClick = "stop",
+  overlayClick = 'stop',
   labels,
   onStepChange,
   onEnd,
@@ -115,24 +115,21 @@ function TourProvider({
   const active = open && step !== null
 
   const callbacksRef = React.useRef<{
-    onStepChange?: TourProviderProps["onStepChange"]
-    onEnd?: TourProviderProps["onEnd"]
+    onStepChange?: TourProviderProps['onStepChange']
+    onEnd?: TourProviderProps['onEnd']
     defaultSteps?: TourStep[]
   }>({})
   React.useEffect(() => {
     callbacksRef.current = { onStepChange, onEnd, defaultSteps }
   })
 
-  const start = React.useCallback(
-    (nextSteps?: TourStep[], startIndex = 0) => {
-      const resolved = nextSteps ?? callbacksRef.current.defaultSteps ?? []
-      if (resolved.length === 0) return
-      setSteps(resolved)
-      setIndex(startIndex)
-      setOpen(true)
-    },
-    []
-  )
+  const start = React.useCallback((nextSteps?: TourStep[], startIndex = 0) => {
+    const resolved = nextSteps ?? callbacksRef.current.defaultSteps ?? []
+    if (resolved.length === 0) return
+    setSteps(resolved)
+    setIndex(startIndex)
+    setOpen(true)
+  }, [])
 
   const endWith = React.useCallback(
     (reason: TourEndReason) => {
@@ -140,15 +137,15 @@ function TourProvider({
       setOpen(false)
       callbacksRef.current.onEnd?.(reason)
     },
-    [active]
+    [active],
   )
 
-  const stop = React.useCallback(() => endWith("stopped"), [endWith])
+  const stop = React.useCallback(() => endWith('stopped'), [endWith])
 
   const next = React.useCallback(() => {
     if (!active) return
     if (index >= steps.length - 1) {
-      endWith("finished")
+      endWith('finished')
     } else {
       setIndex(index + 1)
     }
@@ -164,12 +161,12 @@ function TourProvider({
       if (!active) return
       setIndex(Math.min(Math.max(0, nextIndex), steps.length - 1))
     },
-    [active, steps.length]
+    [active, steps.length],
   )
 
   const targetEl = React.useMemo(
     () => (step ? resolveTarget(step) : null),
-    [step]
+    [step],
   )
 
   React.useEffect(() => {
@@ -187,28 +184,28 @@ function TourProvider({
       if (event.defaultPrevented) return
       const target = event.target
       if (
-        event.key !== "Escape" &&
+        event.key !== 'Escape' &&
         target instanceof HTMLElement &&
         (target.isContentEditable ||
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.tagName === "SELECT")
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT')
       ) {
         return
       }
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         event.preventDefault()
         stop()
-      } else if (event.key === "ArrowRight") {
+      } else if (event.key === 'ArrowRight') {
         event.preventDefault()
         next()
-      } else if (event.key === "ArrowLeft") {
+      } else if (event.key === 'ArrowLeft') {
         event.preventDefault()
         prev()
       }
     }
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
   }, [active, keyboard, next, prev, stop])
 
   const contextValue = React.useMemo<TourContextValue>(
@@ -223,7 +220,7 @@ function TourProvider({
       prev,
       goTo,
     }),
-    [active, index, steps.length, step, start, stop, next, prev, goTo]
+    [active, index, steps.length, step, start, stop, next, prev, goTo],
   )
 
   return (
@@ -277,7 +274,7 @@ function TourOverlay({
   padding: number
   radius: number
   interactive: boolean
-  overlayClick: "stop" | "next" | "none"
+  overlayClick: 'stop' | 'next' | 'none'
   onOverlayStop: () => void
   onOverlayNext: () => void
 }) {
@@ -297,35 +294,35 @@ function TourOverlay({
         spotlight.style.width = `${rect.width}px`
         spotlight.style.height = `${rect.height}px`
         spotlight.style.borderRadius = `${radius}px`
-        spotlight.style.backgroundColor = "transparent"
+        spotlight.style.backgroundColor = 'transparent'
         if (interactive) {
           const { innerWidth: vw, innerHeight: vh } = window
           blocker.style.clipPath = `path("M0 0H${vw}V${vh}H0Z M${rect.x} ${rect.y}v${rect.height}h${rect.width}v${-rect.height}Z")`
         } else {
-          blocker.style.clipPath = "none"
+          blocker.style.clipPath = 'none'
         }
       } else {
-        spotlight.style.top = "0px"
-        spotlight.style.left = "0px"
+        spotlight.style.top = '0px'
+        spotlight.style.left = '0px'
         spotlight.style.width = `${window.innerWidth}px`
         spotlight.style.height = `${window.innerHeight}px`
-        spotlight.style.borderRadius = "0px"
+        spotlight.style.borderRadius = '0px'
         spotlight.style.backgroundColor =
-          "var(--tour-overlay, oklch(0.145 0 0 / 0.72))"
-        blocker.style.clipPath = "none"
+          'var(--tour-overlay, oklch(0.145 0 0 / 0.72))'
+        blocker.style.clipPath = 'none'
       }
     }
 
-    spotlight.style.transitionDuration = ""
+    spotlight.style.transitionDuration = ''
     const settle = window.setTimeout(() => {
-      spotlight.style.transitionDuration = "0s"
+      spotlight.style.transitionDuration = '0s'
     }, 350)
 
     let cleanup: (() => void) | undefined
     if (!targetEl) {
       update()
-      window.addEventListener("resize", update)
-      cleanup = () => window.removeEventListener("resize", update)
+      window.addEventListener('resize', update)
+      cleanup = () => window.removeEventListener('resize', update)
     } else {
       cleanup = autoUpdate(targetEl, spotlight, update)
     }
@@ -336,8 +333,8 @@ function TourOverlay({
   }, [targetEl, padding, radius, interactive, step])
 
   const handleOverlayClick = () => {
-    if (overlayClick === "stop") onOverlayStop()
-    else if (overlayClick === "next") onOverlayNext()
+    if (overlayClick === 'stop') onOverlayStop()
+    else if (overlayClick === 'next') onOverlayNext()
   }
 
   return createPortal(
@@ -354,7 +351,7 @@ function TourOverlay({
         className="pointer-events-none fixed z-[100] shadow-[0_0_0_200vmax_var(--tour-overlay,oklch(0.145_0_0/0.72))] ring-1 ring-white/10 transition-[transform,opacity] duration-page ease-page motion-reduce:transition-none"
       />
     </>,
-    document.body
+    document.body,
   )
 }
 
@@ -371,7 +368,7 @@ function TourPopover({
   targetEl: Element | null
   padding: number
   ctx: TourStepContext
-  labels?: TourProviderProps["labels"]
+  labels?: TourProviderProps['labels']
 }) {
   const positionerRef = React.useRef<HTMLDivElement>(null)
   const hadStepRef = React.useRef(false)
@@ -384,12 +381,12 @@ function TourPopover({
     }
     if (!hadStepRef.current) {
       hadStepRef.current = true
-      node.style.transitionDuration = "0s"
+      node.style.transitionDuration = '0s'
       return
     }
-    node.style.transitionDuration = ""
+    node.style.transitionDuration = ''
     const settle = window.setTimeout(() => {
-      node.style.transitionDuration = "0s"
+      node.style.transitionDuration = '0s'
     }, 350)
     return () => window.clearTimeout(settle)
   }, [open, step, targetEl])
@@ -402,7 +399,7 @@ function TourPopover({
           : new DOMRect(window.innerWidth / 2, window.innerHeight / 2, 0, 0),
       contextElement: targetEl ?? undefined,
     }),
-    [targetEl, padding]
+    [targetEl, padding],
   )
 
   return (
@@ -410,15 +407,15 @@ function TourPopover({
       open={open}
       modal={false}
       onOpenChange={(nextOpen, details) => {
-        if (!nextOpen && details.reason === "escape-key") ctx.stop()
+        if (!nextOpen && details.reason === 'escape-key') ctx.stop()
       }}
     >
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Positioner
           ref={positionerRef}
           anchor={anchor}
-          side={step?.side ?? "bottom"}
-          align={step?.align ?? "center"}
+          side={step?.side ?? 'bottom'}
+          align={step?.align ?? 'center'}
           sideOffset={12}
           collisionPadding={16}
           className="isolate z-[101] transition-transform duration-page ease-page motion-reduce:transition-none"
@@ -478,10 +475,10 @@ function TourPopover({
                         aria-hidden
                         onClick={() => ctx.goTo(i)}
                         className={cn(
-                          "size-1.5 rounded-full transition-colors",
+                          'size-1.5 rounded-full transition-colors',
                           i === ctx.index
-                            ? "bg-primary"
-                            : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                            ? 'bg-primary'
+                            : 'bg-muted-foreground/30 hover:bg-muted-foreground/50',
                         )}
                       />
                     ))}
@@ -489,13 +486,13 @@ function TourPopover({
                   <div className="flex items-center gap-2">
                     {!ctx.isFirst && (
                       <Button variant="ghost" size="xs" onClick={ctx.prev}>
-                        {labels?.back ?? "Back"}
+                        {labels?.back ?? 'Back'}
                       </Button>
                     )}
                     <Button size="xs" onClick={ctx.next}>
                       {ctx.isLast
-                        ? (labels?.done ?? "Done")
-                        : (labels?.next ?? "Next")}
+                        ? (labels?.done ?? 'Done')
+                        : (labels?.next ?? 'Next')}
                     </Button>
                   </div>
                 </div>

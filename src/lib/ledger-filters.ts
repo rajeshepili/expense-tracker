@@ -3,10 +3,9 @@ import type { LedgerFilterChip } from '#/features/ledger/ledger-filters'
 import type { LedgerTransaction, TransactionType } from '#/lib/types'
 import { currentYearMonth } from '#/lib/finance'
 
-function typeFromSearch(
-  type: string | undefined,
-): 'all' | TransactionType {
-  if (type === 'expense' || type === 'income' || type === 'transfer') return type
+function typeFromSearch(type: string | undefined): 'all' | TransactionType {
+  if (type === 'expense' || type === 'income' || type === 'transfer')
+    return type
   return 'all'
 }
 

@@ -27,7 +27,10 @@ describe('dueSoonReminders', () => {
 
   it('includes items due today and within the window', () => {
     const result = dueSoonReminders(
-      [row({ id: 'a', nextDate: '2026-11-04' }), row({ id: 'b', nextDate: '2026-11-06' })],
+      [
+        row({ id: 'a', nextDate: '2026-11-04' }),
+        row({ id: 'b', nextDate: '2026-11-06' }),
+      ],
       today,
     )
     expect(result.map((r) => r.id)).toEqual(['a', 'b'])
@@ -37,7 +40,10 @@ describe('dueSoonReminders', () => {
 
   it('excludes overdue and far-future items', () => {
     const result = dueSoonReminders(
-      [row({ id: 'old', nextDate: '2026-11-01' }), row({ id: 'far', nextDate: '2026-11-20' })],
+      [
+        row({ id: 'old', nextDate: '2026-11-01' }),
+        row({ id: 'far', nextDate: '2026-11-20' }),
+      ],
       today,
     )
     expect(result).toEqual([])
@@ -50,7 +56,10 @@ describe('dueSoonReminders', () => {
 
   it('sorts by next date', () => {
     const result = dueSoonReminders(
-      [row({ id: 'later', nextDate: '2026-11-06' }), row({ id: 'sooner', nextDate: '2026-11-05' })],
+      [
+        row({ id: 'later', nextDate: '2026-11-06' }),
+        row({ id: 'sooner', nextDate: '2026-11-05' }),
+      ],
       today,
     )
     expect(result.map((r) => r.id)).toEqual(['sooner', 'later'])

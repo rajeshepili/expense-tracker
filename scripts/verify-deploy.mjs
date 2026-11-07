@@ -58,7 +58,10 @@ check(
   mRoot.headers['cross-origin-embedder-policy'] ?? 'absent',
 )
 check('marketing has HSTS', Boolean(mRoot.headers['strict-transport-security']))
-check('marketing has nosniff', mRoot.headers['x-content-type-options'] === 'nosniff')
+check(
+  'marketing has nosniff',
+  mRoot.headers['x-content-type-options'] === 'nosniff',
+)
 check('marketing has CSP', Boolean(mRoot.headers['content-security-policy']))
 check(
   'marketing HTML has data-site-mode=marketing',
@@ -66,9 +69,17 @@ check(
 )
 
 const mFeatures = await get(marketing + '/features')
-check('marketing /features is 200', mFeatures.status === 200, `got ${mFeatures.status}`)
+check(
+  'marketing /features is 200',
+  mFeatures.status === 200,
+  `got ${mFeatures.status}`,
+)
 const mPrivacy = await get(marketing + '/privacy')
-check('marketing /privacy is 200', mPrivacy.status === 200, `got ${mPrivacy.status}`)
+check(
+  'marketing /privacy is 200',
+  mPrivacy.status === 200,
+  `got ${mPrivacy.status}`,
+)
 const mLedger = await get(marketing + '/ledger')
 check(
   'marketing /ledger edge-redirects to app host',
@@ -86,7 +97,11 @@ if (isProdDefaults) {
 
 // App project
 const aRoot = await get(app + '/')
-check('app / responds', [200, 301, 302, 307, 308].includes(aRoot.status), `got ${aRoot.status}`)
+check(
+  'app / responds',
+  [200, 301, 302, 307, 308].includes(aRoot.status),
+  `got ${aRoot.status}`,
+)
 check(
   'app HAS COEP require-corp (OPFS needs it)',
   aRoot.headers['cross-origin-embedder-policy'] === 'require-corp',
@@ -111,7 +126,9 @@ const aFeatures = await get(app + '/features')
 check(
   'app /features edge-redirects to marketing host',
   isRedirect(aFeatures.status) &&
-    (aFeatures.headers.location ?? '').startsWith(isProdDefaults ? marketing : 'http'),
+    (aFeatures.headers.location ?? '').startsWith(
+      isProdDefaults ? marketing : 'http',
+    ),
   `got ${aFeatures.status} → ${aFeatures.headers.location ?? 'no location'}`,
 )
 if (isProdDefaults) {

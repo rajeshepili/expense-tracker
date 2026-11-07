@@ -9,9 +9,10 @@ export function routeKeyframes(back: boolean): { out: string; in: string } {
     : { out: 'route-out-left', in: 'route-in-right' }
 }
 
-export function monthKeyframes(
-  direction: MonthDirection,
-): { out: string; in: string } {
+export function monthKeyframes(direction: MonthDirection): {
+  out: string
+  in: string
+} {
   return direction === 'month-back'
     ? { out: 'month-out-down', in: 'month-in-up' }
     : { out: 'month-out-up', in: 'month-in-down' }
@@ -24,15 +25,11 @@ export function resolveNavDirection(args: {
   toIndex?: number
 }): { type: NavDirection; back: boolean } {
   const { fromPathname, toPathname, fromIndex, toIndex } = args
-  if (
-    fromIndex !== undefined &&
-    toIndex !== undefined &&
-    toIndex < fromIndex
-  ) {
+  if (fromIndex !== undefined && toIndex !== undefined && toIndex < fromIndex) {
     return { type: 'nav-back', back: true }
   }
   const fromNav = NAV_PATHS.indexOf(
-    fromPathname as (typeof NAV_PATHS)[number] ?? '',
+    (fromPathname as (typeof NAV_PATHS)[number]) ?? '',
   )
   const toNav = NAV_PATHS.indexOf(toPathname as (typeof NAV_PATHS)[number])
   if (fromNav !== -1 && toNav !== -1 && fromNav !== toNav) {

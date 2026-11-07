@@ -18,24 +18,25 @@ import { listTransactionsForRecurring } from '#/data/repository'
 import { useComposer } from '#/hooks/use-composer'
 import { useCreateHotkey } from '#/hooks/use-create-hotkey'
 import { useRecordRecurring } from '#/hooks/use-record-recurring'
-import {
-  formatIsoDate,
-  money,
-  monthlyEquivalent,
-  percent,
-} from '#/lib/finance'
+import { formatIsoDate, money, monthlyEquivalent, percent } from '#/lib/finance'
 import { SignedMoney } from '#/features/shared/signed-money'
 import { motion } from '#/lib/motion'
 import { queryKeys } from '#/lib/query/keys'
 import type { RecurringFormState } from '#/lib/recurring-form'
 import type { RecurringExpenseRow } from '#/lib/types'
 import { useRecurringList } from '#/lib/recurring-list'
-import { emptyRecurringForm, formFromRecurringRow, useRecurringForm } from '#/lib/recurring-form'
+import {
+  emptyRecurringForm,
+  formFromRecurringRow,
+  useRecurringForm,
+} from '#/lib/recurring-form'
 
 export function RecurringScreen() {
   const recorder = useRecordRecurring()
   const [deleting, setDeleting] = useState<RecurringExpenseRow | null>(null)
-  const [viewPayments, setViewPayments] = useState<RecurringExpenseRow | null>(null)
+  const [viewPayments, setViewPayments] = useState<RecurringExpenseRow | null>(
+    null,
+  )
   const [saveError, setSaveError] = useState<string | null>(null)
 
   const {
@@ -64,24 +65,19 @@ export function RecurringScreen() {
     retry,
   } = useRecurringList()
 
-  const {
-    saveMutation,
-    toggleMutation,
-    deleteMutation,
-    openCreate,
-    openEdit,
-  } = useRecurringForm({
-    onClose: reset,
-    editing,
-    form,
-    setForm,
-    setComposerOpen,
-    reset,
-    setSaveError,
-    setDeleting,
-    deleting,
-    paymentMethods,
-  })
+  const { saveMutation, toggleMutation, deleteMutation, openCreate, openEdit } =
+    useRecurringForm({
+      onClose: reset,
+      editing,
+      form,
+      setForm,
+      setComposerOpen,
+      reset,
+      setSaveError,
+      setDeleting,
+      deleting,
+      paymentMethods,
+    })
 
   const monthlyTotal = useMemo(
     () =>
@@ -99,11 +95,14 @@ export function RecurringScreen() {
     queryKey: viewPayments
       ? queryKeys.recurringTransactions(viewPayments.id)
       : ['recurring', 'transactions', 'none'],
-    queryFn: () => (viewPayments ? listTransactionsForRecurring(viewPayments.id) : []),
+    queryFn: () =>
+      viewPayments ? listTransactionsForRecurring(viewPayments.id) : [],
     enabled: Boolean(viewPayments),
   })
 
-  const [skipConfirm, setSkipConfirm] = useState<RecurringExpenseRow | null>(null)
+  const [skipConfirm, setSkipConfirm] = useState<RecurringExpenseRow | null>(
+    null,
+  )
 
   useCreateHotkey(
     openCreate,
@@ -142,12 +141,12 @@ export function RecurringScreen() {
                 <Plus data-icon="inline-start" />
                 <span className="md:hidden">Add</span>
                 <span className="hidden md:inline">Add recurring</span>
-                <Kbd primary className="ml-1.5">N</Kbd>
+                <Kbd primary className="ml-1.5">
+                  N
+                </Kbd>
               </Button>
             }
-            title={
-              editing ? 'Edit recurring expense' : 'Add recurring expense'
-            }
+            title={editing ? 'Edit recurring expense' : 'Add recurring expense'}
             description="Saved on this device."
             pending={saveMutation.isPending}
             error={saveError}
@@ -298,7 +297,8 @@ export function RecurringScreen() {
                 <>
                   <p className="mb-2">Record a payment to see it here.</p>
                   <p className="text-xs text-muted-foreground">
-                    Open the row menu and tap <Kbd className="mx-1">Record</Kbd> or <Kbd className="mx-1">Skip</Kbd>.
+                    Open the row menu and tap <Kbd className="mx-1">Record</Kbd>{' '}
+                    or <Kbd className="mx-1">Skip</Kbd>.
                   </p>
                 </>
               }

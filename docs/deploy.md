@@ -2,10 +2,10 @@
 
 The repo deploys to **two** Hobby-tier Vercel projects under `linux-res-projects`:
 
-| Project | Hostname | Config file | Serves |
-| --- | --- | --- | --- |
-| `expense-tracker-mkt` | `expense-tracker-mkt.vercel.app` | `vercel.marketing.json` | Marketing: `/` (landing), `/features`, `/privacy` |
-| `expense-tracker` | `expense-tracker-amber-two-58.vercel.app` | `vercel.app.json` | The app: all routes, gate, OPFS database |
+| Project               | Hostname                                  | Config file             | Serves                                            |
+| --------------------- | ----------------------------------------- | ----------------------- | ------------------------------------------------- |
+| `expense-tracker-mkt` | `expense-tracker-mkt.vercel.app`          | `vercel.marketing.json` | Marketing: `/` (landing), `/features`, `/privacy` |
+| `expense-tracker`     | `expense-tracker-amber-two-58.vercel.app` | `vercel.app.json`       | The app: all routes, gate, OPFS database          |
 
 Both projects import the same GitHub repo. In each project's Vercel settings, set:
 
@@ -15,9 +15,9 @@ Both projects import the same GitHub repo. In each project's Vercel settings, se
 
 The build-time split is a **dual route tree**:
 
-| Mode | Routes dir | Generated tree | Contains |
-| --- | --- | --- | --- |
-| `app` | `src/routes/app/` | `src/routeTree.app.gen.ts` | Overview, ledger, bills, goals, categories, year + AppGate/DB |
+| Mode        | Routes dir              | Generated tree                   | Contains                                                                 |
+| ----------- | ----------------------- | -------------------------------- | ------------------------------------------------------------------------ |
+| `app`       | `src/routes/app/`       | `src/routeTree.app.gen.ts`       | Overview, ledger, bills, goals, categories, year + AppGate/DB            |
 | `marketing` | `src/routes/marketing/` | `src/routeTree.marketing.gen.ts` | Home, features, privacy only — **no** product routes, AppGate, or SQLite |
 
 `VITE_SITE_MODE` selects the tree via Vite alias + `tanstackStart({ router: … })`. Run `pnpm generate-routes` after adding/renaming routes (writes both trees). After a marketing build, `pnpm assert:mkt-bundle` fails if product/SQLite markers leak into `.output`.

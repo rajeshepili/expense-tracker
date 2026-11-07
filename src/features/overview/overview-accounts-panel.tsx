@@ -94,7 +94,9 @@ export function OverviewAccountsPanel({
                   onFocus={() => prefetchRoute(queryClient, '/ledger')}
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{account.name}</p>
+                    <p className="truncate text-sm font-medium">
+                      {account.name}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {typeLabel(account.type)}
                     </p>

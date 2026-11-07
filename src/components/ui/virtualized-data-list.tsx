@@ -49,7 +49,13 @@ export function VirtualizedDataList<T>({
   if (isCompact) {
     if (isEmpty) {
       return (
-        <div className={cn('min-h-0', layout === 'fill' && 'flex-1', mobileClassName)}>
+        <div
+          className={cn(
+            'min-h-0',
+            layout === 'fill' && 'flex-1',
+            mobileClassName,
+          )}
+        >
           {empty}
         </div>
       )
@@ -57,7 +63,10 @@ export function VirtualizedDataList<T>({
 
     if (layout === 'flow') {
       return (
-        <div ref={listRootRef as Ref<HTMLDivElement>} className={cn(mobileClassName)}>
+        <div
+          ref={listRootRef as Ref<HTMLDivElement>}
+          className={cn(mobileClassName)}
+        >
           <MobileList>
             {items.map((item, index) => (
               <Fragment key={getItemKey(item, index)}>

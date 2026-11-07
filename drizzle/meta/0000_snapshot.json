@@ -41,10 +41,7 @@
       "indexes": {
         "idx_categories_type_name": {
           "name": "idx_categories_type_name",
-          "columns": [
-            "type",
-            "name"
-          ],
+          "columns": ["type", "name"],
           "isUnique": false
         }
       },
@@ -189,17 +186,12 @@
       "indexes": {
         "idx_recurring_category": {
           "name": "idx_recurring_category",
-          "columns": [
-            "category_id"
-          ],
+          "columns": ["category_id"],
           "isUnique": false
         },
         "idx_recurring_active_next": {
           "name": "idx_recurring_active_next",
-          "columns": [
-            "active",
-            "next_date"
-          ],
+          "columns": ["active", "next_date"],
           "isUnique": false
         }
       },
@@ -208,12 +200,8 @@
           "name": "recurring_expenses_category_id_categories_id_fk",
           "tableFrom": "recurring_expenses",
           "tableTo": "categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -221,12 +209,8 @@
           "name": "recurring_expenses_payment_method_id_payment_methods_id_fk",
           "tableFrom": "recurring_expenses",
           "tableTo": "payment_methods",
-          "columnsFrom": [
-            "payment_method_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["payment_method_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -348,47 +332,32 @@
       "indexes": {
         "idx_transactions_date": {
           "name": "idx_transactions_date",
-          "columns": [
-            "transaction_date",
-            "created_at"
-          ],
+          "columns": ["transaction_date", "created_at"],
           "isUnique": false
         },
         "idx_transactions_category": {
           "name": "idx_transactions_category",
-          "columns": [
-            "category_id"
-          ],
+          "columns": ["category_id"],
           "isUnique": false
         },
         "idx_transactions_type": {
           "name": "idx_transactions_type",
-          "columns": [
-            "type"
-          ],
+          "columns": ["type"],
           "isUnique": false
         },
         "idx_transactions_category_date": {
           "name": "idx_transactions_category_date",
-          "columns": [
-            "category_id",
-            "transaction_date"
-          ],
+          "columns": ["category_id", "transaction_date"],
           "isUnique": false
         },
         "idx_transactions_source_recurring": {
           "name": "idx_transactions_source_recurring",
-          "columns": [
-            "source_recurring_id"
-          ],
+          "columns": ["source_recurring_id"],
           "isUnique": false
         },
         "idx_transactions_method_date": {
           "name": "idx_transactions_method_date",
-          "columns": [
-            "payment_method_id",
-            "transaction_date"
-          ],
+          "columns": ["payment_method_id", "transaction_date"],
           "isUnique": false
         }
       },
@@ -397,12 +366,8 @@
           "name": "transactions_category_id_categories_id_fk",
           "tableFrom": "transactions",
           "tableTo": "categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -410,12 +375,8 @@
           "name": "transactions_payment_method_id_payment_methods_id_fk",
           "tableFrom": "transactions",
           "tableTo": "payment_methods",
-          "columnsFrom": [
-            "payment_method_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["payment_method_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

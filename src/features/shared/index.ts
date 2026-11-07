@@ -8,11 +8,7 @@ export {
   PaymentMethodSelect,
 } from './entity-selects'
 export { InstallNudge } from './install-nudge'
-export {
-  LocalDataCallout,
-  BackupReminder,
-  BackupPanel,
-} from './local-data'
+export { LocalDataCallout, BackupReminder, BackupPanel } from './local-data'
 export { RowActionsMenu } from './row-actions-menu'
 export { SignedMoney } from './signed-money'
 export { StatTile } from './stat-tile'

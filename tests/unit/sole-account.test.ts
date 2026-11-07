@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  canTransferBetweenAccounts,
-  soleAccountId,
-} from '#/lib/sole-account'
+import { canTransferBetweenAccounts, soleAccountId } from '#/lib/sole-account'
 
 describe('soleAccountId', () => {
   it('returns the only account id', () => {

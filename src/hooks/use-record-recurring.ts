@@ -6,12 +6,7 @@ import {
   skipRecurringOccurrence,
 } from '#/data/repository'
 import type { RecordRecurringOverrides } from '#/data/repository'
-import {
-  amountDue,
-  canOneTapRecord,
-  formatIsoDate,
-  money,
-} from '#/lib/finance'
+import { amountDue, canOneTapRecord, formatIsoDate, money } from '#/lib/finance'
 import { invalidateAfter } from '#/lib/query/invalidation'
 import {
   readTransactionDefaults,
@@ -56,8 +51,7 @@ export function useRecordRecurring() {
         paymentMethodId:
           input.overrides?.paymentMethodId !== undefined
             ? input.overrides.paymentMethodId || null
-            : (input.billPaymentMethodId ??
-              (defaults.paymentMethodId || null)),
+            : (input.billPaymentMethodId ?? (defaults.paymentMethodId || null)),
         amount: input.overrides?.amount,
         date: input.overrides?.date,
         force: input.overrides?.force,

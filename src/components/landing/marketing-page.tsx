@@ -36,7 +36,11 @@ function marketingHref(path: string) {
   return `${MARKETING_URL}${path}`
 }
 
-export function MarketingTopbar({ cta }: { cta?: { label: string; href: string } }) {
+export function MarketingTopbar({
+  cta,
+}: {
+  cta?: { label: string; href: string }
+}) {
   const pathname =
     typeof window !== 'undefined' ? window.location.pathname : '/'
   return (
@@ -54,7 +58,8 @@ export function MarketingTopbar({ cta }: { cta?: { label: string; href: string }
             href={marketingHref(link.href)}
             className={cn(
               'mkt-nav-link',
-              isActive(pathname, link.href, link.exact) && 'mkt-nav-link--active',
+              isActive(pathname, link.href, link.exact) &&
+                'mkt-nav-link--active',
             )}
             aria-current={
               isActive(pathname, link.href, link.exact) ? 'page' : undefined
@@ -107,10 +112,7 @@ export function MarketingFooter() {
   )
 }
 
-/**
- * Shared chrome for marketing pages: topbar + hero + content + footer.
- * One continuous page backdrop, same type scale and radius as the landing.
- */
+/** Marketing page shell (topbar, hero, footer). */
 export function MarketingPage({
   title,
   description,

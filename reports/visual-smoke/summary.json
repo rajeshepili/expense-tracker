@@ -6,7 +6,5 @@
     "html_non_empty": false,
     "screenshots": "skipped-no-browser-driver"
   },
-  "errors": [
-    "fetch failed"
-  ]
+  "errors": ["fetch failed"]
 }

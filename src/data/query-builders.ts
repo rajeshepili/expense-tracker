@@ -11,7 +11,11 @@ import {
 } from '#/db/schema'
 import { isYearMonth, yearMonthRange } from '#/lib/finance'
 import type { TransactionType } from '#/lib/types'
-import { transactionSelect, recurringSelect, savingsGoalSelect } from './selectors'
+import {
+  transactionSelect,
+  recurringSelect,
+  savingsGoalSelect,
+} from './selectors'
 
 export type TransactionFilterShape = {
   month?: string
@@ -92,11 +96,7 @@ export function monthBudgetQuery(db: Db, yearMonth: string) {
     .where(eq(monthlyBudgets.yearMonth, yearMonth))
 }
 
-/**
- * SQL sum of signed balance deltas per account, matching `signedDelta` in
- * `#/lib/finance/accounts` (linear, so summing in SQL equals summing rows).
- * Requires `accounts` to be joined on `transactions.accountId`.
- */
+/** Signed per-account delta (join `accounts` on `transactions.accountId`). */
 export function accountDeltaSumSql() {
   return sql<number>`sum(
     case
@@ -114,7 +114,6 @@ export function accountDeltaSumSql() {
   )`
 }
 
-/** One row per account: signed delta of all its transactions. */
 export function accountDeltasQuery(db: Db) {
   return db
     .select({
@@ -133,7 +132,9 @@ export function buildTextSearch(
 ) {
   const pattern = `%${needle.toLowerCase()}%`
   return sql`(${sql.join(
-    columns.map(({ table, column }) => sql`lower(${table}.${column}) like ${pattern}`),
+    columns.map(
+      ({ table, column }) => sql`lower(${table}.${column}) like ${pattern}`,
+    ),
     sql` or `,
   )})`
 }

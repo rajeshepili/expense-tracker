@@ -3,10 +3,7 @@ import { todayIso } from '#/lib/finance'
 
 export type { RecurrenceCadence, TransactionType }
 
-/**
- * Past date within the current calendar month (so “this month” ledger shows
- * sample rows). `daysAgo` is clamped so we never cross the month boundary.
- */
+/** ISO date in the current month, at most `daysAgo` back. */
 function recentInMonth(daysAgo: number, from = todayIso()) {
   const d = new Date(`${from}T12:00:00`)
   const day = d.getDate()
@@ -18,7 +15,6 @@ function recentInMonth(daysAgo: number, from = todayIso()) {
   return `${y}-${m}-${dd}`
 }
 
-/** Future (or today) ISO date — may cross months for yearly/recurring demos. */
 function offsetIso(days: number, from = todayIso()) {
   const d = new Date(`${from}T12:00:00`)
   d.setDate(d.getDate() + days)
@@ -28,8 +24,11 @@ function offsetIso(days: number, from = todayIso()) {
   return `${y}-${m}-${dd}`
 }
 
-/** ISO date `monthsAgo` months back, clamped to a safe day-of-month. */
-function monthsAgoIso(monthsAgo: number, dayOfMonth: number, from = todayIso()) {
+function monthsAgoIso(
+  monthsAgo: number,
+  dayOfMonth: number,
+  from = todayIso(),
+) {
   const d = new Date(`${from}T12:00:00`)
   d.setMonth(d.getMonth() - monthsAgo)
   const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
@@ -50,38 +49,235 @@ export type SampleTransaction = {
   type: TransactionType
 }
 
-/**
- * Current-month rows (anchored to today) plus a few months of history so the
- * year view and month-over-month deltas have real data.
- */
+/** Demo ledger rows for the current month plus prior months. */
 export const ledgerTransactions: SampleTransaction[] = [
   // — current month —
-  { id: '1', description: 'Grocery run', category: 'Food', paymentMethod: 'Debit card', date: recentInMonth(0), amount: 64.2, type: 'expense' },
-  { id: '2', description: 'Monthly salary', category: 'Income', paymentMethod: 'Direct deposit', date: recentInMonth(1), amount: 4200, type: 'income' },
-  { id: '3', description: 'Transit pass', category: 'Transport', paymentMethod: 'Cash', date: recentInMonth(1), amount: 89, type: 'expense' },
-  { id: '4', description: 'Studio rent', category: 'Housing', paymentMethod: 'Bank transfer', date: recentInMonth(2), amount: 1200, type: 'expense' },
-  { id: '5', description: 'Pharmacy', category: 'Health', paymentMethod: 'Debit card', date: recentInMonth(2), amount: 28.5, type: 'expense' },
-  { id: '6', description: 'Coffee shop', category: 'Food', paymentMethod: 'Debit card', date: recentInMonth(2), amount: 6.75, type: 'expense' },
-  { id: '7', description: 'Freelance invoice', category: 'Income', paymentMethod: 'Bank transfer', date: recentInMonth(2), amount: 350, type: 'income' },
-  { id: '8', description: 'Streaming', category: 'Entertainment', paymentMethod: 'Credit card', date: recentInMonth(2), amount: 15.99, type: 'expense' },
-  { id: '9', description: 'Gym membership', category: 'Health', paymentMethod: 'Credit card', date: recentInMonth(2), amount: 45, type: 'expense' },
-  { id: '10', description: 'Weekend market', category: 'Food', paymentMethod: 'Cash', date: recentInMonth(2), amount: 38.4, type: 'expense' },
+  {
+    id: '1',
+    description: 'Grocery run',
+    category: 'Food',
+    paymentMethod: 'Debit card',
+    date: recentInMonth(0),
+    amount: 64.2,
+    type: 'expense',
+  },
+  {
+    id: '2',
+    description: 'Monthly salary',
+    category: 'Income',
+    paymentMethod: 'Direct deposit',
+    date: recentInMonth(1),
+    amount: 4200,
+    type: 'income',
+  },
+  {
+    id: '3',
+    description: 'Transit pass',
+    category: 'Transport',
+    paymentMethod: 'Cash',
+    date: recentInMonth(1),
+    amount: 89,
+    type: 'expense',
+  },
+  {
+    id: '4',
+    description: 'Studio rent',
+    category: 'Housing',
+    paymentMethod: 'Bank transfer',
+    date: recentInMonth(2),
+    amount: 1200,
+    type: 'expense',
+  },
+  {
+    id: '5',
+    description: 'Pharmacy',
+    category: 'Health',
+    paymentMethod: 'Debit card',
+    date: recentInMonth(2),
+    amount: 28.5,
+    type: 'expense',
+  },
+  {
+    id: '6',
+    description: 'Coffee shop',
+    category: 'Food',
+    paymentMethod: 'Debit card',
+    date: recentInMonth(2),
+    amount: 6.75,
+    type: 'expense',
+  },
+  {
+    id: '7',
+    description: 'Freelance invoice',
+    category: 'Income',
+    paymentMethod: 'Bank transfer',
+    date: recentInMonth(2),
+    amount: 350,
+    type: 'income',
+  },
+  {
+    id: '8',
+    description: 'Streaming',
+    category: 'Entertainment',
+    paymentMethod: 'Credit card',
+    date: recentInMonth(2),
+    amount: 15.99,
+    type: 'expense',
+  },
+  {
+    id: '9',
+    description: 'Gym membership',
+    category: 'Health',
+    paymentMethod: 'Credit card',
+    date: recentInMonth(2),
+    amount: 45,
+    type: 'expense',
+  },
+  {
+    id: '10',
+    description: 'Weekend market',
+    category: 'Food',
+    paymentMethod: 'Cash',
+    date: recentInMonth(2),
+    amount: 38.4,
+    type: 'expense',
+  },
   // — prior months (history for year view) —
-  { id: 'h1', description: 'Monthly salary', category: 'Income', paymentMethod: 'Direct deposit', date: monthsAgoIso(1, 1), amount: 4200, type: 'income' },
-  { id: 'h2', description: 'Studio rent', category: 'Housing', paymentMethod: 'Bank transfer', date: monthsAgoIso(1, 2), amount: 1200, type: 'expense' },
-  { id: 'h3', description: 'Grocery run', category: 'Food', paymentMethod: 'Debit card', date: monthsAgoIso(1, 5), amount: 71.1, type: 'expense' },
-  { id: 'h4', description: 'Electricity', category: 'Utilities', paymentMethod: 'Bank transfer', date: monthsAgoIso(1, 10), amount: 82.3, type: 'expense' },
-  { id: 'h5', description: 'Streaming', category: 'Entertainment', paymentMethod: 'Credit card', date: monthsAgoIso(1, 12), amount: 15.99, type: 'expense' },
-  { id: 'h6', description: 'Monthly salary', category: 'Income', paymentMethod: 'Direct deposit', date: monthsAgoIso(2, 1), amount: 4200, type: 'income' },
-  { id: 'h7', description: 'Studio rent', category: 'Housing', paymentMethod: 'Bank transfer', date: monthsAgoIso(2, 2), amount: 1200, type: 'expense' },
-  { id: 'h8', description: 'Grocery run', category: 'Food', paymentMethod: 'Debit card', date: monthsAgoIso(2, 6), amount: 58.75, type: 'expense' },
-  { id: 'h9', description: 'Cinema night', category: 'Entertainment', paymentMethod: 'Cash', date: monthsAgoIso(2, 15), amount: 24, type: 'expense' },
-  { id: 'h10', description: 'Internet bill', category: 'Utilities', paymentMethod: 'Bank transfer', date: monthsAgoIso(2, 18), amount: 49.99, type: 'expense' },
-  { id: 'h11', description: 'Monthly salary', category: 'Income', paymentMethod: 'Direct deposit', date: monthsAgoIso(3, 1), amount: 4200, type: 'income' },
-  { id: 'h12', description: 'Studio rent', category: 'Housing', paymentMethod: 'Bank transfer', date: monthsAgoIso(3, 2), amount: 1200, type: 'expense' },
-  { id: 'h13', description: 'Grocery run', category: 'Food', paymentMethod: 'Debit card', date: monthsAgoIso(3, 7), amount: 66.9, type: 'expense' },
-  { id: 'h14', description: 'Pharmacy', category: 'Health', paymentMethod: 'Debit card', date: monthsAgoIso(3, 20), amount: 12.4, type: 'expense' },
-  { id: 'h15', description: 'Savings deposit', category: 'Savings', paymentMethod: 'Bank transfer', date: monthsAgoIso(3, 25), amount: 300, type: 'expense' },
+  {
+    id: 'h1',
+    description: 'Monthly salary',
+    category: 'Income',
+    paymentMethod: 'Direct deposit',
+    date: monthsAgoIso(1, 1),
+    amount: 4200,
+    type: 'income',
+  },
+  {
+    id: 'h2',
+    description: 'Studio rent',
+    category: 'Housing',
+    paymentMethod: 'Bank transfer',
+    date: monthsAgoIso(1, 2),
+    amount: 1200,
+    type: 'expense',
+  },
+  {
+    id: 'h3',
+    description: 'Grocery run',
+    category: 'Food',
+    paymentMethod: 'Debit card',
+    date: monthsAgoIso(1, 5),
+    amount: 71.1,
+    type: 'expense',
+  },
+  {
+    id: 'h4',
+    description: 'Electricity',
+    category: 'Utilities',
+    paymentMethod: 'Bank transfer',
+    date: monthsAgoIso(1, 10),
+    amount: 82.3,
+    type: 'expense',
+  },
+  {
+    id: 'h5',
+    description: 'Streaming',
+    category: 'Entertainment',
+    paymentMethod: 'Credit card',
+    date: monthsAgoIso(1, 12),
+    amount: 15.99,
+    type: 'expense',
+  },
+  {
+    id: 'h6',
+    description: 'Monthly salary',
+    category: 'Income',
+    paymentMethod: 'Direct deposit',
+    date: monthsAgoIso(2, 1),
+    amount: 4200,
+    type: 'income',
+  },
+  {
+    id: 'h7',
+    description: 'Studio rent',
+    category: 'Housing',
+    paymentMethod: 'Bank transfer',
+    date: monthsAgoIso(2, 2),
+    amount: 1200,
+    type: 'expense',
+  },
+  {
+    id: 'h8',
+    description: 'Grocery run',
+    category: 'Food',
+    paymentMethod: 'Debit card',
+    date: monthsAgoIso(2, 6),
+    amount: 58.75,
+    type: 'expense',
+  },
+  {
+    id: 'h9',
+    description: 'Cinema night',
+    category: 'Entertainment',
+    paymentMethod: 'Cash',
+    date: monthsAgoIso(2, 15),
+    amount: 24,
+    type: 'expense',
+  },
+  {
+    id: 'h10',
+    description: 'Internet bill',
+    category: 'Utilities',
+    paymentMethod: 'Bank transfer',
+    date: monthsAgoIso(2, 18),
+    amount: 49.99,
+    type: 'expense',
+  },
+  {
+    id: 'h11',
+    description: 'Monthly salary',
+    category: 'Income',
+    paymentMethod: 'Direct deposit',
+    date: monthsAgoIso(3, 1),
+    amount: 4200,
+    type: 'income',
+  },
+  {
+    id: 'h12',
+    description: 'Studio rent',
+    category: 'Housing',
+    paymentMethod: 'Bank transfer',
+    date: monthsAgoIso(3, 2),
+    amount: 1200,
+    type: 'expense',
+  },
+  {
+    id: 'h13',
+    description: 'Grocery run',
+    category: 'Food',
+    paymentMethod: 'Debit card',
+    date: monthsAgoIso(3, 7),
+    amount: 66.9,
+    type: 'expense',
+  },
+  {
+    id: 'h14',
+    description: 'Pharmacy',
+    category: 'Health',
+    paymentMethod: 'Debit card',
+    date: monthsAgoIso(3, 20),
+    amount: 12.4,
+    type: 'expense',
+  },
+  {
+    id: 'h15',
+    description: 'Savings deposit',
+    category: 'Savings',
+    paymentMethod: 'Bank transfer',
+    date: monthsAgoIso(3, 25),
+    amount: 300,
+    type: 'expense',
+  },
 ]
 
 /** Asset→asset sample transfer (seeded as a linked pair, not a single ledger row). */
@@ -108,14 +304,87 @@ export type SampleRecurring = {
 }
 
 export const recurringExpenses: SampleRecurring[] = [
-  { id: 'r1', name: 'Studio rent', category: 'Housing', paymentMethod: 'Bank transfer', amount: 1200, cadence: 'monthly', nextDate: offsetIso(0), active: true },
-  { id: 'r2', name: 'Transit pass', category: 'Transport', paymentMethod: 'Debit card', amount: 89, cadence: 'monthly', nextDate: offsetIso(0), active: true },
-  { id: 'r3', name: 'Gym membership', category: 'Health', paymentMethod: 'Credit card', amount: 45, cadence: 'monthly', nextDate: offsetIso(2), active: true },
-  { id: 'r4', name: 'Streaming', category: 'Entertainment', paymentMethod: 'Credit card', amount: 15.99, cadence: 'monthly', nextDate: offsetIso(4), active: true },
-  { id: 'r5', name: 'Cloud backup', category: 'Utilities', paymentMethod: 'Credit card', amount: 2.99, cadence: 'monthly', nextDate: offsetIso(7), active: false },
-  { id: 'r6', name: 'Annual domain', category: 'Utilities', paymentMethod: 'Debit card', amount: 14, cadence: 'yearly', nextDate: offsetIso(120), active: true },
-  { id: 'r7', name: 'Weekly allowance', category: 'Food', paymentMethod: 'Cash', amount: 25, cadence: 'weekly', nextDate: offsetIso(1), active: true },
-  { id: 'r8', name: 'Monthly salary', kind: 'income', category: 'Income', paymentMethod: 'Direct deposit', amount: 4200, cadence: 'monthly', nextDate: offsetIso(26), active: true },
+  {
+    id: 'r1',
+    name: 'Studio rent',
+    category: 'Housing',
+    paymentMethod: 'Bank transfer',
+    amount: 1200,
+    cadence: 'monthly',
+    nextDate: offsetIso(0),
+    active: true,
+  },
+  {
+    id: 'r2',
+    name: 'Transit pass',
+    category: 'Transport',
+    paymentMethod: 'Debit card',
+    amount: 89,
+    cadence: 'monthly',
+    nextDate: offsetIso(0),
+    active: true,
+  },
+  {
+    id: 'r3',
+    name: 'Gym membership',
+    category: 'Health',
+    paymentMethod: 'Credit card',
+    amount: 45,
+    cadence: 'monthly',
+    nextDate: offsetIso(2),
+    active: true,
+  },
+  {
+    id: 'r4',
+    name: 'Streaming',
+    category: 'Entertainment',
+    paymentMethod: 'Credit card',
+    amount: 15.99,
+    cadence: 'monthly',
+    nextDate: offsetIso(4),
+    active: true,
+  },
+  {
+    id: 'r5',
+    name: 'Cloud backup',
+    category: 'Utilities',
+    paymentMethod: 'Credit card',
+    amount: 2.99,
+    cadence: 'monthly',
+    nextDate: offsetIso(7),
+    active: false,
+  },
+  {
+    id: 'r6',
+    name: 'Annual domain',
+    category: 'Utilities',
+    paymentMethod: 'Debit card',
+    amount: 14,
+    cadence: 'yearly',
+    nextDate: offsetIso(120),
+    active: true,
+  },
+  {
+    id: 'r7',
+    name: 'Weekly allowance',
+    category: 'Food',
+    paymentMethod: 'Cash',
+    amount: 25,
+    cadence: 'weekly',
+    nextDate: offsetIso(1),
+    active: true,
+  },
+  {
+    id: 'r8',
+    name: 'Monthly salary',
+    kind: 'income',
+    category: 'Income',
+    paymentMethod: 'Direct deposit',
+    amount: 4200,
+    cadence: 'monthly',
+    nextDate: offsetIso(26),
+    active: true,
+  },
 ]
 
 export const expenseCategories = [

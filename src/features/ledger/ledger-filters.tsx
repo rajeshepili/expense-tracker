@@ -73,13 +73,22 @@ export function LedgerFilters({
             <TabsTrigger value="all" className="pressable flex-1 sm:flex-none">
               All
             </TabsTrigger>
-            <TabsTrigger value="expense" className="pressable flex-1 sm:flex-none">
+            <TabsTrigger
+              value="expense"
+              className="pressable flex-1 sm:flex-none"
+            >
               Expenses
             </TabsTrigger>
-            <TabsTrigger value="income" className="pressable flex-1 sm:flex-none">
+            <TabsTrigger
+              value="income"
+              className="pressable flex-1 sm:flex-none"
+            >
               Income
             </TabsTrigger>
-            <TabsTrigger value="transfer" className="pressable flex-1 sm:flex-none">
+            <TabsTrigger
+              value="transfer"
+              className="pressable flex-1 sm:flex-none"
+            >
               Transfers
             </TabsTrigger>
           </TabsList>
@@ -110,12 +119,7 @@ export function LedgerFilters({
           ) : null}
         </div>
       </div>
-      <div
-        className={cn(
-          'grid grid-cols-2 gap-2',
-          !showAdvanced && 'hidden',
-        )}
-      >
+      <div className={cn('grid grid-cols-2 gap-2', !showAdvanced && 'hidden')}>
         <Select
           value={categoryFilter || '__all__'}
           onValueChange={(value) =>

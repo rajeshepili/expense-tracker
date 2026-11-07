@@ -43,9 +43,7 @@ export function emptyLedgerForm(): LedgerFormState {
 }
 
 function isAutoTransferDescription(value: string) {
-  return (
-    value.startsWith('Transfer to ') || value.startsWith('Transfer from ')
-  )
+  return value.startsWith('Transfer to ') || value.startsWith('Transfer from ')
 }
 
 export function formFromTransaction(tx: LedgerTransaction): LedgerFormState {
@@ -58,8 +56,7 @@ export function formFromTransaction(tx: LedgerTransaction): LedgerFormState {
       type: 'transfer',
       categoryId: '',
       paymentMethodId: '',
-      fromAccountId:
-        tx.transferDirection === 'out' ? (tx.accountId ?? '') : '',
+      fromAccountId: tx.transferDirection === 'out' ? (tx.accountId ?? '') : '',
       toAccountId: tx.transferDirection === 'in' ? (tx.accountId ?? '') : '',
       date: tx.date,
     }
@@ -116,7 +113,6 @@ export function transferBadgeClass(direction: TransferDirection | null) {
   return 'badge-transfer capitalize'
 }
 
-/** Prefetch pair and fill form when opening a transfer for edit. */
 export async function prepareTransferEdit(tx: LedgerTransaction) {
   return formFromTransferLeg(tx)
 }

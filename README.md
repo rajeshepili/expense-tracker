@@ -60,41 +60,41 @@ pnpm preview   # Nitro Node server (applies COEP to HTML + /assets)
 
 ## Project layout
 
-| Path                     | Role                                                  |
-| ------------------------ | ----------------------------------------------------- |
-| `src/app/`               | App shell: gate, nav, theme, onboarding               |
-| `src/routes/`            | Screens: Overview, Ledger, Recurring, Savings, Categories |
-| `src/features/`          | Domain UI (ledger, overview, recurring, categories, savings, settings, shared) |
-| `src/components/ui/`     | shadcn primitives                                     |
-| `src/components/layout/` | Page shell, header, month nav, empty / loading        |
-| `src/components/landing/`| Marketing site pages                                  |
-| `src/data/`              | Public `repository.ts` barrel, seed, sample ledger    |
-| `src/data/repo/`         | Entity modules (settings, transactions, savings, …)   |
-| `src/db/`                | Drizzle schema + browser SQLite client + migrator     |
-| `drizzle/`               | Kit-generated SQL + `migrations.js` (commit these)    |
-| `src/lib/`               | Domain helpers (`finance/`, forms, savings, motion)   |
-| `src/lib/query/`         | Query keys, invalidation, route prefetch              |
-| `src/styles/`            | Ordered CSS modules (`00`–`70`); entry is `styles.css`|
-| `src/features/shared/local-data.tsx` | Persistence callout + backup UI            |
-| `src/data/backup.ts`     | Export / restore SQLite file                          |
-| `server/plugins/`        | Nitro plugins (cross-origin isolation headers)        |
-| `public/`                | PWA manifest + icons                                  |
-| `vercel.json`            | Vercel COEP/security headers                          |
-| `docs/`                  | Operator notes (OPFS / COEP, mobile)                  |
-| `tests/unit/`            | Vitest unit tests                                     |
-| `e2e/`                   | Playwright critical-path specs                        |
+| Path                                 | Role                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------ |
+| `src/app/`                           | App shell: gate, nav, theme, onboarding                                        |
+| `src/routes/`                        | Screens: Overview, Ledger, Recurring, Savings, Categories                      |
+| `src/features/`                      | Domain UI (ledger, overview, recurring, categories, savings, settings, shared) |
+| `src/components/ui/`                 | shadcn primitives                                                              |
+| `src/components/layout/`             | Page shell, header, month nav, empty / loading                                 |
+| `src/components/landing/`            | Marketing site pages                                                           |
+| `src/data/`                          | Public `repository.ts` barrel, seed, sample ledger                             |
+| `src/data/repo/`                     | Entity modules (settings, transactions, savings, …)                            |
+| `src/db/`                            | Drizzle schema + browser SQLite client + migrator                              |
+| `drizzle/`                           | Kit-generated SQL + `migrations.js` (commit these)                             |
+| `src/lib/`                           | Domain helpers (`finance/`, forms, savings, motion)                            |
+| `src/lib/query/`                     | Query keys, invalidation, route prefetch                                       |
+| `src/styles/`                        | Ordered CSS modules (`00`–`70`); entry is `styles.css`                         |
+| `src/features/shared/local-data.tsx` | Persistence callout + backup UI                                                |
+| `src/data/backup.ts`                 | Export / restore SQLite file                                                   |
+| `server/plugins/`                    | Nitro plugins (cross-origin isolation headers)                                 |
+| `public/`                            | PWA manifest + icons                                                           |
+| `vercel.json`                        | Vercel COEP/security headers                                                   |
+| `docs/`                              | Operator notes (OPFS / COEP, mobile)                                           |
+| `tests/unit/`                        | Vitest unit tests                                                              |
+| `e2e/`                               | Playwright critical-path specs                                                 |
 
 ## Data model
 
-| Table                | Purpose                                           |
-| -------------------- | ------------------------------------------------- |
-| `settings`           | Default monthly budget, currency, onboarding flag |
-| `monthly_budgets`    | Optional per-month budget overrides (`YYYY-MM`)   |
-| `categories`         | Income / expense categories                       |
+| Table                | Purpose                                             |
+| -------------------- | --------------------------------------------------- |
+| `settings`           | Default monthly budget, currency, onboarding flag   |
+| `monthly_budgets`    | Optional per-month budget overrides (`YYYY-MM`)     |
+| `categories`         | Income / expense categories                         |
 | `payment_methods`    | Accounts (balances); table name kept for migrations |
-| `transactions`       | Ledger entries (expense / income / transfer legs) |
-| `recurring_expenses` | Recurring bills                                   |
-| `savings_goals`      | Savings goals (target, current, optional date)    |
+| `transactions`       | Ledger entries (expense / income / transfer legs)   |
+| `recurring_expenses` | Recurring bills                                     |
+| `savings_goals`      | Savings goals (target, current, optional date)      |
 
 ## Scripts
 

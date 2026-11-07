@@ -48,9 +48,9 @@ describe('savingsRemaining / progress', () => {
   })
 
   it('computes progress percent', () => {
-    expect(savingsProgressPercent({ targetAmount: 100, currentAmount: 25 })).toBe(
-      25,
-    )
+    expect(
+      savingsProgressPercent({ targetAmount: 100, currentAmount: 25 }),
+    ).toBe(25)
     expect(savingsProgressPercent({ targetAmount: 0, currentAmount: 0 })).toBe(
       100,
     )
@@ -80,10 +80,14 @@ describe('shouldPromptFundGoal', () => {
     expect(shouldPromptFundGoal(undefined)).toBe(true)
     expect(shouldPromptFundGoal([])).toBe(false)
     expect(
-      shouldPromptFundGoal([goal({ id: 'done', name: 'Done', currentAmount: 100 })]),
+      shouldPromptFundGoal([
+        goal({ id: 'done', name: 'Done', currentAmount: 100 }),
+      ]),
     ).toBe(false)
     expect(
-      shouldPromptFundGoal([goal({ id: 'open', name: 'Open', currentAmount: 10 })]),
+      shouldPromptFundGoal([
+        goal({ id: 'open', name: 'Open', currentAmount: 10 }),
+      ]),
     ).toBe(true)
   })
 })
@@ -181,12 +185,12 @@ describe('contribution helpers', () => {
   })
 
   it('applies contribution without exceeding target', () => {
-    expect(applyContribution({ targetAmount: 100, currentAmount: 80 }, 50)).toBe(
-      100,
-    )
-    expect(applyContribution({ targetAmount: 100, currentAmount: 20 }, 15)).toBe(
-      35,
-    )
+    expect(
+      applyContribution({ targetAmount: 100, currentAmount: 80 }, 50),
+    ).toBe(100)
+    expect(
+      applyContribution({ targetAmount: 100, currentAmount: 20 }, 15),
+    ).toBe(35)
     expect(() =>
       applyContribution({ targetAmount: 100, currentAmount: 20 }, 0),
     ).toThrow(/greater than 0/)

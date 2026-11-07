@@ -13,10 +13,7 @@ type NavigateAfterPrefetchOptions = NavigateOptions & {
   month?: string
 }
 
-/**
- * Tab nav: stamp page-forward|page-back name, then run one View Transition
- * around a typeless navigate (router VT disabled for this call).
- */
+/** Tab navigate with route view transition + prefetch. */
 export async function navigateAfterPrefetch(
   router: AnyRouter,
   queryClient: QueryClient,
@@ -29,7 +26,7 @@ export async function navigateAfterPrefetch(
   try {
     await prefetchRouteAsync(queryClient, toPath, { month })
   } catch {
-    // Prefetch failure must not block navigation.
+    // ignore prefetch errors
   }
 
   const navigateNoVt = () =>

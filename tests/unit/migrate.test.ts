@@ -215,7 +215,9 @@ CREATE TABLE savings_goals (
     await migrateSchema({ sql })
 
     const card = db
-      .prepare(`SELECT type, starting_balance, closed FROM payment_methods WHERE id = ?`)
+      .prepare(
+        `SELECT type, starting_balance, closed FROM payment_methods WHERE id = ?`,
+      )
       .get('pm-card') as {
       type: string
       starting_balance: number
@@ -264,7 +266,8 @@ CREATE TABLE savings_goals (
     db.prepare(
       `INSERT INTO payment_methods (id, name) VALUES (?, ?), (?, ?)`,
     ).run('a1', 'Checking', 'a2', 'Cash')
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO transactions (
         id, description, amount, type, transaction_date,
         payment_method_id, transfer_id, transfer_direction
@@ -272,7 +275,8 @@ CREATE TABLE savings_goals (
         ('orphan-out', 'Broken out', 10, 'transfer', '2026-03-01', 'a1', 'missing-peer', 'out'),
         ('good-out', 'Out', 5, 'transfer', '2026-03-02', 'a1', 'good-in', 'out'),
         ('good-in', 'In', 5, 'transfer', '2026-03-02', 'a2', 'good-out', 'in')
-    `).run()
+    `,
+    ).run()
 
     const rows = db
       .prepare(
