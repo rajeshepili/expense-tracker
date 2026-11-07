@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "comment": "Legacy default config — the app project uses vercel.app.json, marketing uses vercel.marketing.json. Kept for local `vercel dev`.",
   "buildCommand": "pnpm build",
   "outputDirectory": ".output/public",
   "devCommand": "pnpm dev",
