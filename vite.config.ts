@@ -48,6 +48,10 @@ const config = defineConfig({
       spa: {
         enabled: true,
       },
+      // Marketing prerender for SEO; app is SPA/OPFS and skips it.
+      prerender: {
+        enabled: isMarketing,
+      },
       router: {
         routesDirectory,
         // Watch regenerates the active tree into the import path used by router.tsx.

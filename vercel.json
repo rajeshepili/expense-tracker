@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm build",
+  "buildCommand": "pnpm build:app",
   "outputDirectory": ".output/public",
-  "devCommand": "pnpm dev",
+  "devCommand": "pnpm dev:app",
   "installCommand": "pnpm install",
   "framework": "tanstack-start",
   "headers": [

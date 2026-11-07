@@ -103,31 +103,36 @@ const NotFoundPage = lazy(() =>
   })),
 )
 
-/** Dev-only: dynamically imported so prod bundles exclude devtools + their fonts. */
-const DevtoolsLazy = lazy(async () => {
-  const [{ TanStackDevtools }, { TanStackRouterDevtoolsPanel }, queryDevtools] =
-    await Promise.all([
-      import('@tanstack/react-devtools'),
-      import('@tanstack/react-router-devtools'),
-      import('../../integrations/tanstack-query/devtools'),
-    ])
-  return {
-    default: function Devtools() {
-      return (
-        <TanStackDevtools
-          config={{ position: 'bottom-right' }}
-          plugins={[
-            {
-              name: 'Tanstack Router',
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-            queryDevtools.default,
-          ]}
-        />
-      )
-    },
-  }
-})
+/** Prod builds must not reference this — prerender loads every SSR chunk. */
+const DevtoolsLazy = import.meta.env.DEV
+  ? lazy(async () => {
+      const [
+        { TanStackDevtools },
+        { TanStackRouterDevtoolsPanel },
+        queryDevtools,
+      ] = await Promise.all([
+        import('@tanstack/react-devtools'),
+        import('@tanstack/react-router-devtools'),
+        import('../../integrations/tanstack-query/devtools'),
+      ])
+      return {
+        default: function Devtools() {
+          return (
+            <TanStackDevtools
+              config={{ position: 'bottom-right' }}
+              plugins={[
+                {
+                  name: 'Tanstack Router',
+                  render: <TanStackRouterDevtoolsPanel />,
+                },
+                queryDevtools.default,
+              ]}
+            />
+          )
+        },
+      }
+    })
+  : null
 
 function RootComponent() {
   return (
@@ -170,7 +175,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             mobileOffset={{ bottom: 'calc(var(--tab-bar-h) + 0.75rem)' }}
           />
         </ThemeProvider>
-        {import.meta.env.DEV ? <DevtoolsLazy /> : null}
+        {DevtoolsLazy ? <DevtoolsLazy /> : null}
         <Scripts />
       </body>
     </html>
