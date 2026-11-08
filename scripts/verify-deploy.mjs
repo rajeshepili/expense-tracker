@@ -120,11 +120,11 @@ check(
   aSw.headers['service-worker-allowed'] === '/',
 )
 check(
-  'app sw.js precaches hashed assets (offline)',
+  'app sw.js embeds Serwist precache of hashed assets',
   typeof aSw.body === 'string' &&
     aSw.body.includes('/assets/') &&
     aSw.body.includes('.wasm') &&
-    !aSw.body.includes("const SW_VERSION = 'dev'"),
+    !aSw.body.includes('__SW_MANIFEST'),
 )
 if (aRoot.status === 200) {
   check('app HTML has data-site-mode=app', hasModeMarker(aRoot.body, 'app'))

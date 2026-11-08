@@ -34,7 +34,7 @@ The installed PWA should stay small (app shell + SQLite, typically tens of MB at
 2. Clear site data for the origin (Chrome → Site settings) and restore from a `.sqlite3` backup.
 3. Prefer a normal Chrome profile (not many abandoned preview deploy origins).
 
-WAL checkpoints and orphaned export temps are cleaned on open; the service worker only caches `/assets/*`, icons, and the shell.
+WAL checkpoints and orphaned export temps are cleaned on open. Offline shell/assets come from Serwist (`src/sw.ts` + `scripts/serwist-inject.mjs` after `vite build`).
 
 ## Layout: phone vs tablet vs desktop
 

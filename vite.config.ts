@@ -12,7 +12,6 @@ import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
 import sqlocal from 'sqlocal/vite'
 import { sqlRaw } from './src/vite-sql-raw.ts'
-import { injectSwPrecache } from './src/vite-sw-precache.ts'
 
 const root = path.dirname(fileURLToPath(import.meta.url))
 const siteMode =
@@ -44,8 +43,6 @@ const config = defineConfig({
       rollupConfig: { external: [/^@sentry\//] },
       serverDir: './server',
     }),
-    // After Nitro finishes (correct publicDir for node-server or Vercel).
-    injectSwPrecache(),
     tailwindcss(),
     tanstackStart({
       spa: {
