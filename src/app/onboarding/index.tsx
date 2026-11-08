@@ -59,7 +59,6 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
         'transactions',
         'recurring',
         'categories',
-        'paymentMethods',
         'accounts',
         'savingsGoals',
         'overview',
@@ -112,7 +111,6 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
         'transactions',
         'recurring',
         'categories',
-        'paymentMethods',
         'accounts',
       ])
       onComplete()

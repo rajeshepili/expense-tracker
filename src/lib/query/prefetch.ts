@@ -20,12 +20,12 @@ async function routeQueryPromises(
     getSettings,
     getMonthBudget,
     listCategories,
-    listPaymentMethods,
+    listAccounts,
     listRecurring,
     listSavingsGoals,
     listTransactions,
     listCategoriesWithUsage,
-    listPaymentMethodsWithUsage,
+    listAccountsWithBalances,
   } = await repo()
 
   if (to === '/') {
@@ -60,8 +60,8 @@ async function routeQueryPromises(
         queryFn: listCategories,
       }),
       queryClient.query({
-        queryKey: queryKeys.paymentMethods,
-        queryFn: listPaymentMethods,
+        queryKey: queryKeys.accounts,
+        queryFn: listAccounts,
       }),
     ]
   }
@@ -82,8 +82,8 @@ async function routeQueryPromises(
         queryFn: listCategories,
       }),
       queryClient.query({
-        queryKey: queryKeys.paymentMethods,
-        queryFn: listPaymentMethods,
+        queryKey: queryKeys.accounts,
+        queryFn: listAccounts,
       }),
     ]
   }
@@ -95,8 +95,8 @@ async function routeQueryPromises(
         queryFn: listCategoriesWithUsage,
       }),
       queryClient.query({
-        queryKey: queryKeys.paymentMethodsUsage,
-        queryFn: listPaymentMethodsWithUsage,
+        queryKey: queryKeys.accountsUsage,
+        queryFn: listAccountsWithBalances,
       }),
     ]
   }

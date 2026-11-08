@@ -1,8 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react'
-import {
-  CategorySelect,
-  PaymentMethodSelect,
-} from '#/features/shared/entity-selects'
+import { CategorySelect, AccountSelect } from '#/features/shared/entity-selects'
 import { Field, FieldGroup, FieldLabel } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import {
@@ -24,7 +21,7 @@ type RecurringFormFieldsProps = {
   setForm: Dispatch<SetStateAction<RecurringFormState>>
   categories: NamedOption[]
   incomeCategories: NamedOption[]
-  paymentMethods: NamedOption[]
+  accounts: NamedOption[]
 }
 
 export function RecurringFormFields({
@@ -32,7 +29,7 @@ export function RecurringFormFields({
   setForm,
   categories,
   incomeCategories,
-  paymentMethods,
+  accounts,
 }: RecurringFormFieldsProps) {
   const kindCategories = form.kind === 'income' ? incomeCategories : categories
   return (
@@ -108,13 +105,13 @@ export function RecurringFormFields({
           }
         />
       </Field>
-      {paymentMethods.length === 1 ? null : (
+      {accounts.length === 1 ? null : (
         <Field>
           <FieldLabel htmlFor="recurring-method">Account</FieldLabel>
-          <PaymentMethodSelect
+          <AccountSelect
             id="recurring-method"
             value={form.paymentMethodId}
-            options={paymentMethods}
+            options={accounts}
             onValueChange={(paymentMethodId) =>
               setForm((current) => ({ ...current, paymentMethodId }))
             }

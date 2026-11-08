@@ -2,11 +2,7 @@ export { AppTour } from './app-tour'
 export { ComposerFormModal } from './composer-form-modal'
 export { ConfirmDeleteDialog } from './confirm-delete-dialog'
 export { DueStatusBadge } from './due-status-badge'
-export {
-  CategorySelect,
-  AccountSelect,
-  PaymentMethodSelect,
-} from './entity-selects'
+export { CategorySelect, AccountSelect } from './entity-selects'
 export { InstallNudge } from './install-nudge'
 export { LocalDataCallout, BackupReminder, BackupPanel } from './local-data'
 export { RowActionsMenu } from './row-actions-menu'

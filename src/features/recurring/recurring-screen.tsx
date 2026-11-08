@@ -58,7 +58,7 @@ export function RecurringScreen() {
     monthlyBudget,
     expenseCategories,
     incomeCategories,
-    paymentMethods,
+    accounts,
     isLoading,
     isError,
     errorMessage,
@@ -76,7 +76,7 @@ export function RecurringScreen() {
       setSaveError,
       setDeleting,
       deleting,
-      paymentMethods,
+      accounts,
     })
 
   const monthlyTotal = useMemo(
@@ -157,7 +157,7 @@ export function RecurringScreen() {
               setForm={setForm}
               categories={expenseCategories}
               incomeCategories={incomeCategories}
-              paymentMethods={paymentMethods}
+              accounts={accounts}
             />
           </ComposerFormModal>
         }
@@ -220,7 +220,7 @@ export function RecurringScreen() {
 
       <RecordRecurringControls
         recorder={recorder}
-        paymentMethods={paymentMethods}
+        accounts={accounts}
         currencyHint={currency}
       />
 

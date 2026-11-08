@@ -14,7 +14,7 @@ import { RecordRecurringControls } from '#/features/recurring/record-recurring-c
 import {
   deleteTransaction,
   getOverview,
-  listPaymentMethods,
+  listAccounts,
 } from '#/data/repository'
 import { useCreateHotkey } from '#/hooks/use-create-hotkey'
 import { useRecordRecurring } from '#/hooks/use-record-recurring'
@@ -75,10 +75,10 @@ function Home() {
     queryFn: () => fetchOverview(yearMonth),
     placeholderData: (prev) => prev,
   })
-  const methodsQuery = useQuery({
-    queryKey: queryKeys.paymentMethods,
+  const accountsQuery = useQuery({
+    queryKey: queryKeys.accounts,
     staleTime: 30_000,
-    queryFn: listPaymentMethods,
+    queryFn: listAccounts,
     placeholderData: (prev) => prev,
   })
 
@@ -108,12 +108,7 @@ function Home() {
       await deleteTransaction(deleting.id)
     },
     onSuccess: async () => {
-      await invalidateAfter(queryClient, [
-        'transactions',
-        'categories',
-        'accounts',
-        'transfers',
-      ])
+      await invalidateAfter(queryClient, ['transactions', 'accounts'])
       setDeleting(null)
     },
   })
@@ -191,7 +186,9 @@ function Home() {
     netWorth,
   } = overviewQuery.data
   const monthLabel = formatYearMonth(monthBudget.yearMonth)
-  const paymentMethods = methodsQuery.data ?? []
+  const openAccounts = (accountsQuery.data ?? []).filter(
+    (account) => !account.closed,
+  )
   const monthFetching = overviewQuery.isFetching && !overviewQuery.isPending
 
   return (
@@ -285,7 +282,7 @@ function Home() {
         {upcomingRecurring.length > 0 && (
           <RecordRecurringControls
             recorder={recorder}
-            paymentMethods={paymentMethods}
+            accounts={openAccounts}
             currencyHint={settings.currency}
           />
         )}

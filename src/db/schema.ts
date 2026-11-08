@@ -52,9 +52,6 @@ export const accounts = sqliteTable('payment_methods', {
     .default(sql`(unixepoch())`),
 })
 
-/** @deprecated use `accounts` */
-export const paymentMethods = accounts
-
 export const transactions = sqliteTable(
   'transactions',
   {

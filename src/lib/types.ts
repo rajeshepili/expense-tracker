@@ -116,14 +116,6 @@ export type CategoryRow = {
   recurringCount: number
 }
 
-/** @deprecated use AccountRow */
-export type PaymentMethodRow = {
-  id: string
-  name: string
-  transactionCount: number
-  recurringCount: number
-}
-
 export type SavingsGoalRow = {
   id: string
   name: string

@@ -94,6 +94,3 @@ export function AccountSelect({
     </Select>
   )
 }
-
-/** @deprecated use AccountSelect */
-export const PaymentMethodSelect = AccountSelect

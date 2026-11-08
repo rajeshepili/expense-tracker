@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ComposerFormModal } from '#/features/shared/composer-form-modal'
-import { PaymentMethodSelect } from '#/features/shared/entity-selects'
+import { AccountSelect } from '#/features/shared/entity-selects'
 import {
   Field,
   FieldGroup,
@@ -21,17 +21,17 @@ import {
 import { amountDue, canOneTapRecord, formatIsoDate, money } from '#/lib/finance'
 import type { useRecordRecurring } from '#/hooks/use-record-recurring'
 
-type PaymentMethod = { id: string; name: string }
+type AccountOption = { id: string; name: string }
 
 type RecordRecurringControlsProps = {
   recorder: ReturnType<typeof useRecordRecurring>
-  paymentMethods: PaymentMethod[]
+  accounts: AccountOption[]
   currencyHint?: string
 }
 
 export function RecordRecurringControls({
   recorder,
-  paymentMethods,
+  accounts,
   currencyHint,
 }: RecordRecurringControlsProps) {
   const {
@@ -151,13 +151,13 @@ export function RecordRecurringControls({
               <FieldError id="date-error">{dateError}</FieldError>
             ) : null}
           </Field>
-          {paymentMethods.length === 1 ? null : (
+          {accounts.length === 1 ? null : (
             <Field>
               <FieldLabel htmlFor="record-method">Account</FieldLabel>
-              <PaymentMethodSelect
+              <AccountSelect
                 id="record-method"
                 value={adjustDraft.paymentMethodId}
-                options={paymentMethods}
+                options={accounts}
                 onValueChange={(paymentMethodId) =>
                   setAdjustDraft((current) => ({ ...current, paymentMethodId }))
                 }

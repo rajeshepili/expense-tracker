@@ -12,7 +12,6 @@ import type {
   AccountRow,
   AccountType,
   AccountUpdate,
-  PaymentMethodRow,
 } from '#/lib/types'
 import { withDb } from '#/data/repo/db'
 import type { Db } from '#/data/repo/db'
@@ -258,40 +257,4 @@ export async function deleteAccount(id: string) {
     await db.delete(accounts).where(eq(accounts.id, id))
     return { success: true as const }
   })
-}
-
-/** @deprecated */
-export async function listPaymentMethods() {
-  return listAccounts()
-}
-
-/** @deprecated */
-export async function listPaymentMethodsWithUsage(): Promise<
-  PaymentMethodRow[]
-> {
-  const rows = await listAccountsWithBalances()
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    transactionCount: row.transactionCount,
-    recurringCount: row.recurringCount,
-  }))
-}
-
-/** @deprecated */
-export async function createPaymentMethod(input: { name: string }) {
-  return createAccount({
-    name: input.name,
-    type: inferAccountTypeFromName(input.name.trim()),
-  })
-}
-
-/** @deprecated */
-export async function updatePaymentMethod(id: string, input: { name: string }) {
-  return updateAccount(id, { name: input.name })
-}
-
-/** @deprecated */
-export async function deletePaymentMethod(id: string) {
-  return deleteAccount(id)
 }

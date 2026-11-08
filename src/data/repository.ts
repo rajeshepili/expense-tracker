@@ -29,11 +29,6 @@ export {
   closeAccount,
   deleteAccount,
   assertAccountOpen,
-  listPaymentMethods,
-  listPaymentMethodsWithUsage,
-  createPaymentMethod,
-  updatePaymentMethod,
-  deletePaymentMethod,
 } from '#/data/repo/accounts'
 
 export type { ListTransactionsFilters } from '#/data/repo/transactions'

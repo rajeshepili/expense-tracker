@@ -82,7 +82,7 @@ interface UseRecurringFormArgs {
   setSaveError: (error: string | null) => void
   setDeleting: (item: RecurringExpenseRow | null) => void
   deleting: RecurringExpenseRow | null
-  paymentMethods: ReadonlyArray<{ id: string }>
+  accounts: ReadonlyArray<{ id: string }>
 }
 
 export function useRecurringForm({
@@ -95,7 +95,7 @@ export function useRecurringForm({
   setSaveError,
   setDeleting,
   deleting,
-  paymentMethods,
+  accounts,
 }: UseRecurringFormArgs) {
   const queryClient = useQueryClient()
 
@@ -139,7 +139,7 @@ export function useRecurringForm({
       await invalidateAfter(queryClient, [
         'recurring',
         'categories',
-        'paymentMethods',
+        'accounts',
       ])
       onClose()
     },
@@ -174,7 +174,7 @@ export function useRecurringForm({
       await invalidateAfter(queryClient, [
         'recurring',
         'categories',
-        'paymentMethods',
+        'accounts',
       ])
       setDeleting(null)
       onClose()
@@ -184,7 +184,7 @@ export function useRecurringForm({
 
   function openCreate() {
     reset()
-    const sole = soleAccountId(paymentMethods)
+    const sole = soleAccountId(accounts)
     setForm((current) => ({
       ...current,
       active: true,

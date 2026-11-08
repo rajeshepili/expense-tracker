@@ -306,6 +306,3 @@ export function AccountsPanel() {
     </>
   )
 }
-
-/** @deprecated use AccountsPanel */
-export const PaymentMethodsPanel = AccountsPanel

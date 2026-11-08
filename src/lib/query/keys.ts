@@ -33,20 +33,8 @@ export const queryKeys = {
   categoriesUsage: ['categories', 'usage'] as const,
   accounts: ['accounts'] as const,
   accountsUsage: ['accounts', 'usage'] as const,
-  /** @deprecated use accounts */
-  paymentMethods: ['paymentMethods'] as const,
-  /** @deprecated use accountsUsage */
-  paymentMethodsUsage: ['paymentMethods', 'usage'] as const,
   savingsGoals: ['savingsGoals'] as const,
   overview: ['overview'] as const,
   overviewMonth: (yearMonth: string) => ['overview', yearMonth] as const,
-  /** Granular slices under overviewMonth — invalidate selectively after writes. */
-  overviewSummary: (yearMonth: string) =>
-    ['overview', yearMonth, 'summary'] as const,
-  overviewCategorySpend: (yearMonth: string) =>
-    ['overview', yearMonth, 'categorySpend'] as const,
-  overviewRecent: (yearMonth: string) =>
-    ['overview', yearMonth, 'recent'] as const,
-  overviewAccounts: ['overview', 'accounts'] as const,
   overviewYear: (year: string) => ['overview', 'year', year] as const,
 }

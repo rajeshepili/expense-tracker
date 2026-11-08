@@ -7,7 +7,6 @@ export type InvalidateScope =
   | 'recurring'
   | 'categories'
   | 'settings'
-  | 'paymentMethods'
   | 'accounts'
   | 'transfers'
   | 'savingsGoals'
@@ -43,17 +42,10 @@ export async function invalidateAfter(
   if (set.has('settings')) {
     tasks.push(queryClient.invalidateQueries({ queryKey: queryKeys.settings }))
   }
-  if (set.has('paymentMethods') || set.has('accounts')) {
+  if (set.has('accounts')) {
     tasks.push(
-      queryClient.invalidateQueries({ queryKey: queryKeys.paymentMethods }),
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.paymentMethodsUsage,
-      }),
       queryClient.invalidateQueries({ queryKey: queryKeys.accounts }),
       queryClient.invalidateQueries({ queryKey: queryKeys.accountsUsage }),
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.overviewAccounts,
-      }),
     )
   }
   if (set.has('savingsGoals')) {
@@ -62,9 +54,6 @@ export async function invalidateAfter(
     )
   }
 
-  // Overview: only when explicitly requested, or settings/recurring change.
-  // Routine ledger CRUD uses transactions+accounts — overviewMonth refetches
-  // when the Overview route is active (default refetchType: 'active').
   const touchOverview =
     set.has('overview') ||
     set.has('recurring') ||
@@ -74,9 +63,11 @@ export async function invalidateAfter(
     set.has('accounts')
 
   if (touchOverview) {
-    // Prefer granular slice keys when present; still bust overviewMonth bundle.
     tasks.push(
-      queryClient.invalidateQueries({ queryKey: queryKeys.overview }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.overview,
+        refetchType: 'active',
+      }),
     )
   }
 

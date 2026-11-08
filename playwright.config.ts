@@ -23,7 +23,7 @@ export default defineConfig({
     // SW + Vite dev module URLs break hard reloads (backup restore).
     serviceWorkers: 'block',
     ...devices['Desktop Chrome'],
-    // Tall enough that Categories table + payment methods both fit.
+    // Tall enough that Categories table + accounts panel both fit.
     viewport: { width: 1280, height: 1100 },
   },
   projects: [

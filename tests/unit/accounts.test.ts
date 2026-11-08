@@ -144,7 +144,7 @@ describe('accountBalance and netWorth', () => {
   })
 })
 
-describe('inferAccountTypeFromName (createPaymentMethod alias)', () => {
+describe('inferAccountTypeFromName', () => {
   it('marks credit cards as liabilities and others as assets', () => {
     expect(inferAccountTypeFromName('Credit card')).toBe('liability')
     expect(inferAccountTypeFromName('My CREDIT CARD')).toBe('liability')

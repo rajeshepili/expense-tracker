@@ -77,12 +77,7 @@ export function useRecordRecurring() {
             ? (variables.overrides.paymentMethodId ?? '')
             : defaults.paymentMethodId,
       })
-      await invalidateAfter(queryClient, [
-        'transactions',
-        'recurring',
-        'paymentMethods',
-        'overview',
-      ])
+      await invalidateAfter(queryClient, ['transactions', 'recurring'])
 
       if (result.partial && result.remainingAmount !== null) {
         toast.success(
@@ -111,7 +106,7 @@ export function useRecordRecurring() {
   const skipMutation = useMutation({
     mutationFn: skipRecurringOccurrence,
     onSuccess: async (result) => {
-      await invalidateAfter(queryClient, ['recurring', 'overview'])
+      await invalidateAfter(queryClient, ['recurring'])
       toast.success(`Skipped · next ${formatIsoDate(result.nextDate, true)}`)
     },
     onError: (error: Error) => {
