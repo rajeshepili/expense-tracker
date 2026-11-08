@@ -35,7 +35,7 @@ Wrong-host routes:
 - Wizard: Welcome → Currency & budget → First account → **Categories** (multi-select expense tags; Income always seeded; “Select common” for Food/Housing/Transport/Other). `?from=mkt` (or a marketing referrer) **skips Welcome**; cold app visits still see Welcome + restore.
 - Restore a `.sqlite3` backup is available from Welcome / Money; it replaces OPFS data and reloads.
 - After setup, more income tags (Salary, Freelance, …) are added on Categories — not as extra accounts. Transfer appears in the ledger only once you have 2+ accounts.
-- After setup, Overview **Privacy** opens the marketing privacy page (new tab). Marketing HTML `preconnect`s to `APP_URL` for a snappier handoff.
+- After setup, Overview **Privacy** opens the marketing privacy page (new tab). Marketing HTML `preconnect`s to `APP_URL`.
 
 OPFS is per-origin, so only the app host has a database; the marketing host never initializes one and says so on `/privacy`.
 
@@ -71,7 +71,7 @@ pnpm dev:app   # VITE_SITE_MODE=app
 pnpm dev:mkt   # VITE_SITE_MODE=marketing
 ```
 
-First HTTPS run: `portless trust` (local CA). Diagnose with `portless doctor` / `portless list`. Agents can use the `portless` MCP (`portless mcp`) for `list` / `get` / `doctor` — it does not start servers.
+First HTTPS run: `portless trust` (local CA). Diagnose with `portless doctor` / `portless list`.
 
 ## Host / mode drift
 

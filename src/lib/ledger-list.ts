@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { TransactionType } from '#/lib/types'
 import { LEDGER_PAGE_SIZE } from '#/lib/app-config'
+import { ledgerHasMore } from '#/lib/ledger-page'
 import { queryKeys } from '#/lib/query/keys'
 import {
   listTransactions,
@@ -25,7 +26,6 @@ interface UseLedgerListArgs {
 }
 
 export function useLedgerList({ search, filter, query }: UseLedgerListArgs) {
-  // `all` is no longer a valid ledger scope — treat as current month.
   const viewingMonth =
     !search.month || search.month === 'all'
       ? currentYearMonth()
@@ -115,7 +115,12 @@ export function useLedgerList({ search, filter, query }: UseLedgerListArgs) {
     .map((account) => ({ id: account.id, name: account.name }))
 
   const totals = totalsQuery.data ?? { income: 0, expenses: 0, count: 0 }
-  const hasMore = rows.length < totals.count && rows.length >= pageLimit
+  const hasMore = ledgerHasMore({
+    rowCount: rows.length,
+    totalCount: totals.count,
+    pageLimit,
+    totalsPending: totalsQuery.isPending,
+  })
 
   const isLoading =
     (transactionsQuery.isPending || settingsQuery.isPending) &&

@@ -20,6 +20,7 @@ export default [
       'eslint.config.js',
       'prettier.config.js',
       '.output',
+      '.vercel',
       'node_modules',
       'dist',
       'build',

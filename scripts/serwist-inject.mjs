@@ -1,12 +1,9 @@
 #!/usr/bin/env node
 /**
- * Post-build Serwist injectManifest.
+ * Inject the Serwist precache after `vite build`.
+ * Nitro writes `_shell.html` and public assets only once the build exits, so
+ * this has to run as a separate step (not a Vite plugin hook).
  *
- * TanStack Start + Nitro finish writing public assets (and `_shell.html`) only
- * after `vite build` exits — Vite/Nitro hooks race that. Run this once after
- * the build, against whichever public dir the preset left behind.
- *
- * Usage (wired from package.json):
  *   VITE_SITE_MODE=app vite build && node scripts/serwist-inject.mjs
  */
 import { existsSync, mkdirSync, rmSync } from 'node:fs'

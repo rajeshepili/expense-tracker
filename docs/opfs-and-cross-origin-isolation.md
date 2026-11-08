@@ -44,11 +44,11 @@ typeof SharedArrayBuffer !== 'undefined' // should be true
 
 `vite.config.ts` enables scanning with `serverDir: './server'` so the plugin is picked up.
 
-## Failure mode we hit (and how to recognize it)
+## Stuck on “Loading…” after preview
 
-**Symptom:** After `pnpm build && pnpm preview`, a cold load stays on “Loading…” for a long time (or forever). Chrome may report a COEP warning about `worker-*.js`.
+After `pnpm build && pnpm preview`, a cold load can hang on “Loading…”. Chrome may warn about COEP on `worker-*.js`.
 
-**Cause:** The HTML response had COEP, but the SQLite worker (and/or WASM) did not. Chrome blocked the worker → SQLocal never connected → `AppGate` never left the loading state.
+Usually the HTML response has COEP, but the SQLite worker or WASM does not. Chrome blocks the worker, SQLocal never connects, and `AppGate` never leaves the loading state.
 
 **Checks:**
 
@@ -83,13 +83,13 @@ If you strip headers on a CDN cache layer for “immutable” assets only, you w
 
 Phone install and Android notes: [mobile.md](./mobile.md).
 
-## What the app does for users
+## Backups and warnings in the UI
 
-- **Callouts** (`LocalDataCallout`) on onboarding and Overview: Chromium preferred, avoid private mode, clearing site data can erase the ledger.
-- **Export / restore** (`BackupPanel` in Overview → Budget): download a `.sqlite3` file, or restore one (replaces all local data and reloads).
-- **Backup reminder** if no export in ~14 days (snooze for 7 days).
+- Onboarding and Overview show a short callout: use Chromium, avoid private mode, clearing site data wipes the ledger.
+- Overview → Budget can export or restore a `.sqlite3` file (restore replaces local data and reloads).
+- A backup reminder appears if nothing was exported for about two weeks (snooze for a week).
 
-Code: `src/features/shared/local-data.tsx`, `src/data/backup.ts`, `src/lib/backup.ts`. No automatic browser/OPFS detection — copy + backups only.
+See `src/features/shared/local-data.tsx`, `src/data/backup.ts`, and `src/lib/backup.ts`.
 
 ## Troubleshooting
 

@@ -1,6 +1,10 @@
 import { and, eq, sql } from 'drizzle-orm'
 import { accounts, categories, transactions } from '#/db/schema'
-import { LEDGER_PAGE_SIZE, RECENT_TRANSACTION_LIMIT } from '#/lib/app-config'
+import {
+  LEDGER_PAGE_SIZE,
+  RECENT_TRANSACTION_LIMIT,
+  RECURRING_PAYMENT_HISTORY_LIMIT,
+} from '#/lib/app-config'
 import {
   applyTransactionFilters,
   buildTransactionFilters,
@@ -77,7 +81,7 @@ export async function listTransactions(
   })
 }
 
-/** Month/filter totals independent of list pagination. */
+/** Totals for the current filters (ignores list limit/offset). */
 export async function summarizeTransactions(
   filters: ListTransactionsFilters = {},
 ): Promise<TransactionTotals> {
@@ -184,11 +188,11 @@ export async function deleteTransaction(id: string) {
 
 export async function listTransactionsForRecurring(
   recurringId: string,
+  limit = RECURRING_PAYMENT_HISTORY_LIMIT,
 ): Promise<LedgerTransaction[]> {
   return withDb(async (db) => {
-    const rows = await baseTransactionQuery(db)
+    return baseTransactionQuery(db)
       .where(eq(transactions.sourceRecurringId, recurringId))
-      .execute()
-    return rows
+      .limit(limit)
   })
 }

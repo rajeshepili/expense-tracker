@@ -20,11 +20,8 @@ import {
   shouldShowBackupReminder,
 } from '#/lib/backup'
 import { getErrorMessage } from '#/lib/errors'
-import {
-  formatBytes,
-  measureStorageUsage,
-  type StorageBreakdown,
-} from '#/lib/storage-usage'
+import type { StorageBreakdown } from '#/lib/storage-usage'
+import { formatBytes, measureStorageUsage } from '#/lib/storage-usage'
 import { cn } from 'cn'
 
 const calloutBody = (

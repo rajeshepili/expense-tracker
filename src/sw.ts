@@ -10,11 +10,7 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope
 
-/**
- * Pocketbook service worker — Serwist precache + document NetworkFirst.
- * Manifest is injected by `scripts/serwist-inject.mjs` after `vite build`.
- * Hashed assets/icons/manifest come from the precache; no duplicate CacheFirst.
- */
+// Precache manifest is written by scripts/serwist-inject.mjs after vite build.
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,

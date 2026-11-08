@@ -38,7 +38,7 @@ function SWRegister() {
   return null
 }
 
-/** Shrink OPFS WAL when the tab is hidden so storage cannot balloon. */
+/** Checkpoint WAL when the tab is hidden. */
 function WalMaintenance() {
   useEffect(() => {
     const run = () => {

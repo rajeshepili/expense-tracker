@@ -243,13 +243,13 @@ export async function getOverview(yearMonth = currentYearMonth()) {
       })),
       budget,
     )
-    const categoryRows = breakdown.map((row) => {
-      const match = categorySpend.find((item) => item.name === row.name)
-      return {
-        ...row,
-        categoryId: match?.categoryId ?? '',
-      }
-    })
+    const spendByName = new Map(
+      categorySpend.map((row) => [row.name, row.categoryId]),
+    )
+    const categoryRows = breakdown.map((row) => ({
+      ...row,
+      categoryId: spendByName.get(row.name) ?? '',
+    }))
     const remaining = budget - summary.expenses
     const recurringMonthly = activeRecurring.reduce(
       (sum, row) =>

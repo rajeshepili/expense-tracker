@@ -443,7 +443,7 @@ export const expenseCategories = [
   'Other',
 ] as const
 
-export const paymentMethods = [
+export const sampleMethodLabels = [
   'Debit card',
   'Credit card',
   'Cash',
@@ -467,6 +467,3 @@ export const sampleSavingsGoals = [
     category: 'Income',
   },
 ] as const
-
-/** @deprecated use sampleSavingsGoals */
-export const sampleSavingsGoal = sampleSavingsGoals[0]
