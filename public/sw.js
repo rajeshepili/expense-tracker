@@ -1,10 +1,12 @@
 /**
  * Service Worker for Pocketbook PWA
- * Offline support: precaches the shell + build assets, runtime-caches
- * same-origin GETs, and falls back to the cached shell for navigations.
+ *
+ * Precaches the shell + hashed build assets (injected at build time).
+ * Runtime caching is restricted to immutable static paths only — never
+ * cache arbitrary same-origin GETs (that unbounded growth can fill disk).
  *
  * `scripts/inject-sw-precache.mjs` rewrites SW_VERSION and PRECACHE after
- * production builds so every hashed chunk/wasm is available offline.
+ * production builds for both `.output/public` and `.vercel/output/static`.
  */
 
 // SW_VERSION_START
@@ -20,8 +22,22 @@ const PRECACHE = [
 ]
 // PRECACHE_END
 
+function isCacheableAsset(url) {
+  const p = url.pathname
+  if (p.startsWith('/assets/')) return true
+  if (p === '/manifest.webmanifest') return true
+  if (p === '/_shell.html') return true
+  if (p.startsWith('/icons/')) return true
+  return false
+}
+
+/** Cache key ignores deploy query strings (?dpl=…) so one entry per path. */
+function cacheKey(request) {
+  const url = new URL(request.url)
+  return url.origin + url.pathname
+}
+
 async function precacheAll(cache, urls) {
-  // Prefer per-URL put over addAll so one miss does not abort the install.
   await Promise.all(
     urls.map(async (url) => {
       try {
@@ -35,7 +51,6 @@ async function precacheAll(cache, urls) {
   )
 }
 
-// Install: cache the shell + every hashed asset, then activate immediately.
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => precacheAll(cache, PRECACHE)),
@@ -43,7 +58,6 @@ self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
-// Activate: drop old caches and take control of open clients.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
@@ -57,7 +71,6 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// Notifications: tapping a bill reminder opens (or focuses) the app on Bills.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   event.waitUntil(
@@ -75,15 +88,13 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
-// Fetch handling. Only same-origin GETs; everything else goes to the network.
 self.addEventListener('fetch', (event) => {
   const { request } = event
   if (request.method !== 'GET') return
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
 
-  // Navigations: network-first, keep the cached shell fresh while online,
-  // fall back to the cached shell when offline.
+  // Navigations: network-first; keep one shell copy for offline boot.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -96,28 +107,24 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() =>
           caches
-            .match(request)
-            .then(
-              (cached) =>
-                cached || caches.match('/') || caches.match('/_shell.html'),
-            ),
+            .match('/')
+            .then((cached) => cached || caches.match('/_shell.html')),
         ),
     )
     return
   }
 
-  // Static assets (JS/CSS/fonts/wasm/icons): cache-first, populate cache from
-  // network on miss so the next offline load works.
+  // Only immutable static assets — never cache API-ish or unknown GETs.
+  if (!isCacheableAsset(url)) return
+
+  const key = cacheKey(request)
   event.respondWith(
-    caches.match(request).then((cached) => {
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const cached = await cache.match(key)
       if (cached) return cached
-      return fetch(request).then((response) => {
-        if (response.ok) {
-          const copy = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy))
-        }
-        return response
-      })
+      const response = await fetch(request)
+      if (response.ok) await cache.put(key, response.clone())
+      return response
     }),
   )
 })

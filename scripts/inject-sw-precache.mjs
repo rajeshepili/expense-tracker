@@ -1,8 +1,8 @@
 /**
- * After `vite build`, rewrite `.output/public/sw.js` so install precaches every
- * hashed asset (route chunks, workers, wasm, fonts). Without this, airplane
- * mode fails on first visit to a lazy route: "Failed to fetch dynamically
- * imported module".
+ * After `vite build` (+ Nitro), rewrite sw.js in every Nitro public dir so
+ * install precaches hashed assets. Resolves both:
+ *   - `.output/public` (local node-server preset)
+ *   - `.vercel/output/static` (Vercel Build Output API preset)
  */
 import { createHash } from 'node:crypto'
 import {
@@ -14,102 +14,64 @@ import {
 } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {
+  buildPrecacheList,
+  isCacheableAssetPath,
+  patchSwSource,
+  resolvePublicDirs,
+  walkAssetUrls,
+} from './sw-precache-core.mjs'
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
-const outDir = path.join(root, '.output', 'public')
-const swPath = path.join(outDir, 'sw.js')
-
-const ASSET_EXT = new Set([
-  '.js',
-  '.css',
-  '.wasm',
-  '.woff',
-  '.woff2',
-  '.png',
-  '.svg',
-  '.ico',
-  '.webp',
-  '.webmanifest',
-  '.html',
-])
-
-function walk(dir, base = dir) {
-  const urls = []
-  if (!existsSync(dir)) return urls
-  for (const name of readdirSync(dir)) {
-    const full = path.join(dir, name)
-    const st = statSync(full)
-    if (st.isDirectory()) {
-      urls.push(...walk(full, base))
-      continue
-    }
-    const ext = path.extname(name).toLowerCase()
-    if (!ASSET_EXT.has(ext)) continue
-    if (name === 'sw.js') continue
-    const rel = path.relative(base, full).split(path.sep).join('/')
-    urls.push(`/${rel}`)
-  }
-  return urls
-}
-
-function replaceMarkedBlock(source, startMark, endMark, replacement) {
-  const start = source.indexOf(startMark)
-  const end = source.indexOf(endMark)
-  if (start === -1 || end === -1 || end < start) {
-    throw new Error(`missing markers ${startMark} … ${endMark}`)
-  }
-  return (
-    source.slice(0, start) +
-    startMark +
-    '\n' +
-    replacement +
-    '\n' +
-    source.slice(end)
-  )
-}
+const fsApi = { existsSync, readdirSync, statSync }
 
 function main() {
-  if (!existsSync(outDir)) {
-    console.error(`[inject-sw-precache] missing ${outDir}; run vite build first`)
-    process.exit(1)
-  }
-  if (!existsSync(swPath)) {
-    console.error(`[inject-sw-precache] missing ${swPath}`)
-    process.exit(1)
-  }
-
-  const shell = ['/', '/manifest.webmanifest', '/_shell.html']
-  const found = walk(outDir)
-  const urls = [...new Set([...shell, ...found])].sort()
-
-  const version = createHash('sha256')
-    .update(urls.join('\n'))
-    .digest('hex')
-    .slice(0, 12)
-
-  let source = readFileSync(swPath, 'utf8')
-  try {
-    source = replaceMarkedBlock(
-      source,
-      '// SW_VERSION_START',
-      '// SW_VERSION_END',
-      `const SW_VERSION = '${version}'`,
+  const dirs = resolvePublicDirs(root, existsSync)
+  if (dirs.length === 0) {
+    const tried = [
+      path.join(root, '.vercel/output/static'),
+      path.join(root, '.output/public'),
+    ]
+    console.error(
+      `[inject-sw-precache] no sw.js under Nitro public dirs:\n  - ${tried.join('\n  - ')}\nrun vite build first`,
     )
-    source = replaceMarkedBlock(
-      source,
-      '// PRECACHE_START',
-      '// PRECACHE_END',
-      `const PRECACHE = ${JSON.stringify(urls, null, 2)}`,
-    )
-  } catch (err) {
-    console.error(`[inject-sw-precache] ${err.message}`)
     process.exit(1)
   }
 
-  writeFileSync(swPath, source)
-  console.log(
-    `[inject-sw-precache] wrote ${urls.length} urls into sw.js (v=${version})`,
-  )
+  let total = 0
+  for (const outDir of dirs) {
+    const found = walkAssetUrls(outDir, fsApi).filter((url) =>
+      isCacheableAssetPath(new URL(url, 'https://app.local').pathname),
+    )
+    // Always keep shell entries even if not on disk yet (_shell.html may lag).
+    const urls = buildPrecacheList(found)
+    const version = createHash('sha256')
+      .update(urls.join('\n'))
+      .digest('hex')
+      .slice(0, 12)
+
+    const swPath = path.join(outDir, 'sw.js')
+    const source = readFileSync(swPath, 'utf8')
+    let patched
+    try {
+      patched = patchSwSource(source, version, urls)
+    } catch (err) {
+      console.error(`[inject-sw-precache] ${outDir}: ${err.message}`)
+      process.exit(1)
+    }
+    writeFileSync(swPath, patched)
+    total = Math.max(total, urls.length)
+    console.log(
+      `[inject-sw-precache] ${path.relative(root, outDir)}: ${urls.length} urls (v=${version})`,
+    )
+  }
+
+  if (total < 5) {
+    console.error(
+      `[inject-sw-precache] refused: precache list too small (${total}); expected hashed /assets/*`,
+    )
+    process.exit(1)
+  }
 }
 
 main()

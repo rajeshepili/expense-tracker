@@ -38,6 +38,25 @@ function SWRegister() {
   return null
 }
 
+/** Shrink OPFS WAL when the tab is hidden so storage cannot balloon. */
+function WalMaintenance() {
+  useEffect(() => {
+    const run = () => {
+      void import('#/db/index').then((m) => m.checkpointWal())
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') run()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('pagehide', run)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pagehide', run)
+    }
+  }, [])
+  return null
+}
+
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
@@ -138,6 +157,7 @@ function RootComponent() {
   return (
     <>
       <SWRegister />
+      <WalMaintenance />
       <a href="#main" className="skip-link">
         Skip to content
       </a>

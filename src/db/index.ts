@@ -31,15 +31,33 @@ async function openDatabase() {
 
   const next = new SQLocalDrizzle({ databasePath: DATABASE_PATH })
   await next.sql`SELECT 1`
-  // Enforce FK declarations and use WAL so reads don't block writers.
+  // FK + WAL for concurrent readers. Cap WAL growth: long-lived Query
+  // subscriptions can starve checkpoints and inflate OPFS into gigabytes.
   await next.sql`PRAGMA foreign_keys = ON`
   await next.sql`PRAGMA journal_mode = WAL`
   await next.sql`PRAGMA synchronous = NORMAL`
+  await next.sql`PRAGMA wal_autocheckpoint = 1000`
+  // Truncate WAL file back after checkpoints (bytes).
+  await next.sql`PRAGMA journal_size_limit = 8388608`
   await migrateSchema(next)
+  // Best-effort reclaim if a prior session left a fat WAL or export temps.
+  await next.sql`PRAGMA wal_checkpoint(TRUNCATE)`
+  const { cleanupOrphanedOpfsBackups } = await import('#/lib/storage-usage')
+  await cleanupOrphanedOpfsBackups(DATABASE_PATH)
 
   client = next
   db = drizzle(next.driver, next.batchDriver, { schema })
   return db
+}
+
+/** Idle maintenance: shrink WAL when the tab is backgrounded. */
+export async function checkpointWal() {
+  try {
+    const c = await requireClient()
+    await c.sql`PRAGMA wal_checkpoint(TRUNCATE)`
+  } catch {
+    // DB may be closed / unavailable during teardown.
+  }
 }
 
 export function warmDatabase() {

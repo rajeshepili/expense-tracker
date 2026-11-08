@@ -20,6 +20,11 @@ import {
   shouldShowBackupReminder,
 } from '#/lib/backup'
 import { getErrorMessage } from '#/lib/errors'
+import {
+  formatBytes,
+  measureStorageUsage,
+  type StorageBreakdown,
+} from '#/lib/storage-usage'
 import { cn } from 'cn'
 
 const calloutBody = (
@@ -213,7 +218,18 @@ export function BackupPanel() {
   const [lastLabel, setLastLabel] = useState(() =>
     formatLastExportLabel(getLastExportAt()),
   )
+  const [storage, setStorage] = useState<StorageBreakdown | null>(null)
   const busy = exporting || restoring
+
+  useEffect(() => {
+    let cancelled = false
+    void measureStorageUsage().then((next) => {
+      if (!cancelled) setStorage(next)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [exporting, restoring])
 
   return (
     <div className="grid gap-3 rounded-lg border bg-muted/30 p-3">
@@ -223,6 +239,16 @@ export function BackupPanel() {
           Download a <code className="text-[0.7rem]">.sqlite3</code> copy, or
           merge a backup into this device (keeps local rows). {lastLabel}.
         </p>
+        {storage ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            This site uses {formatBytes(storage.usage)}
+            {storage.opfsBytes != null
+              ? ` (files on device ${formatBytes(storage.opfsBytes)})`
+              : null}
+            {storage.quota != null ? ` of ${formatBytes(storage.quota)}` : null}
+            .
+          </p>
+        ) : null}
       </div>
       <div className="flex flex-wrap gap-2">
         <Button

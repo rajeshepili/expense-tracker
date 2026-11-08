@@ -26,6 +26,16 @@ Expense Tracker is a **local-only** web app. On Android, use **Chrome** and inst
 
 After an app update, open the PWA online once so the new service worker can replace the asset cache; then offline navigation works again.
 
+## Storage size
+
+The installed PWA should stay small (app shell + SQLite, typically tens of MB at most). If Android shows gigabytes for this origin:
+
+1. Open Overview → Budget / backup panel and check the “This site uses …” line.
+2. Clear site data for the origin (Chrome → Site settings) and restore from a `.sqlite3` backup.
+3. Prefer a normal Chrome profile (not many abandoned preview deploy origins).
+
+WAL checkpoints and orphaned export temps are cleaned on open; the service worker only caches `/assets/*`, icons, and the shell.
+
 ## Layout: phone vs tablet vs desktop
 
 Navigation splits at `md` (768px) via `useIsMobile` / Tailwind `md:`. Lists and composers stay compact until `lg` (1024px) via `useIsCompact`:
