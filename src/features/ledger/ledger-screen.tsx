@@ -72,6 +72,9 @@ export function LedgerScreen() {
     currency,
     monthFetching,
     listMode,
+    hasMore,
+    loadMore,
+    totalCount,
     filterChips,
     saveMutation,
     deleteMutation,
@@ -210,7 +213,9 @@ export function LedgerScreen() {
         <CardHeader className="shrink-0 border-b py-3">
           <CardTitle className="text-base">Transactions</CardTitle>
           <CardDescription>
-            {rows.length} {rows.length === 1 ? 'entry' : 'entries'} ·{' '}
+            {rows.length}
+            {hasMore ? '+' : ''} shown
+            {totalCount > rows.length ? ` of ${totalCount}` : ''} ·{' '}
             <span className="tabular-nums">
               {money(totals.expenses, currency)}
             </span>{' '}
@@ -248,6 +253,20 @@ export function LedgerScreen() {
             onDelete={askDelete}
             onFilterByMethod={filterByMethod}
           />
+          {hasMore ? (
+            <div className="shrink-0 pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
+                onClick={loadMore}
+                disabled={monthFetching}
+              >
+                Load more
+              </Button>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

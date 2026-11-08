@@ -30,6 +30,17 @@ export async function completeOnboarding(input: OnboardingInput) {
   return result
 }
 
+export async function loadSampleData(opts?: {
+  budget?: number
+  currency?: string
+}) {
+  await bootstrapDatabase()
+  const { loadSampleData: seedSample } = await import('#/data/seed-sample')
+  const result = await seedSample(opts)
+  markOnboardingComplete()
+  return result
+}
+
 export async function updateSettings(patch: {
   budget?: number
   currency?: string

@@ -49,7 +49,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-On first visit, the app host shows a short setup wizard (currency, monthly budget, first account, expense categories) or restore-from-backup. Income is always seeded; you pick expense tags (or none) and can add more income types later on Categories. With one account, new entries use it automatically and Transfer stays hidden until you add another. Marketing CTAs use `/?from=mkt` so setup starts without a second landing page. After setup, screens read and write the local DB through TanStack Query and `src/data/repository.ts`.
+On first visit, the app host shows a short setup wizard (currency, monthly budget, first account, expense categories), **Explore with sample data** (multi-account demo ledger, still local-only), or restore-from-backup. Empty setup always seeds Income; you pick expense tags (or none) and can add more income types later on Categories. With one account, new entries use it automatically and Transfer stays hidden until you add another. Marketing CTAs use `/?from=mkt` so setup starts without a second landing page. After setup, screens read and write the local DB through TanStack Query and `src/data/repository.ts`.
 
 To see onboarding again in development, clear site data for localhost (Application → Storage → Clear site data).
 

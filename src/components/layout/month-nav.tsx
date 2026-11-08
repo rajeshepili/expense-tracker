@@ -9,7 +9,7 @@ import {
 import { cn } from 'cn'
 
 type MonthNavProps = {
-  /** undefined = current month, 'all' = all months, else YYYY-MM */
+  /** undefined = current month, else YYYY-MM */
   monthFilter: string | undefined
   viewingMonth: string | null
   onGoMonth: (month: string) => void
@@ -18,13 +18,12 @@ type MonthNavProps = {
 }
 
 export function MonthNav({
-  monthFilter,
   viewingMonth,
   onGoMonth,
   fetching = false,
 }: MonthNavProps) {
-  const isCurrentMonth =
-    viewingMonth !== null && viewingMonth === currentYearMonth()
+  const activeMonth = viewingMonth ?? currentYearMonth()
+  const isCurrentMonth = activeMonth === currentYearMonth()
   return (
     <span
       className="inline-flex flex-wrap items-center gap-2"
@@ -37,10 +36,8 @@ export function MonthNav({
           size="icon-sm"
           className="min-h-11 min-w-11 touch-manipulation md:min-h-8 md:min-w-8"
           aria-label="Previous month"
-          disabled={monthFilter === 'all' || fetching}
-          onClick={() =>
-            onGoMonth(shiftYearMonth(viewingMonth ?? currentYearMonth(), -1))
-          }
+          disabled={fetching}
+          onClick={() => onGoMonth(shiftYearMonth(activeMonth, -1))}
         >
           <ChevronLeft />
         </Button>
@@ -50,9 +47,7 @@ export function MonthNav({
             fetching && 'text-muted-foreground',
           )}
         >
-          {monthFilter === 'all'
-            ? 'All months'
-            : formatYearMonth(viewingMonth ?? currentYearMonth())}
+          {formatYearMonth(activeMonth)}
           {fetching ? (
             <Spinner className="size-3.5" aria-label="Loading month" />
           ) : null}
@@ -63,15 +58,13 @@ export function MonthNav({
           size="icon-sm"
           className="min-h-11 min-w-11 touch-manipulation md:min-h-8 md:min-w-8"
           aria-label="Next month"
-          disabled={monthFilter === 'all' || fetching}
-          onClick={() =>
-            onGoMonth(shiftYearMonth(viewingMonth ?? currentYearMonth(), 1))
-          }
+          disabled={fetching}
+          onClick={() => onGoMonth(shiftYearMonth(activeMonth, 1))}
         >
           <ChevronRight />
         </Button>
       </span>
-      {monthFilter === 'all' || !isCurrentMonth ? (
+      {!isCurrentMonth ? (
         <Button
           type="button"
           variant="outline"
@@ -82,28 +75,17 @@ export function MonthNav({
           This month
         </Button>
       ) : null}
-      {monthFilter !== 'all' ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="min-h-11 touch-manipulation px-3 md:min-h-8 md:px-2.5 md:text-xs"
-          onClick={() => onGoMonth('all')}
-        >
-          All months
-        </Button>
-      ) : null}
       <Button
         type="button"
         variant="ghost"
         size="sm"
         className="min-h-11 touch-manipulation px-3 md:min-h-8 md:px-2.5 md:text-xs"
         onClick={() => {
-          const year = (viewingMonth ?? currentYearMonth()).slice(0, 4)
+          const year = activeMonth.slice(0, 4)
           window.location.assign(`/year?year=${year}`)
         }}
       >
-        Year {String((viewingMonth ?? currentYearMonth()).slice(0, 4))}
+        Year {String(activeMonth.slice(0, 4))}
       </Button>
     </span>
   )

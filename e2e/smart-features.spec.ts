@@ -28,7 +28,10 @@ test.describe('local smart features @smoke', () => {
     }
     await dialogSave(page)
     await goToNav(page, 'Overview')
-    await expect(page.getByText(/at month end/i)).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: /Month outlook/i }),
+    ).toBeVisible()
+    await expect(page.getByText(/At month end/i)).toBeVisible()
   })
 
   test('year view renders after adding a transaction', async ({ page }) => {

@@ -53,6 +53,9 @@ type LedgerPageReady = { status: 'ready' } & ReturnType<typeof useLedgerForm> &
     rows: LedgerTransaction[]
     isCurrentMonth: boolean
     listMode: 'empty' | 'filtered' | 'rows'
+    hasMore: boolean
+    loadMore: () => void
+    totalCount: number
     fundOffer: FundGoalOffer | null
     setFundOffer: (offer: FundGoalOffer | null) => void
     filteredCategories: { id: string; name: string }[]
@@ -142,6 +145,9 @@ export function useLedgerPage({
     methods,
     viewingMonth,
     listQueryKey,
+    totals: listTotals,
+    hasMore,
+    loadMore,
     isLoading,
     isFetching,
     isError,
@@ -171,7 +177,7 @@ export function useLedgerPage({
     search,
     categories,
     methods,
-    rows,
+    totals: listTotals,
     onNavigate: navigate,
   })
 
@@ -363,6 +369,9 @@ export function useLedgerPage({
     monthFetching: isFetching,
     isCurrentMonth,
     listMode,
+    hasMore,
+    loadMore,
+    totalCount: listTotals.count,
     filterChips,
     saveMutation,
     deleteMutation,
@@ -371,13 +380,15 @@ export function useLedgerPage({
     openDuplicate,
     goMonth: (month: string) => {
       if (!motion.can('navigate')) return
+      // Ledger no longer supports unbounded "all months".
+      const next = month === 'all' ? currentYearMonth() : month
       const current = monthFilter ?? currentYearMonth()
-      const direction = resolveMonthDirection(current, month)
-      void motion.coalesceNavigate(`ledger-month:${month}`, async () => {
+      const direction = resolveMonthDirection(current, next)
+      void motion.coalesceNavigate(`ledger-month:${next}`, async () => {
         motion.month(
           () =>
             void navigate({
-              search: (prev) => ({ ...prev, month }),
+              search: (prev) => ({ ...prev, month: next }),
               replace: true,
             }),
           direction,

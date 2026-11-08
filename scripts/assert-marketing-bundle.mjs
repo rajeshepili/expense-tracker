@@ -5,7 +5,7 @@
  * Usage (after `VITE_SITE_MODE=marketing pnpm build`):
  *   node scripts/assert-marketing-bundle.mjs
  */
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -64,6 +64,12 @@ for (const file of files) {
       failures++
     }
   }
+}
+
+const swPath = path.join(outDir, 'public', 'sw.js')
+if (existsSync(swPath)) {
+  console.error('FAIL  marketing output must not ship sw.js')
+  failures++
 }
 
 if (failures > 0) {

@@ -60,6 +60,18 @@ export async function checkpointWal() {
   }
 }
 
+let checkpointTimer: ReturnType<typeof setTimeout> | null = null
+
+/** Coalesce write bursts — checkpoint ~30s after the last scheduled call. */
+export function scheduleCheckpointWal(delayMs = 30_000) {
+  if (typeof window === 'undefined') return
+  if (checkpointTimer) clearTimeout(checkpointTimer)
+  checkpointTimer = setTimeout(() => {
+    checkpointTimer = null
+    void checkpointWal()
+  }, delayMs)
+}
+
 export function warmDatabase() {
   if (typeof window === 'undefined') return
   if (!ready) {

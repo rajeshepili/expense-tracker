@@ -77,7 +77,7 @@ export function useLedgerForm({
   >({
     queryClient,
     queryKey: listQueryKey,
-    invalidateKeys: ['transactions', 'categories', 'accounts'],
+    invalidateKeys: ['transactions', 'accounts'],
     mutationFn: async (vars) => {
       const payload = {
         description: vars.description,
@@ -183,7 +183,7 @@ export function useLedgerForm({
   const deleteMutation = useOptimisticMutation<LedgerTransaction[], string>({
     queryClient,
     queryKey: listQueryKey,
-    invalidateKeys: ['transactions', 'categories', 'accounts', 'transfers'],
+    invalidateKeys: ['transactions', 'accounts', 'transfers'],
     mutationFn: async (id) => {
       await deleteTransaction(id)
     },

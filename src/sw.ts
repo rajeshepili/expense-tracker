@@ -1,11 +1,6 @@
 /// <reference lib="webworker" />
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist'
-import {
-  CacheFirst,
-  ExpirationPlugin,
-  NetworkFirst,
-  Serwist,
-} from 'serwist'
+import { ExpirationPlugin, NetworkFirst, Serwist } from 'serwist'
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -16,8 +11,9 @@ declare global {
 declare const self: ServiceWorkerGlobalScope
 
 /**
- * Pocketbook service worker — Serwist precache + narrow runtime caches.
+ * Pocketbook service worker — Serwist precache + document NetworkFirst.
  * Manifest is injected by `scripts/serwist-inject.mjs` after `vite build`.
+ * Hashed assets/icons/manifest come from the precache; no duplicate CacheFirst.
  */
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -38,25 +34,9 @@ const serwist = new Serwist({
         cacheName: 'pocketbook-pages',
         networkTimeoutSeconds: 3,
         plugins: [
-          new ExpirationPlugin({ maxEntries: 4, maxAgeSeconds: 7 * 24 * 60 * 60 }),
-        ],
-      }),
-    },
-    {
-      matcher({ url, sameOrigin }) {
-        return (
-          sameOrigin &&
-          (url.pathname.startsWith('/assets/') ||
-            url.pathname.startsWith('/icons/') ||
-            url.pathname === '/manifest.webmanifest')
-        )
-      },
-      handler: new CacheFirst({
-        cacheName: 'pocketbook-static',
-        plugins: [
           new ExpirationPlugin({
-            maxEntries: 80,
-            maxAgeSeconds: 30 * 24 * 60 * 60,
+            maxEntries: 4,
+            maxAgeSeconds: 7 * 24 * 60 * 60,
           }),
         ],
       }),
@@ -65,7 +45,6 @@ const serwist = new Serwist({
   fallbacks: {
     entries: [
       {
-        // Always additional-precached by post-build inject (TanStack SPA shell).
         url: '/_shell.html',
         matcher({ request }) {
           return request.destination === 'document'

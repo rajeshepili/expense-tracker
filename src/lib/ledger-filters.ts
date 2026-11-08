@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { LedgerFilterChip } from '#/features/ledger/ledger-filters'
-import type { LedgerTransaction, TransactionType } from '#/lib/types'
+import type { TransactionType } from '#/lib/types'
 import { currentYearMonth } from '#/lib/finance'
 
 function typeFromSearch(type: string | undefined): 'all' | TransactionType {
@@ -19,7 +19,8 @@ interface UseLedgerFiltersArgs {
   }
   categories: { id: string; name: string }[]
   methods: { id: string; name: string }[]
-  rows: LedgerTransaction[]
+  /** Authoritative totals from SQL summary (not the paginated rows). */
+  totals: { income: number; expenses: number }
   onNavigate: (opts: { search: any; replace?: boolean }) => void
 }
 
@@ -27,7 +28,7 @@ export function useLedgerFilters({
   search,
   categories,
   methods,
-  rows,
+  totals,
   onNavigate,
 }: UseLedgerFiltersArgs) {
   const { category: categoryFilter, method: methodFilter, q: qParam } = search
@@ -62,17 +63,6 @@ export function useLedgerFilters({
     if (!methodFilter) return null
     return methods.find((m) => m.id === methodFilter)?.name ?? null
   }, [methodFilter, methods])
-
-  const totals = useMemo(() => {
-    return rows.reduce(
-      (acc: { income: number; expenses: number }, row: LedgerTransaction) => {
-        if (row.type === 'income') acc.income += row.amount
-        else if (row.type === 'expense') acc.expenses += row.amount
-        return acc
-      },
-      { income: 0, expenses: 0 },
-    )
-  }, [rows])
 
   const narrowingFilters = Boolean(
     categoryFilter || methodFilter || filter !== 'all' || query.trim(),

@@ -6,8 +6,9 @@ import { isYearMonth } from '#/lib/finance'
 export const Route = createFileRoute('/ledger')({
   validateSearch: (search: Record<string, unknown>): LedgerSearch => {
     const monthRaw = typeof search.month === 'string' ? search.month : undefined
+    // Reject unbounded `all` — ledger always scopes to a YYYY-MM.
     const month =
-      monthRaw === 'all' || (monthRaw && isYearMonth(monthRaw))
+      monthRaw && monthRaw !== 'all' && isYearMonth(monthRaw)
         ? monthRaw
         : undefined
     const typeRaw = typeof search.type === 'string' ? search.type : undefined

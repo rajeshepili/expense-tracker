@@ -5,6 +5,28 @@
   "devCommand": "pnpm dev:app",
   "installCommand": "pnpm install",
   "framework": "tanstack-start",
+  "redirects": [
+    {
+      "source": "/features",
+      "destination": "https://expense-tracker-mkt.vercel.app/features",
+      "permanent": false
+    },
+    {
+      "source": "/features/:path*",
+      "destination": "https://expense-tracker-mkt.vercel.app/features/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/privacy",
+      "destination": "https://expense-tracker-mkt.vercel.app/privacy",
+      "permanent": false
+    },
+    {
+      "source": "/privacy/:path*",
+      "destination": "https://expense-tracker-mkt.vercel.app/privacy/:path*",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -20,6 +42,14 @@
         {
           "key": "Cross-Origin-Resource-Policy",
           "value": "same-origin"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         },
         {
           "key": "X-Content-Type-Options",

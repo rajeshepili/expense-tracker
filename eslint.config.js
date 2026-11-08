@@ -29,7 +29,6 @@ export default [
       'components.json',
       'package-lock.json',
       'pnpm-lock.yaml',
-      'public/sw.js',
     ],
   },
 ]

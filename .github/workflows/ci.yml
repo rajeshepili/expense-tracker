@@ -24,5 +24,6 @@ jobs:
       - run: pnpm tsc --noEmit
       # Both deployment modes must build — the two Vercel projects use different route trees.
       - run: pnpm build:app
+      - run: pnpm assert:app-sw
       - run: pnpm build:mkt
       - run: pnpm assert:mkt-bundle

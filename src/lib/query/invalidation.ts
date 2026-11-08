@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query'
+import { scheduleCheckpointWal } from '#/db/index'
 import { queryKeys } from './keys'
 
 export type InvalidateScope =
@@ -50,6 +51,9 @@ export async function invalidateAfter(
       }),
       queryClient.invalidateQueries({ queryKey: queryKeys.accounts }),
       queryClient.invalidateQueries({ queryKey: queryKeys.accountsUsage }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.overviewAccounts,
+      }),
     )
   }
   if (set.has('savingsGoals')) {
@@ -57,16 +61,34 @@ export async function invalidateAfter(
       queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals }),
     )
   }
-  if (
+
+  // Overview: only when explicitly requested, or settings/recurring change.
+  // Routine ledger CRUD uses transactions+accounts — overviewMonth refetches
+  // when the Overview route is active (default refetchType: 'active').
+  const touchOverview =
     set.has('overview') ||
-    set.has('transactions') ||
     set.has('recurring') ||
     set.has('settings') ||
-    set.has('accounts') ||
-    set.has('transfers')
-  ) {
-    tasks.push(queryClient.invalidateQueries({ queryKey: queryKeys.overview }))
+    set.has('transfers') ||
+    set.has('transactions') ||
+    set.has('accounts')
+
+  if (touchOverview) {
+    // Prefer granular slice keys when present; still bust overviewMonth bundle.
+    tasks.push(
+      queryClient.invalidateQueries({ queryKey: queryKeys.overview }),
+    )
   }
 
   await Promise.all(tasks)
+
+  if (
+    set.has('transactions') ||
+    set.has('transfers') ||
+    set.has('accounts') ||
+    set.has('recurring') ||
+    set.has('savingsGoals')
+  ) {
+    scheduleCheckpointWal()
+  }
 }

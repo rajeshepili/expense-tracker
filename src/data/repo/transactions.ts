@@ -1,8 +1,9 @@
-import { eq } from 'drizzle-orm'
-import { transactions } from '#/db/schema'
-import { RECENT_TRANSACTION_LIMIT } from '#/lib/app-config'
+import { and, eq, sql } from 'drizzle-orm'
+import { accounts, categories, transactions } from '#/db/schema'
+import { LEDGER_PAGE_SIZE, RECENT_TRANSACTION_LIMIT } from '#/lib/app-config'
 import {
   applyTransactionFilters,
+  buildTransactionFilters,
   baseTransactionQuery,
 } from '#/data/query-builders'
 import { ValidationError } from '#/lib/errors'
@@ -23,7 +24,7 @@ export type TransactionInput = {
 }
 
 export type ListTransactionsFilters = {
-  /** YYYY-MM, `all`, or omit for every month */
+  /** YYYY-MM preferred; `all` is rejected by the ledger UI */
   month?: string
   categoryId?: string
   paymentMethodId?: string
@@ -31,6 +32,13 @@ export type ListTransactionsFilters = {
   type?: TransactionType
   q?: string
   limit?: number
+  offset?: number
+}
+
+export type TransactionTotals = {
+  income: number
+  expenses: number
+  count: number
 }
 
 export function transactionValues(input: TransactionInput) {
@@ -63,10 +71,51 @@ export async function listTransactions(
       ...filters,
       accountId: filters.accountId ?? filters.paymentMethodId,
     })
-    const rows = filters.limit
-      ? await filtered.limit(filters.limit)
-      : await filtered
-    return rows
+    const limit = filters.limit ?? LEDGER_PAGE_SIZE
+    const offset = filters.offset ?? 0
+    return filtered.limit(limit).offset(offset)
+  })
+}
+
+/** Month/filter totals independent of list pagination. */
+export async function summarizeTransactions(
+  filters: ListTransactionsFilters = {},
+): Promise<TransactionTotals> {
+  return withDb(async (db) => {
+    const accountId = filters.accountId ?? filters.paymentMethodId
+    const conditions = buildTransactionFilters({
+      ...filters,
+      accountId,
+    })
+    // Search joins category/account names — mirror list filter joins.
+    const needsJoin = Boolean(filters.q?.trim())
+    const base = db
+      .select({
+        income:
+          sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amount} else 0 end), 0)`.mapWith(
+            Number,
+          ),
+        expenses:
+          sql<number>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amount} else 0 end), 0)`.mapWith(
+            Number,
+          ),
+        count: sql<number>`count(*)`.mapWith(Number),
+      })
+      .from(transactions)
+    const joined = needsJoin
+      ? base
+          .leftJoin(categories, eq(transactions.categoryId, categories.id))
+          .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+      : base
+    const rows =
+      conditions.length > 0
+        ? await joined.where(and(...conditions))
+        : await joined
+    return {
+      income: rows[0]?.income ?? 0,
+      expenses: rows[0]?.expenses ?? 0,
+      count: rows[0]?.count ?? 0,
+    }
   })
 }
 

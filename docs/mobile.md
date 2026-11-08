@@ -8,7 +8,7 @@ Expense Tracker is a **local-only** web app. On Android, use **Chrome** and inst
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Android Chrome         | OPFS + SQLite WASM with COEP/COOP (same stack as desktop Chromium)                                                           |
 | Install to Home Screen | Chrome → Install app / Add to Home Screen (`standalone` display)                                                             |
-| HTTPS demo             | [expense-tracker-amber-two-58.vercel.app](https://expense-tracker-amber-two-58.vercel.app) (`vercel.json` isolation headers) |
+| HTTPS demo             | [expense-tracker-amber-two-58.vercel.app](https://expense-tracker-amber-two-58.vercel.app) (app COEP/COOP via `vercel.json` / `vercel.app.json`) |
 
 ## Not supported yet
 

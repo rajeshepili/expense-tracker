@@ -4,6 +4,7 @@ export { bootstrapApp, bootstrapDatabase } from '#/data/repo/db'
 export {
   getSettings,
   completeOnboarding,
+  loadSampleData,
   updateSettings,
   getMonthBudget,
   setMonthBudget,
@@ -38,6 +39,7 @@ export {
 export type { ListTransactionsFilters } from '#/data/repo/transactions'
 export {
   listTransactions,
+  summarizeTransactions,
   listRecentTransactions,
   listAllTransactions,
   createTransaction,

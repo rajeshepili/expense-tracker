@@ -120,7 +120,9 @@ export function VirtualizedTable<T>({
     virtualRows.length > 0
       ? totalSize - (virtualRows[virtualRows.length - 1]?.end ?? 0)
       : 0
-  const useVirtual = !!scrollEl && virtualRows.length > 0
+  // Large lists must not paint every row before scrollEl attaches.
+  const largeList = items.length >= 24
+  const useVirtual = !!scrollEl && (largeList || virtualRows.length > 0)
 
   if (empty) {
     return (
@@ -147,7 +149,18 @@ export function VirtualizedTable<T>({
       <table data-slot="table" className="w-full caption-bottom text-sm">
         {header}
         <TableBody>
-          {useVirtual ? (
+          {largeList && !scrollEl ? (
+            <tr aria-hidden="true">
+              <td
+                colSpan={colSpan}
+                style={{
+                  height: estimateSize * Math.min(items.length, 12),
+                  padding: 0,
+                  border: 0,
+                }}
+              />
+            </tr>
+          ) : useVirtual ? (
             <>
               {paddingTop > 0 ? (
                 <tr aria-hidden="true">

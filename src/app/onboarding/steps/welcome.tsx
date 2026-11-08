@@ -4,18 +4,25 @@ import { Button } from '#/components/ui/button'
 type WelcomeStepProps = {
   headingId: string
   restorePending: boolean
+  samplePending: boolean
   restoreError: string | null
+  sampleError: string | null
   onContinue: () => void
+  onExploreSample: () => void
   onRestoreClick: () => void
 }
 
 export function WelcomeStep({
   headingId,
   restorePending,
+  samplePending,
   restoreError,
+  sampleError,
   onContinue,
+  onExploreSample,
   onRestoreClick,
 }: WelcomeStepProps) {
+  const busy = restorePending || samplePending
   return (
     <>
       <div className="space-y-2">
@@ -35,20 +42,36 @@ export function WelcomeStep({
         <Button
           size="lg"
           className="pressable min-h-11 w-full"
+          disabled={busy}
           onClick={onContinue}
         >
           Continue
         </Button>
         <Button
           type="button"
+          variant="secondary"
+          size="lg"
+          className="pressable min-h-11 w-full"
+          disabled={busy}
+          onClick={onExploreSample}
+        >
+          {samplePending ? 'Loading sample…' : 'Explore with sample data'}
+        </Button>
+        <Button
+          type="button"
           variant="outline"
           size="lg"
           className="pressable min-h-11 w-full"
-          disabled={restorePending}
+          disabled={busy}
           onClick={onRestoreClick}
         >
           {restorePending ? 'Restoring…' : 'Restore a backup'}
         </Button>
+        {sampleError ? (
+          <p className="text-sm text-destructive" role="alert">
+            {sampleError}
+          </p>
+        ) : null}
         {restoreError ? (
           <p className="text-sm text-destructive" role="alert">
             {restoreError}

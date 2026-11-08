@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ModeToggle } from '#/app/mode-toggle'
 import { restoreBackup } from '#/data/backup'
 import { COMMON_EXPENSE_CATEGORIES } from '#/data/seed'
-import { completeOnboarding } from '#/data/repository'
+import { completeOnboarding, loadSampleData } from '#/data/repository'
 import { APP_NAME } from '#/lib/brand'
 import { money } from '#/lib/finance'
 import { animateWizardStep } from '#/lib/motion'
@@ -34,6 +34,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([])
   const [restoreError, setRestoreError] = useState<string | null>(null)
   const [restorePending, setRestorePending] = useState(false)
+  const [sampleError, setSampleError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -49,6 +50,28 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
     )
     focusable?.focus({ preventScroll: true })
   }, [step, direction])
+
+  const sampleMutation = useMutation({
+    mutationFn: async () => loadSampleData({ budget: 2500, currency: 'USD' }),
+    onSuccess: async () => {
+      await invalidateAfter(queryClient, [
+        'settings',
+        'transactions',
+        'recurring',
+        'categories',
+        'paymentMethods',
+        'accounts',
+        'savingsGoals',
+        'overview',
+      ])
+      onComplete()
+    },
+    onError: (err) => {
+      setSampleError(
+        err instanceof Error ? err.message : 'Could not load sample data',
+      )
+    },
+  })
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -151,8 +174,14 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
           <WelcomeStep
             headingId={headingId}
             restorePending={restorePending}
+            samplePending={sampleMutation.isPending}
             restoreError={restoreError}
+            sampleError={sampleError}
             onContinue={() => go('money', 'forward')}
+            onExploreSample={() => {
+              setSampleError(null)
+              sampleMutation.mutate()
+            }}
             onRestoreClick={() => fileInputRef.current?.click()}
           />
         ) : null}

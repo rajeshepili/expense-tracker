@@ -278,6 +278,51 @@ export const ledgerTransactions: SampleTransaction[] = [
     amount: 300,
     type: 'expense',
   },
+  {
+    id: 'h16',
+    description: 'Monthly salary',
+    category: 'Income',
+    paymentMethod: 'Direct deposit',
+    date: monthsAgoIso(4, 1),
+    amount: 4100,
+    type: 'income',
+  },
+  {
+    id: 'h17',
+    description: 'Studio rent',
+    category: 'Housing',
+    paymentMethod: 'Bank transfer',
+    date: monthsAgoIso(4, 2),
+    amount: 1200,
+    type: 'expense',
+  },
+  {
+    id: 'h18',
+    description: 'Grocery run',
+    category: 'Food',
+    paymentMethod: 'Debit card',
+    date: monthsAgoIso(4, 12),
+    amount: 71.2,
+    type: 'expense',
+  },
+  {
+    id: 'h19',
+    description: 'Monthly salary',
+    category: 'Income',
+    paymentMethod: 'Direct deposit',
+    date: monthsAgoIso(5, 1),
+    amount: 4100,
+    type: 'income',
+  },
+  {
+    id: 'h20',
+    description: 'Studio rent',
+    category: 'Housing',
+    paymentMethod: 'Bank transfer',
+    date: monthsAgoIso(5, 2),
+    amount: 1180,
+    type: 'expense',
+  },
 ]
 
 /** Asset→asset sample transfer (seeded as a linked pair, not a single ledger row). */
@@ -321,7 +366,7 @@ export const recurringExpenses: SampleRecurring[] = [
     paymentMethod: 'Debit card',
     amount: 89,
     cadence: 'monthly',
-    nextDate: offsetIso(0),
+    nextDate: offsetIso(-3),
     active: true,
   },
   {
@@ -406,10 +451,22 @@ export const paymentMethods = [
   'Direct deposit',
 ] as const
 
-export const sampleSavingsGoal = {
-  name: 'Emergency fund',
-  targetAmount: 3000,
-  currentAmount: 300,
-  targetDate: offsetIso(180),
-  category: 'Income',
-} as const
+export const sampleSavingsGoals = [
+  {
+    name: 'Emergency fund',
+    targetAmount: 3000,
+    currentAmount: 300,
+    targetDate: offsetIso(180),
+    category: 'Income',
+  },
+  {
+    name: 'Laptop upgrade',
+    targetAmount: 1200,
+    currentAmount: 1050,
+    targetDate: offsetIso(45),
+    category: 'Income',
+  },
+] as const
+
+/** @deprecated use sampleSavingsGoals */
+export const sampleSavingsGoal = sampleSavingsGoals[0]

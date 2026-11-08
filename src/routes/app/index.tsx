@@ -27,6 +27,7 @@ import { navigateAfterPrefetch } from '#/lib/navigate-after-prefetch'
 import { queryKeys } from '#/lib/query/keys'
 import { OverviewBodySkeleton } from '#/components/layout/page-skeletons'
 import { OverviewMonthStats } from '#/features/overview/overview-month-stats'
+import { OverviewMonthOutlook } from '#/features/overview/overview-month-outlook'
 import { OverviewRecentTransactions } from '#/features/overview/overview-recent-transactions'
 import { OverviewCategoryBudget } from '#/features/overview/overview-category-budget'
 import { OverviewRecurringPanel } from '#/features/overview/overview-recurring-panel'
@@ -230,8 +231,16 @@ function Home() {
           remaining={remaining}
           budgetUsed={budgetUsed}
           monthBudget={monthBudget}
+        />
+
+        <OverviewMonthOutlook
+          yearMonth={yearMonth}
+          currency={settings.currency}
+          budget={monthBudget.budget}
+          spent={summary.expenses}
           projectedRemaining={projectedRemaining}
-          projectionNet={projection.net}
+          projection={projection}
+          upcomingRecurring={upcomingRecurring}
         />
 
         <section className="grid shrink-0 gap-3 md:gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(16rem,1fr)]">
