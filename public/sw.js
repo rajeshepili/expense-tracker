@@ -1,23 +1,44 @@
 /**
  * Service Worker for Pocketbook PWA
- * Offline support: precaches the shell, runtime-caches same-origin assets,
- * and falls back to the cached shell for navigations while offline.
+ * Offline support: precaches the shell + build assets, runtime-caches
+ * same-origin GETs, and falls back to the cached shell for navigations.
+ *
+ * `scripts/inject-sw-precache.mjs` rewrites SW_VERSION and PRECACHE after
+ * production builds so every hashed chunk/wasm is available offline.
  */
 
-// Bump per release so deploys cleanly replace old caches.
-const SW_VERSION = '2026-11-07.1'
+// SW_VERSION_START
+const SW_VERSION = 'dev'
+// SW_VERSION_END
 const CACHE_NAME = `expense-tracker-${SW_VERSION}`
+// PRECACHE_START
 const PRECACHE = [
   '/',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/apple-touch-icon.png',
 ]
+// PRECACHE_END
 
-// Install: cache the shell, then activate immediately.
+async function precacheAll(cache, urls) {
+  // Prefer per-URL put over addAll so one miss does not abort the install.
+  await Promise.all(
+    urls.map(async (url) => {
+      try {
+        const response = await fetch(url, { cache: 'reload' })
+        if (response.ok) await cache.put(url, response)
+        else console.warn('[sw] precache skip', url, response.status)
+      } catch (err) {
+        console.warn('[sw] precache fail', url, err)
+      }
+    }),
+  )
+}
+
+// Install: cache the shell + every hashed asset, then activate immediately.
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)),
+    caches.open(CACHE_NAME).then((cache) => precacheAll(cache, PRECACHE)),
   )
   self.skipWaiting()
 })
@@ -74,13 +95,18 @@ self.addEventListener('fetch', (event) => {
           return response
         })
         .catch(() =>
-          caches.match(request).then((cached) => cached || caches.match('/')),
+          caches
+            .match(request)
+            .then(
+              (cached) =>
+                cached || caches.match('/') || caches.match('/_shell.html'),
+            ),
         ),
     )
     return
   }
 
-  // Static assets (JS/CSS/fonts/icons): cache-first, populate cache from
+  // Static assets (JS/CSS/fonts/wasm/icons): cache-first, populate cache from
   // network on miss so the next offline load works.
   event.respondWith(
     caches.match(request).then((cached) => {

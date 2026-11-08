@@ -114,9 +114,17 @@ check(
 check('app has HSTS', Boolean(aRoot.headers['strict-transport-security']))
 check('app has CSP', Boolean(aRoot.headers['content-security-policy']))
 check('app has nosniff', aRoot.headers['x-content-type-options'] === 'nosniff')
+const aSw = await get(app + '/sw.js')
 check(
   'app sw.js has Service-Worker-Allowed',
-  (await get(app + '/sw.js')).headers['service-worker-allowed'] === '/',
+  aSw.headers['service-worker-allowed'] === '/',
+)
+check(
+  'app sw.js precaches hashed assets (offline)',
+  typeof aSw.body === 'string' &&
+    aSw.body.includes('/assets/') &&
+    aSw.body.includes('.wasm') &&
+    !aSw.body.includes("const SW_VERSION = 'dev'"),
 )
 if (aRoot.status === 200) {
   check('app HTML has data-site-mode=app', hasModeMarker(aRoot.body, 'app'))

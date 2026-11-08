@@ -20,8 +20,11 @@ Expense Tracker is a **local-only** web app. On Android, use **Chrome** and inst
 
 1. Open the app URL in Chrome (not a private tab).
 2. Menu → **Install app** or **Add to Home Screen**.
-3. Open from the icon; confirm the ledger still loads after a cold start.
-4. Optionally export a backup from Overview → Budget.
+3. Open from the icon **while online once** so the service worker can precache JS/WASM chunks (needed for airplane mode on every tab, not only screens you visited).
+4. Confirm the ledger still loads after a cold start, then optionally try airplane mode.
+5. Optionally export a backup from Overview → Budget.
+
+After an app update, open the PWA online once so the new service worker can replace the asset cache; then offline navigation works again.
 
 ## Layout: phone vs tablet vs desktop
 
