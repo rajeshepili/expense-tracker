@@ -5,8 +5,8 @@
  * Runtime caching is restricted to immutable static paths only — never
  * cache arbitrary same-origin GETs (that unbounded growth can fill disk).
  *
- * `scripts/inject-sw-precache.mjs` rewrites SW_VERSION and PRECACHE after
- * production builds for both `.output/public` and `.vercel/output/static`.
+ * The Vite plugin `injectSwPrecache` (Nitro `compiled` hook) rewrites
+ * SW_VERSION and PRECACHE into Nitro's final publicDir after each build.
  */
 
 // SW_VERSION_START
