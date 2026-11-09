@@ -108,17 +108,7 @@ export function OverviewRecurringPanel({
                     >
                       Record
                     </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full sm:w-auto"
-                      disabled={recorder.recording}
-                      onClick={() => recorder.openAdjust(item)}
-                    >
-                      Pay early
-                    </Button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             ))}

@@ -2,7 +2,6 @@ import { and, eq, sql } from 'drizzle-orm'
 import { accounts, categories, transactions } from '#/db/schema'
 import {
   LEDGER_PAGE_SIZE,
-  RECENT_TRANSACTION_LIMIT,
   RECURRING_PAYMENT_HISTORY_LIMIT,
 } from '#/lib/app-config'
 import {
@@ -16,7 +15,7 @@ import { withDb } from '#/data/repo/db'
 import { assertAccountOpen } from '#/data/repo/accounts'
 import { deleteTransfer } from '#/data/repo/transfers'
 
-export type TransactionInput = {
+type TransactionInput = {
   description: string
   amount: number
   type: TransactionType
@@ -39,7 +38,7 @@ export type ListTransactionsFilters = {
   offset?: number
 }
 
-export type TransactionTotals = {
+type TransactionTotals = {
   income: number
   expenses: number
   count: number
@@ -121,12 +120,6 @@ export async function summarizeTransactions(
       count: rows[0]?.count ?? 0,
     }
   })
-}
-
-export async function listRecentTransactions(
-  limit = RECENT_TRANSACTION_LIMIT,
-): Promise<LedgerTransaction[]> {
-  return listTransactions({ limit })
 }
 
 /** All transactions, oldest first — for CSV export. */

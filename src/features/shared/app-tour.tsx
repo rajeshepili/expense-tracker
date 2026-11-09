@@ -12,7 +12,7 @@ const STEPS: TourStep[] = [
   {
     title: `Welcome to ${APP_NAME}`,
     content:
-      "This URL is your ledger — everything lives only in this browser. Let's take a quick look around.",
+      'This URL is your ledger — everything lives only in this browser.',
   },
   {
     target: () =>

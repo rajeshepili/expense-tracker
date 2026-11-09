@@ -58,19 +58,6 @@ export function signedAmountPrefix(
   return '−'
 }
 
-export function summarizeTransactions(
-  rows: Array<{ type: TransactionType; amount: number }>,
-) {
-  return rows.reduce(
-    (acc, row) => {
-      if (row.type === 'income') acc.income += row.amount
-      else if (row.type === 'expense') acc.expenses += row.amount
-      return acc
-    },
-    { income: 0, expenses: 0 },
-  )
-}
-
 export function categoryBudgetBreakdown(
   expenses: Array<{ category: string; amount: number }>,
   budget: number,

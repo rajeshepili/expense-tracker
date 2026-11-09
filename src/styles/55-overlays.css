@@ -136,7 +136,7 @@
   }
 }
 
-/* HIG: PRM — opacity cross-fade only (no scale). Mirrors 45-page-enter.css. */
+/* prefers-reduced-motion: opacity only (no scale) */
 @media (prefers-reduced-motion: reduce) {
   @starting-style {
     [data-radix-dialog-content][data-state='open'],

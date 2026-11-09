@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router'
 import { Wallet } from 'lucide-react'
 import { EmptyState } from '#/components/layout/empty-state'
 import { MobileListRow } from '#/components/layout/mobile-list'
-import { RowActionsMenu } from '#/features/shared/row-actions-menu'
 import { Badge } from '#/components/ui/badge'
 import {
   TableCell,
@@ -19,17 +18,13 @@ import { typeLabel } from './account-form'
 type AccountsListProps = {
   rows: AccountRow[]
   currency: string
-  onEdit: (row: AccountRow) => void
-  onClose: (row: AccountRow) => void
-  onReopen: (row: AccountRow) => void
-  onDelete: (row: AccountRow) => void
+  onOpenDetail: (row: AccountRow) => void
 }
 
 function accountMeta(row: AccountRow) {
   return (
     <>
       {typeLabel(row.type)}
-      {row.closed ? ' · Closed' : ''}
       {' · '}
       {row.transactionCount > 0 ? (
         <Link
@@ -55,35 +50,10 @@ function accountMeta(row: AccountRow) {
   )
 }
 
-function accountActions(
-  row: AccountRow,
-  {
-    onEdit,
-    onClose,
-    onReopen,
-    onDelete,
-  }: Pick<AccountsListProps, 'onEdit' | 'onClose' | 'onReopen' | 'onDelete'>,
-) {
-  const unused = row.transactionCount === 0 && row.recurringCount === 0
-  return (
-    <RowActionsMenu
-      label={row.name}
-      size="touch"
-      onEdit={() => onEdit(row)}
-      onCloseAccount={row.closed ? undefined : () => onClose(row)}
-      onReopenAccount={row.closed ? () => onReopen(row) : undefined}
-      onDelete={unused ? () => onDelete(row) : undefined}
-    />
-  )
-}
-
 export function AccountsList({
   rows,
   currency,
-  onEdit,
-  onClose,
-  onReopen,
-  onDelete,
+  onOpenDetail,
 }: AccountsListProps) {
   const emptyAccounts = (
     <EmptyState
@@ -99,10 +69,9 @@ export function AccountsList({
       layout="flow"
       items={rows}
       getItemKey={(row) => row.id}
-      mobileEstimateSize={80}
-      desktopEstimateSize={52}
-      colSpan={5}
-      mobileClassName="px-3 py-2"
+      mobileEstimateSize={72}
+      desktopEstimateSize={48}
+      colSpan={4}
       empty={emptyAccounts}
       header={
         <TableHeader>
@@ -111,9 +80,6 @@ export function AccountsList({
             <TableHead>Type</TableHead>
             <TableHead className="text-right">Balance</TableHead>
             <TableHead className="text-right">Activity</TableHead>
-            <TableHead className="w-10">
-              <span className="sr-only">Actions</span>
-            </TableHead>
           </TableRow>
         </TableHeader>
       }
@@ -146,19 +112,17 @@ export function AccountsList({
               {money(account.balance, currency)}
             </span>
           }
-          onClick={() => onEdit(account)}
-          actions={accountActions(account, {
-            onEdit,
-            onClose,
-            onReopen,
-            onDelete,
-          })}
+          onClick={() => onOpenDetail(account)}
         />
       )}
       renderDesktop={(account) => (
         <TableRow
           key={account.id}
-          className={cn(account.closed && 'opacity-70')}
+          className={cn(
+            'cursor-pointer pressable-row [@media(hover:hover)]:hover:bg-muted/40',
+            account.closed && 'opacity-70',
+          )}
+          onClick={() => onOpenDetail(account)}
         >
           <TableCell className="font-medium">
             <span className="inline-flex items-center gap-2">
@@ -189,6 +153,7 @@ export function AccountsList({
                 to="/ledger"
                 search={{ method: account.id }}
                 className="underline-offset-2 hover:underline"
+                onClick={(event) => event.stopPropagation()}
               >
                 {account.transactionCount}
               </Link>
@@ -198,23 +163,6 @@ export function AccountsList({
             {account.recurringCount
               ? ` · ${account.recurringCount} bill${account.recurringCount === 1 ? '' : 's'}`
               : null}
-          </TableCell>
-          <TableCell>
-            <RowActionsMenu
-              label={account.name}
-              onEdit={() => onEdit(account)}
-              onCloseAccount={
-                account.closed ? undefined : () => onClose(account)
-              }
-              onReopenAccount={
-                account.closed ? () => onReopen(account) : undefined
-              }
-              onDelete={
-                account.transactionCount === 0 && account.recurringCount === 0
-                  ? () => onDelete(account)
-                  : undefined
-              }
-            />
           </TableCell>
         </TableRow>
       )}

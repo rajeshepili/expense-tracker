@@ -5,6 +5,7 @@ import { restoreBackup } from '#/data/backup'
 import { COMMON_EXPENSE_CATEGORIES } from '#/data/seed'
 import { completeOnboarding, loadSampleData } from '#/data/repository'
 import { APP_NAME } from '#/lib/brand'
+import { getErrorMessage } from '#/lib/errors'
 import { money } from '#/lib/finance'
 import { animateWizardStep } from '#/lib/motion'
 import { invalidateAfter } from '#/lib/query/invalidation'
@@ -66,9 +67,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
       onComplete()
     },
     onError: (err) => {
-      setSampleError(
-        err instanceof Error ? err.message : 'Could not load sample data',
-      )
+      setSampleError(getErrorMessage(err, 'Could not load sample data'))
     },
   })
 
@@ -142,9 +141,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
       await restoreBackup(file)
     } catch (err) {
       setRestorePending(false)
-      setRestoreError(
-        err instanceof Error ? err.message : 'Could not restore backup',
-      )
+      setRestoreError(getErrorMessage(err, 'Could not restore backup'))
     }
   }
 

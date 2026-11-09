@@ -6,6 +6,11 @@
     "prettier.config.js",
     "vite.config.js"
   ],
+  "exclude": [
+    "src/routeTree.app.gen.ts",
+    "src/routeTree.marketing.gen.ts",
+    "src/routes/marketing"
+  ],
 
   "compilerOptions": {
     "target": "ES2022",

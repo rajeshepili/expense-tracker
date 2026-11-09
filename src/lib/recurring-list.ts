@@ -23,7 +23,7 @@ export function useRecurringList() {
   })
 
   const monthBudgetQuery = useQuery({
-    queryKey: [...queryKeys.settings, 'month-budget'] as const,
+    queryKey: queryKeys.monthBudget,
     queryFn: () => getMonthBudget(),
   })
 

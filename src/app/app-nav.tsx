@@ -64,7 +64,7 @@ function isActive(pathname: string, link: (typeof links)[number]) {
 }
 
 const tabClass = cn(
-  'touch-manipulation relative inline-flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1 text-[0.6875rem] font-medium no-underline',
+  'touch-manipulation relative inline-flex h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 text-[0.6875rem] font-medium leading-none no-underline',
   'transition-[transform,color] duration-settle ease-settle',
   'active:scale-[0.97]',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
@@ -77,8 +77,6 @@ const desktopLinkClass = cn(
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
 )
 
-type PillMetrics = { left: number; width: number; height: number; top: number }
-
 function useNavPill<T extends HTMLElement>(
   activeIndex: number,
   visible: boolean,
@@ -90,7 +88,7 @@ function useNavPill<T extends HTMLElement>(
   const hasAnimated = useRef(false)
 
   useLayoutEffect(() => {
-    if (!visible) {
+    if (!visible || activeIndex < 0) {
       hasAnimated.current = false
       setReady(false)
       return
@@ -104,29 +102,26 @@ function useNavPill<T extends HTMLElement>(
       const r = el.getBoundingClientRect()
       if (r.width === 0 || r.height === 0) return
 
-      const metrics: PillMetrics = {
-        left: r.left - c.left,
-        top: r.top - c.top,
-        width: r.width,
-        height: r.height,
-      }
+      const x = r.left - c.left
+      const y = r.top - c.top
+      const width = r.width
+      const height = r.height
 
-      const next = {
-        transform: `translate(${metrics.left}px, ${metrics.top}px)`,
-        width: `${metrics.width}px`,
-        height: `${metrics.height}px`,
-      }
+      // During route VT, snap — live spring fighting the chrome snapshot flickers
+      // (especially fixed mobile tabs). Otherwise spring with velocity retargets.
+      const routeVt =
+        typeof document !== 'undefined' &&
+        Boolean(document.documentElement.dataset.vtRoute)
 
-      // First paint or PRM: snap. Subsequent tab changes: interruptible spring.
-      if (!hasAnimated.current || prefersReducedMotion()) {
-        snapChrome(node, next)
+      if (!hasAnimated.current || prefersReducedMotion() || routeVt) {
+        snapChrome(node, {
+          width: `${width}px`,
+          height: `${height}px`,
+          transform: `translate(${x}px, ${y}px)`,
+        })
         hasAnimated.current = true
       } else {
-        animateChrome(node, {
-          transform: next.transform,
-          width: metrics.width,
-          height: metrics.height,
-        })
+        animateChrome(node, { x, y, width, height })
       }
       setReady(true)
     }
@@ -167,10 +162,8 @@ export function AppNav() {
       event.preventDefault()
       void navigateAfterPrefetch(router, queryClient, { to })
     }
-  const activeIndex = Math.max(
-    0,
-    links.findIndex((link) => isActive(pathname, link)),
-  )
+  // -1 when on a route outside the tab bar (e.g. /year) — do not force Home.
+  const activeIndex = links.findIndex((link) => isActive(pathname, link))
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const desktopNav = useNavPill<HTMLElement>(activeIndex, isDesktop)
   const mobileNav = useNavPill<HTMLDivElement>(activeIndex, !isDesktop)
@@ -178,7 +171,10 @@ export function AppNav() {
   return (
     <>
       {/* Desktop / tablet top bar */}
-      <header className="z-10 hidden shrink-0 border-b border-border/80 bg-background/80 backdrop-blur-md md:block">
+      <header
+        data-app-chrome="top-desktop"
+        className="z-10 hidden shrink-0 border-b border-border/80 bg-background/80 backdrop-blur-md md:block"
+      >
         <div className="mx-auto flex h-12 w-full max-w-6xl items-center gap-4 px-6 md:px-8">
           <Link
             to="/"
@@ -191,7 +187,7 @@ export function AppNav() {
           <nav
             data-tour="nav"
             ref={desktopNav.containerRef}
-            className="relative flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="relative flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden"
             aria-label="Primary"
           >
             <span
@@ -235,7 +231,10 @@ export function AppNav() {
       </header>
 
       {/* Phone: compact top bar (brand + theme) */}
-      <header className="z-10 shrink-0 border-b border-border/80 bg-background/80 pt-[var(--safe-top)] backdrop-blur-md md:hidden">
+      <header
+        data-app-chrome="top-mobile"
+        className="z-10 shrink-0 border-b border-border/80 bg-background/80 pt-(--safe-top) backdrop-blur-md md:hidden"
+      >
         <div className="flex h-12 items-center justify-between gap-3 px-4">
           <Link
             to="/"
@@ -252,12 +251,13 @@ export function AppNav() {
       {/* Phone: bottom tabs */}
       <nav
         data-tour="nav"
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-background/95 pb-[var(--safe-bottom)] backdrop-blur-md md:hidden"
+        data-app-chrome="tabs"
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-background/95 pb-(--safe-bottom) backdrop-blur-md md:hidden"
         aria-label="Primary"
       >
         <div
           ref={mobileNav.containerRef}
-          className="relative mx-auto flex max-w-lg items-stretch gap-1 px-2 pt-1"
+          className="relative mx-auto flex h-12 max-w-lg items-center gap-0.5 px-1.5"
         >
           <span
             ref={mobileNav.pillRef}
@@ -286,10 +286,10 @@ export function AppNav() {
                 )}
                 aria-current={active ? 'page' : undefined}
               >
-                <span className="flex size-8 items-center justify-center rounded-md">
-                  <Icon aria-hidden="true" className="size-5 shrink-0" />
+                <Icon aria-hidden="true" className="size-5 shrink-0" />
+                <span className="max-w-full truncate leading-none">
+                  {link.shortLabel}
                 </span>
-                <span className="max-w-full truncate">{link.shortLabel}</span>
               </Link>
             )
           })}

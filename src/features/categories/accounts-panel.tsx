@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import { ConfirmDeleteDialog } from '#/features/shared/confirm-delete-dialog'
@@ -38,6 +38,7 @@ import type { AccountRow, AccountType } from '#/lib/types'
 import { toast } from 'sonner'
 import { emptyForm, formFromRow } from './account-form'
 import type { FormState } from './account-form'
+import { AccountDetailSheet } from './account-detail-sheet'
 import { AccountsList } from './accounts-list'
 
 export function AccountsPanel() {
@@ -134,6 +135,11 @@ export function AccountsPanel() {
   })
 
   const rows = accountsQuery.data ?? []
+  const [detailId, setDetailId] = useState<string | null>(null)
+  const detailItem = useMemo(
+    () => (detailId ? (rows.find((row) => row.id === detailId) ?? null) : null),
+    [detailId, rows],
+  )
   const typeLocked =
     Boolean(editing) &&
     ((editing?.transactionCount ?? 0) > 0 || (editing?.recurringCount ?? 0) > 0)
@@ -251,22 +257,32 @@ export function AccountsPanel() {
           <AccountsList
             rows={rows}
             currency={currency}
-            onEdit={handleOpenEdit}
-            onClose={(row) => {
-              closeMutation.reset()
-              setClosing(row)
-            }}
-            onReopen={(row) => {
-              reopenMutation.reset()
-              reopenMutation.mutate(row)
-            }}
-            onDelete={(row) => {
-              deleteMutation.reset()
-              setDeleting(row)
-            }}
+            onOpenDetail={(row) => setDetailId(row.id)}
           />
         </CardContent>
       </Card>
+
+      <AccountDetailSheet
+        item={detailItem}
+        open={detailId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailId(null)
+        }}
+        currency={currency}
+        onEdit={handleOpenEdit}
+        onClose={(row) => {
+          closeMutation.reset()
+          setClosing(row)
+        }}
+        onReopen={(row) => {
+          reopenMutation.reset()
+          reopenMutation.mutate(row)
+        }}
+        onDelete={(row) => {
+          deleteMutation.reset()
+          setDeleting(row)
+        }}
+      />
 
       <ConfirmDeleteDialog
         open={Boolean(deleting)}

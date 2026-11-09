@@ -6,7 +6,7 @@ async function repo() {
   return import('#/data/repository')
 }
 
-export type PrefetchRouteOptions = {
+type PrefetchRouteOptions = {
   month?: string
 }
 
@@ -74,7 +74,7 @@ async function routeQueryPromises(
       }),
       queryClient.query({ queryKey: queryKeys.settings, queryFn: getSettings }),
       queryClient.query({
-        queryKey: [...queryKeys.settings, 'month-budget'] as const,
+        queryKey: queryKeys.monthBudget,
         queryFn: () => getMonthBudget(),
       }),
       queryClient.query({

@@ -6,14 +6,9 @@ export type VtKind = 'page' | 'month' | 'theme'
 type StartVtArgs = {
   update: () => void
   kind: VtKind
-  /** Month only — stamps html[data-vt-month] → month-forward|month-back names. */
   direction?: MonthDirection
 }
 
-/**
- * Stamp route VT name via html[data-vt-route]. CSS maps that to
- * view-transition-name: page-forward | page-back on .page-content.
- */
 export function applyRouteVtDirection(back: boolean): void {
   if (typeof document === 'undefined') return
   document.documentElement.dataset.vtRoute = back ? 'back' : 'forward'
@@ -35,7 +30,6 @@ export function clearMonthVtDirection(): void {
   delete document.documentElement.dataset.vtMonth
 }
 
-/** Shared startViewTransition entry (month / theme). Route tabs use navigateAfterPrefetch. */
 export function startVT(args: StartVtArgs): ViewTransition | undefined {
   const { update, direction } = args
   if (typeof document === 'undefined') {

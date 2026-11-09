@@ -4,7 +4,10 @@ import {
   VirtualizedList,
   VirtualizedTable,
 } from '#/components/ui/virtualized-list'
-import { MobileList } from '#/components/layout/mobile-list'
+import {
+  MobileList,
+  MobileListFillShell,
+} from '#/components/layout/mobile-list'
 import { Table, TableBody } from '#/components/ui/table'
 import { useIsCompact } from '#/hooks/use-media-query'
 import { cn } from 'cn'
@@ -80,19 +83,16 @@ export function VirtualizedDataList<T>({
 
     // Virtualized mobile uses translateY — do not attach FLIP root (WAAPI fight).
     return (
-      <div className={cn('min-h-0 flex-1', mobileClassName)}>
-        <MobileList className="flex min-h-0 max-h-full flex-col overflow-hidden p-0">
-          <VirtualizedList
-            items={items}
-            estimateSize={mobileEstimateSize}
-            overscan={overscan}
-            getItemKey={getItemKey}
-            className="min-h-0 flex-1"
-          >
-            {renderMobile}
-          </VirtualizedList>
-        </MobileList>
-      </div>
+      <MobileListFillShell className={mobileClassName}>
+        <VirtualizedList
+          items={items}
+          estimateSize={mobileEstimateSize}
+          overscan={overscan}
+          getItemKey={getItemKey}
+        >
+          {renderMobile}
+        </VirtualizedList>
+      </MobileListFillShell>
     )
   }
 

@@ -112,7 +112,3 @@ export function transferBadgeClass(direction: TransferDirection | null) {
   if (direction === 'out') return 'badge-expense capitalize'
   return 'badge-transfer capitalize'
 }
-
-export async function prepareTransferEdit(tx: LedgerTransaction) {
-  return formFromTransferLeg(tx)
-}

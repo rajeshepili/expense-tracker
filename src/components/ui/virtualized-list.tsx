@@ -1,7 +1,7 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Fragment, useCallback, useRef, useState } from 'react'
+import { Fragment, useCallback, useState } from 'react'
 import type { CSSProperties, ReactNode, Ref } from 'react'
-import { cn } from 'cn'
+import { PanelScroll } from '#/components/ui/panel-scroll'
 import { TableBody } from '#/components/ui/table'
 
 type VirtualRowRender<T> = (item: T, index: number) => ReactNode
@@ -22,6 +22,19 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T) {
   else ref.current = value
 }
 
+/** Scroll parent for TanStack Virtual — state so the virtualizer rebinds on mount. */
+function useVirtualScrollParent(listRootRef?: Ref<HTMLElement | null>) {
+  const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
+  const bindScrollEl = useCallback(
+    (node: HTMLDivElement | null) => {
+      setScrollEl(node)
+      assignRef(listRootRef, node)
+    },
+    [listRootRef],
+  )
+  return { scrollEl, bindScrollEl }
+}
+
 export function VirtualizedList<T>({
   items,
   estimateSize = 56,
@@ -35,29 +48,19 @@ export function VirtualizedList<T>({
   className?: string
   style?: CSSProperties
 }) {
-  const parentRef = useRef<HTMLDivElement>(null)
-  const setParentRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      parentRef.current = node
-      assignRef(listRootRef, node)
-    },
-    [listRootRef],
-  )
+  const { scrollEl, bindScrollEl } = useVirtualScrollParent(listRootRef)
   const virtualizer = useVirtualizer({
     count: items.length,
-    getScrollElement: () => parentRef.current,
+    getScrollElement: () => scrollEl,
     estimateSize: () => estimateSize,
     overscan,
+    enabled: !!scrollEl,
     getItemKey: (index) =>
       getItemKey ? getItemKey(items[index], index) : index,
   })
 
   return (
-    <div
-      ref={setParentRef}
-      className={cn('relative overflow-y-auto overscroll-contain', className)}
-      style={style}
-    >
+    <PanelScroll ref={bindScrollEl} fill className={className} style={style}>
       <div
         className="relative w-full"
         style={{ height: virtualizer.getTotalSize() }}
@@ -74,7 +77,16 @@ export function VirtualizedList<T>({
           </div>
         ))}
       </div>
-    </div>
+    </PanelScroll>
+  )
+}
+
+function SpacerRow({ colSpan, height }: { colSpan: number; height: number }) {
+  if (height <= 0) return null
+  return (
+    <tr aria-hidden="true">
+      <td colSpan={colSpan} style={{ height, padding: 0, border: 0 }} />
+    </tr>
   )
 }
 
@@ -95,14 +107,7 @@ export function VirtualizedTable<T>({
   className?: string
   empty?: ReactNode
 }) {
-  const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
-  const bindScrollEl = useCallback(
-    (node: HTMLDivElement | null) => {
-      setScrollEl(node)
-      assignRef(listRootRef, node)
-    },
-    [listRootRef],
-  )
+  const { scrollEl, bindScrollEl } = useVirtualScrollParent(listRootRef)
   const virtualizer = useVirtualizer({
     count: empty ? 0 : items.length,
     getScrollElement: () => scrollEl,
@@ -120,79 +125,47 @@ export function VirtualizedTable<T>({
     virtualRows.length > 0
       ? totalSize - (virtualRows[virtualRows.length - 1]?.end ?? 0)
       : 0
-  // Large lists must not paint every row before scrollEl attaches.
   const largeList = items.length >= 24
   const useVirtual = !!scrollEl && (largeList || virtualRows.length > 0)
 
-  if (empty) {
-    return (
-      <div
-        ref={bindScrollEl}
-        className={cn(
-          'min-h-0 flex-1 overflow-y-auto overscroll-contain',
-          className,
-        )}
-      >
-        {empty}
-      </div>
-    )
+  let rows: ReactNode = null
+  if (!empty) {
+    if (largeList && !scrollEl) {
+      rows = (
+        <SpacerRow
+          colSpan={colSpan}
+          height={estimateSize * Math.min(items.length, 12)}
+        />
+      )
+    } else if (useVirtual) {
+      rows = (
+        <>
+          <SpacerRow colSpan={colSpan} height={paddingTop} />
+          {virtualRows.map((virtualRow) => (
+            <Fragment key={virtualRow.key}>
+              {children(items[virtualRow.index], virtualRow.index)}
+            </Fragment>
+          ))}
+          <SpacerRow colSpan={colSpan} height={paddingBottom} />
+        </>
+      )
+    } else {
+      rows = items.map((item, index) => (
+        <Fragment key={getItemKey ? getItemKey(item, index) : index}>
+          {children(item, index)}
+        </Fragment>
+      ))
+    }
   }
 
   return (
-    <div
-      ref={bindScrollEl}
-      className={cn(
-        'min-h-0 flex-1 overflow-y-auto overscroll-contain',
-        className,
+    <PanelScroll ref={bindScrollEl} fill className={className}>
+      {empty ?? (
+        <table data-slot="table" className="w-full caption-bottom text-sm">
+          {header}
+          <TableBody>{rows}</TableBody>
+        </table>
       )}
-    >
-      <table data-slot="table" className="w-full caption-bottom text-sm">
-        {header}
-        <TableBody>
-          {largeList && !scrollEl ? (
-            <tr aria-hidden="true">
-              <td
-                colSpan={colSpan}
-                style={{
-                  height: estimateSize * Math.min(items.length, 12),
-                  padding: 0,
-                  border: 0,
-                }}
-              />
-            </tr>
-          ) : useVirtual ? (
-            <>
-              {paddingTop > 0 ? (
-                <tr aria-hidden="true">
-                  <td
-                    colSpan={colSpan}
-                    style={{ height: paddingTop, padding: 0, border: 0 }}
-                  />
-                </tr>
-              ) : null}
-              {virtualRows.map((virtualRow) => (
-                <Fragment key={virtualRow.key}>
-                  {children(items[virtualRow.index], virtualRow.index)}
-                </Fragment>
-              ))}
-              {paddingBottom > 0 ? (
-                <tr aria-hidden="true">
-                  <td
-                    colSpan={colSpan}
-                    style={{ height: paddingBottom, padding: 0, border: 0 }}
-                  />
-                </tr>
-              ) : null}
-            </>
-          ) : (
-            items.map((item, index) => (
-              <Fragment key={getItemKey ? getItemKey(item, index) : index}>
-                {children(item, index)}
-              </Fragment>
-            ))
-          )}
-        </TableBody>
-      </table>
-    </div>
+    </PanelScroll>
   )
 }

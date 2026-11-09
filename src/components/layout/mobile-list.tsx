@@ -28,6 +28,29 @@ export function MobileList({
   )
 }
 
+export function MobileListFillShell({
+  children,
+  className,
+  listClassName,
+}: {
+  children: ReactNode
+  className?: string
+  listClassName?: string
+}) {
+  return (
+    <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
+      <MobileList
+        className={cn(
+          'flex h-full min-h-0 flex-col overflow-hidden p-0',
+          listClassName,
+        )}
+      >
+        {children}
+      </MobileList>
+    </div>
+  )
+}
+
 type MobileListRowProps = {
   title: ReactNode
   meta?: ReactNode
@@ -63,7 +86,7 @@ export function MobileListRow({
           : undefined
       }
       className={cn(
-        'min-h-[3.75rem] touch-manipulation rounded-none border-0 border-b border-border/60 last:border-b-0',
+        'min-h-15 touch-manipulation rounded-none border-0 border-b border-border/60 last:border-b-0',
         'pressable-row',
         onClick &&
           'cursor-pointer pressable [@media(hover:hover)]:hover:bg-muted/50',

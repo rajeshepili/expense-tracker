@@ -148,10 +148,10 @@ export function AppGate({ children }: { children: ReactNode }) {
           </p>
           <Spinner className="size-5 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
-            Getting your ledger ready…
+            Loading…
           </p>
           <p className="max-w-xs text-xs text-muted-foreground/80">
-            Stays on this device — nothing is uploaded.
+            Stored in this browser.
           </p>
         </div>
       </main>

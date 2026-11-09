@@ -1,4 +1,4 @@
-import { and, count, eq, lte } from 'drizzle-orm'
+import { count, eq } from 'drizzle-orm'
 import { accounts, recurringExpenses, transactions } from '#/db/schema'
 import { accountDeltasQuery } from '#/data/query-builders'
 import { ConflictError, NotFoundError, ValidationError } from '#/lib/errors'
@@ -53,35 +53,6 @@ export async function assertAccountOpen(id: string) {
 
 export async function listAccounts() {
   return withDb((db) => db.select().from(accounts).orderBy(accounts.name))
-}
-
-export async function getAccount(id: string) {
-  return withDb((db) => loadAccountOrThrow(db, id))
-}
-
-export async function getAccountBalance(id: string, asOfDate?: string) {
-  return withDb(async (db) => {
-    const row = await loadAccountOrThrow(db, id)
-    const conditions = [eq(transactions.accountId, id)]
-    if (asOfDate) conditions.push(lte(transactions.transactionDate, asOfDate))
-    const rows = await db
-      .select({
-        type: transactions.type,
-        amount: transactions.amount,
-        transferDirection: transactions.transferDirection,
-      })
-      .from(transactions)
-      .where(and(...conditions))
-    return accountBalance(
-      row.startingBalance,
-      rows.map((item) => ({
-        type: item.type,
-        amount: item.amount,
-        transferDirection: item.transferDirection,
-      })),
-      row.type,
-    )
-  })
 }
 
 export async function listAccountsWithBalances(): Promise<AccountRow[]> {

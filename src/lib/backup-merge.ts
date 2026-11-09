@@ -1,5 +1,3 @@
-/** Merge a backup snapshot into the live DB by id / createdAt. */
-
 export type MergeAction = 'insert' | 'update' | 'skip'
 
 export type TimestampedRow = {

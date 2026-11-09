@@ -1,8 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { Link, useRouter } from '@tanstack/react-router'
 import { Target, ArrowRight } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import { prefetchRoute } from '#/lib/query/prefetch'
+import { navigateAfterPrefetch } from '#/lib/navigate-after-prefetch'
 import {
   Card,
   CardAction,
@@ -21,8 +22,14 @@ import { useSavingsList } from '#/lib/savings-list'
 
 export function SavingsSummary() {
   const queryClient = useQueryClient()
+  const router = useRouter()
   const { goals, activeGoals, completedGoals, currency } = useSavingsList()
   const prefetchSavings = () => prefetchRoute(queryClient, '/savings')
+
+  function openSavings() {
+    prefetchSavings()
+    void navigateAfterPrefetch(router, queryClient, { to: '/savings' })
+  }
 
   if (goals.length === 0) {
     return (
@@ -110,23 +117,7 @@ export function SavingsSummary() {
                 key={goal.id}
                 goal={goal}
                 currency={currency}
-                actions={
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="w-full sm:w-auto"
-                    asChild
-                  >
-                    <Link
-                      to="/savings"
-                      onMouseEnter={prefetchSavings}
-                      onFocus={prefetchSavings}
-                    >
-                      <ArrowRight className="size-4" />
-                      <span className="sr-only">Edit {goal.name}</span>
-                    </Link>
-                  </Button>
-                }
+                onOpen={openSavings}
               />
             ))}
             {activeGoals.length > 2 && (
@@ -154,18 +145,7 @@ export function SavingsSummary() {
               <CompletedGoalRow
                 key={goal.id}
                 goal={goal}
-                action={
-                  <Button size="sm" variant="ghost" asChild>
-                    <Link
-                      to="/savings"
-                      onMouseEnter={prefetchSavings}
-                      onFocus={prefetchSavings}
-                    >
-                      <ArrowRight className="size-4" />
-                      <span className="sr-only">View {goal.name}</span>
-                    </Link>
-                  </Button>
-                }
+                onOpen={openSavings}
               />
             ))}
             {completedGoals.length > 2 && (

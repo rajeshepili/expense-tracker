@@ -16,8 +16,6 @@ export type RankedSavingsGoal = {
   categoryMatch: boolean
 }
 
-export { MONEY_EPSILON }
-
 export function savingsRemaining(goal: SavingsGoalAmounts): number {
   const left = goal.targetAmount - goal.currentAmount
   return left > MONEY_EPSILON ? left : 0

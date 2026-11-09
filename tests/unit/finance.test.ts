@@ -17,13 +17,33 @@ import {
   money,
   monthBudgetMatchesDefault,
   monthlyEquivalent,
+  partitionRecurringForMonth,
   priorDeltaRatio,
   resolveMonthBudget,
   shiftYearMonth,
-  summarizeTransactions,
   yearMonthRange,
   yearRange,
 } from '#/lib/finance'
+import type { RecurringExpenseRow } from '#/lib/types'
+
+function bill(
+  partial: Pick<RecurringExpenseRow, 'id' | 'name' | 'nextDate' | 'active'> &
+    Partial<RecurringExpenseRow>,
+): RecurringExpenseRow {
+  return {
+    amount: 10,
+    cadence: 'monthly',
+    kind: 'expense',
+    category: 'Utilities',
+    categoryId: 'cat',
+    paymentMethod: null,
+    paymentMethodId: null,
+    accountId: null,
+    account: null,
+    remainingAmount: null,
+    ...partial,
+  }
+}
 
 describe('money', () => {
   it('formats with the currency symbol and rejects unknown codes', () => {
@@ -84,6 +104,19 @@ describe('dates and months', () => {
     expect(advanceRecurringDate('2024-02-29', 'yearly')).toBe('2025-03-01')
   })
 
+  it('partitions bills into this month, later, and paused', () => {
+    const rows = [
+      bill({ id: '1', name: 'Overdue rent', nextDate: '2026-10-28', active: true }),
+      bill({ id: '2', name: 'Streaming', nextDate: '2026-11-12', active: true }),
+      bill({ id: '3', name: 'Studio rent', nextDate: '2026-12-08', active: true }),
+      bill({ id: '4', name: 'Old gym', nextDate: '2026-11-01', active: false }),
+    ]
+    const parts = partitionRecurringForMonth(rows, '2026-11')
+    expect(parts.thisMonth.map((r) => r.id)).toEqual(['1', '2'])
+    expect(parts.later.map((r) => r.id)).toEqual(['3'])
+    expect(parts.paused.map((r) => r.id)).toEqual(['4'])
+  })
+
   it('computes prior-month deltas without dividing by zero', () => {
     expect(priorDeltaRatio(110, 100)).toBeCloseTo(0.1)
     expect(priorDeltaRatio(0, 0)).toBe(0)
@@ -128,15 +161,7 @@ describe('month budget', () => {
 })
 
 describe('transaction math', () => {
-  it('summarizes income vs expenses and monthly cadence equivalents', () => {
-    expect(
-      summarizeTransactions([
-        { type: 'income', amount: 100 },
-        { type: 'expense', amount: 40 },
-        { type: 'expense', amount: 10 },
-        { type: 'transfer', amount: 99 },
-      ]),
-    ).toEqual({ income: 100, expenses: 50 })
+  it('computes monthly cadence equivalents', () => {
     expect(monthlyEquivalent(100, 'monthly')).toBe(100)
     expect(monthlyEquivalent(1200, 'yearly')).toBe(100)
     expect(monthlyEquivalent(100, 'weekly')).toBeCloseTo(100 * (52 / 12))

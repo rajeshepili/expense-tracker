@@ -97,7 +97,7 @@ export function monthBudgetQuery(db: Db, yearMonth: string) {
 }
 
 /** Signed per-account delta (join `accounts` on `transactions.accountId`). */
-export function accountDeltaSumSql() {
+function accountDeltaSumSql() {
   return sql<number>`sum(
     case
       when ${transactions.type} = 'transfer' then
@@ -124,17 +124,4 @@ export function accountDeltasQuery(db: Db) {
     .innerJoin(accounts, eq(transactions.accountId, accounts.id))
     .where(sql`${transactions.accountId} is not null`)
     .groupBy(transactions.accountId)
-}
-
-export function buildTextSearch(
-  needle: string,
-  columns: { table: any; column: any }[],
-) {
-  const pattern = `%${needle.toLowerCase()}%`
-  return sql`(${sql.join(
-    columns.map(
-      ({ table, column }) => sql`lower(${table}.${column}) like ${pattern}`,
-    ),
-    sql` or `,
-  )})`
 }

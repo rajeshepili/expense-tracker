@@ -7,34 +7,29 @@ const runs = new WeakMap<Element, AnimationPlaybackControls>()
 
 export type ChromeKeyframes = DOMKeyframesDefinition
 
-/**
- * Imperative chrome animation that cancels any in-flight run on the same node
- * so rapid retargets (e.g. tab switches) interrupt mid-spring.
- */
+/** Retarget without stop() so the spring keeps velocity. */
 export function animateChrome(
   el: Element,
   keyframes: ChromeKeyframes,
   options?: Parameters<typeof animate>[2],
 ): AnimationPlaybackControls {
-  const prev = runs.get(el)
-  prev?.stop()
+  if (prefersReducedMotion()) {
+    runs.get(el)?.stop()
+    const controls = animate(el, keyframes, { ...chromeReduced, ...options })
+    runs.set(el, controls)
+    return controls
+  }
 
-  const transition = prefersReducedMotion()
-    ? { ...chromeReduced, ...options }
-    : { ...chromeSpring, ...options }
-
-  const controls = animate(el, keyframes, transition)
+  const controls = animate(el, keyframes, { ...chromeSpring, ...options })
   runs.set(el, controls)
   return controls
 }
 
-/** Instantly apply chrome geometry (first paint / PRM snap). */
 export function snapChrome(
   el: HTMLElement,
-  styles: Partial<CSSStyleDeclaration>,
+  styles: Partial<CSSStyleDeclaration> & Record<string, string>,
 ) {
-  const prev = runs.get(el)
-  prev?.stop()
+  runs.get(el)?.stop()
   runs.delete(el)
   Object.assign(el.style, styles)
 }

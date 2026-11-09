@@ -26,5 +26,9 @@ for (const mode of ['app', 'marketing']) {
   console.log(`generated routeTree.${mode}.gen.ts`)
 }
 
-// Leave tsr.config.json pointing at app (default local/dev mode).
+// Leave tsr.config.json + routeTree.gen.ts on app (default local/IDE typecheck).
 copyFileSync(path.join(cwd, 'tsr.app.json'), path.join(cwd, 'tsr.config.json'))
+copyFileSync(
+  path.join(cwd, 'src/routeTree.app.gen.ts'),
+  path.join(cwd, 'src/routeTree.gen.ts'),
+)

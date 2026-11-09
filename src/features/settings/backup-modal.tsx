@@ -12,6 +12,7 @@ import {
   formatLastExportLabel,
   getLastExportAt,
 } from '#/lib/backup'
+import { getErrorMessage } from '#/lib/errors'
 import { transactionsToCsv } from '#/lib/export-csv'
 import {
   ensureNotificationPermission,
@@ -48,8 +49,7 @@ export function BackupModal({
       await restoreBackup(file, { mode })
     } catch (err: unknown) {
       setRestoring(false)
-      const message =
-        err instanceof Error ? err.message : 'Could not restore backup'
+      const message = getErrorMessage(err, 'Could not restore backup')
       setError(message)
       toast.error(message)
     }
@@ -67,8 +67,7 @@ export function BackupModal({
       )
       toast.success(`Saved ${filename} (${rows.length} rows)`)
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Could not export CSV'
+      const message = getErrorMessage(err, 'Could not export CSV')
       setError(message)
       toast.error(message)
     } finally {
@@ -167,10 +166,7 @@ export function BackupModal({
                   toast.success(`Saved ${filename}`)
                 })
                 .catch((err: unknown) => {
-                  const message =
-                    err instanceof Error
-                      ? err.message
-                      : 'Could not export backup'
+                  const message = getErrorMessage(err, 'Could not export backup')
                   setError(message)
                   toast.error(message)
                 })

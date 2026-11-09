@@ -20,7 +20,7 @@ import { prefetchRoute } from '#/lib/query/prefetch'
 import type { CategoryView } from '#/lib/overview-helpers'
 import { cn } from 'cn'
 
-export type OverviewCategoryRow = {
+type OverviewCategoryRow = {
   name: string
   amount: number
   ofBudget: number

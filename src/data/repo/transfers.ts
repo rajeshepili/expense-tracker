@@ -218,64 +218,6 @@ export async function deleteTransfer(legId: string) {
   })
 }
 
-export async function linkAsTransfer(outTxId: string, inTxId: string) {
-  return withDb(async (db) => {
-    if (outTxId === inTxId) {
-      throw new ValidationError('Choose two different transactions')
-    }
-    const [outRow] = await db
-      .select()
-      .from(transactions)
-      .where(eq(transactions.id, outTxId))
-      .limit(1)
-    const [inRow] = await db
-      .select()
-      .from(transactions)
-      .where(eq(transactions.id, inTxId))
-      .limit(1)
-    if (!outRow || !inRow) throw new NotFoundError('Transaction')
-    if (outRow.transferId || inRow.transferId) {
-      throw new ConflictError('Transaction is already linked as a transfer')
-    }
-    if (outRow.type === 'transfer' || inRow.type === 'transfer') {
-      throw new ConflictError('Transaction is already a transfer')
-    }
-    if (
-      !outRow.accountId ||
-      !inRow.accountId ||
-      outRow.accountId === inRow.accountId
-    ) {
-      throw new ValidationError('Both transactions need different accounts')
-    }
-    if (Math.abs(outRow.amount - inRow.amount) > MONEY_EPSILON) {
-      throw new ValidationError('Transfer legs must have the same amount')
-    }
-
-    await db.transaction(async (tx) => {
-      await tx
-        .update(transactions)
-        .set({
-          type: 'transfer',
-          categoryId: null,
-          transferId: inRow.id,
-          transferDirection: 'out',
-        })
-        .where(eq(transactions.id, outRow.id))
-      await tx
-        .update(transactions)
-        .set({
-          type: 'transfer',
-          categoryId: null,
-          transferId: outRow.id,
-          transferDirection: 'in',
-        })
-        .where(eq(transactions.id, inRow.id))
-    })
-
-    return { success: true as const, outId: outRow.id, inId: inRow.id }
-  })
-}
-
 export async function repairOrphanTransfers() {
   return withDb(async (db) => {
     const transferRows = await db

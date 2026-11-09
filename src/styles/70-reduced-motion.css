@@ -26,26 +26,4 @@
   .skeleton-shimmer {
     opacity: 0.7;
   }
-
-  .animated-number-delta[data-show='true'] {
-    animation: none;
-    opacity: 0;
-  }
-
-  .animated-number-value {
-    will-change: auto;
-  }
-
-  .landing-brand-hero,
-  .landing-headline,
-  .landing-lede,
-  .landing-cta-block,
-  .landing-hero-mock .landing-mock,
-  .landing-mock-row {
-    animation: none !important;
-  }
-
-  .landing-scroll-cue {
-    display: none;
-  }
 }

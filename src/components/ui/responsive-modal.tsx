@@ -2,8 +2,9 @@
 
 import * as React from 'react'
 import { cn } from 'cn'
-import { useIsCompact } from '#/hooks/use-media-query'
+import { useIsMobile } from '#/hooks/use-media-query'
 import { motion } from '#/lib/motion'
+import { PanelScroll } from '#/components/ui/panel-scroll'
 import {
   Dialog,
   DialogClose,
@@ -41,8 +42,9 @@ function ResponsiveModal({
   onOpenChange,
   ...props
 }: React.ComponentProps<typeof Dialog> & React.ComponentProps<typeof Drawer>) {
-  const isCompact = useIsCompact()
-  const blocker = isCompact ? 'drawer' : 'modal'
+  // Phone (≤767, bottom tabs): Vaul sheet. Tablet+ top-nav widths: centered dialog.
+  const isMobile = useIsMobile()
+  const blocker = isMobile ? 'drawer' : 'modal'
   const openRef = React.useRef(Boolean(open))
 
   React.useEffect(() => {
@@ -73,9 +75,9 @@ function ResponsiveModal({
   }, [blocker])
 
   return (
-    <ModalModeContext.Provider value={isCompact ? 'drawer' : 'dialog'}>
+    <ModalModeContext.Provider value={isMobile ? 'drawer' : 'dialog'}>
       {/* repositionInputs={false}: vaul's keyboard repositioning breaks on iOS (vaul#503). */}
-      {isCompact ? (
+      {isMobile ? (
         <Drawer
           repositionInputs={false}
           open={open}
@@ -109,12 +111,18 @@ function ResponsiveModalContent({
   if (mode === 'drawer') {
     return (
       <DrawerContent
-        className={cn('max-h-[90dvh] gap-0 overflow-hidden p-0', className)}
+        className={cn(
+          // Bottom sheets must span the viewport. Callers often pass dialog
+          // widths like `sm:max-w-md`; those shrink the sheet to a left corner.
+          'max-h-[90dvh] w-full gap-0 overflow-hidden p-0',
+          className,
+          'max-w-none sm:max-w-none md:max-w-none lg:max-w-none xl:max-w-none',
+        )}
         {...props}
       >
-        <div className="flex max-h-[90dvh] flex-col overflow-y-auto overscroll-contain px-4 pb-[max(1rem,var(--safe-bottom))] pt-0">
+        <PanelScroll className="flex max-h-[90dvh] w-full flex-col px-4 pb-[max(1rem,var(--safe-bottom))] pt-0">
           {children}
-        </div>
+        </PanelScroll>
       </DrawerContent>
     )
   }

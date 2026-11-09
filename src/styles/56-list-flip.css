@@ -1,4 +1,8 @@
-/* FLIP list enter/exit — no always-on transitions (avoids border shimmer). */
+/*
+ * FLIP list enter/exit — no always-on transitions (avoids border shimmer).
+ * Position invert is WAAPI in useFlipList (First from prior commit only).
+ * These attrs own transform during enter/exit — WAAPI skips them.
+ */
 
 [data-flip-key][data-flip-enter] {
   animation: flip-row-enter var(--duration-enter) var(--ease-enter) both;
@@ -12,13 +16,28 @@
   }
 }
 
+/*
+ * Exit collapses out of flow immediately so siblings FLIP once to final seats.
+ * In-flow opacity/scale left a second layout jump when the hold cleared (very
+ * obvious on short lists).
+ */
 [data-flip-key][data-flip-exit] {
-  opacity: 0;
-  transform: scale(0.96);
   pointer-events: none;
-  transition:
-    opacity var(--duration-exit) var(--ease-exit),
-    transform var(--duration-exit) var(--ease-exit);
+  opacity: 0;
+  overflow: hidden;
+  height: 0 !important;
+  max-height: 0 !important;
+  min-height: 0 !important;
+  padding-block: 0 !important;
+  margin-block: 0 !important;
+  border-width: 0 !important;
+  transform: none;
+  transition: opacity var(--duration-exit) var(--ease-exit);
+}
+
+[data-flip-key][data-flip-exit] > * {
+  padding-block: 0 !important;
+  border-width: 0 !important;
 }
 
 .composer-fields-pane,

@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useRouter } from '@tanstack/react-router'
 import { Plus, Receipt } from 'lucide-react'
@@ -20,7 +20,7 @@ import {
 import { VirtualizedDataList } from '#/components/ui/virtualized-data-list'
 import { EmptyState } from '#/components/layout/empty-state'
 import { MobileListRow } from '#/components/layout/mobile-list'
-import { RowActionsMenu } from '#/features/shared/row-actions-menu'
+import { TransactionDetailSheet } from '#/features/ledger/transaction-detail-sheet'
 import { SignedMoney } from '#/features/shared/signed-money'
 import { useFlipList } from '#/hooks/use-flip-list'
 import { formatIsoDate } from '#/lib/finance'
@@ -65,7 +65,15 @@ export function OverviewRecentTransactions({
   const queryClient = useQueryClient()
   const router = useRouter()
   const listRef = useRef<HTMLElement | null>(null)
-  const { isEntering, isExiting } = useFlipList(
+  const [detailId, setDetailId] = useState<string | null>(null)
+  const detailItem = useMemo(
+    () =>
+      detailId
+        ? (transactions.find((row) => row.id === detailId) ?? null)
+        : null,
+    [detailId, transactions],
+  )
+  const { displayItems, isEntering, isExiting } = useFlipList(
     listRef,
     transactions,
     (row) => row.id,
@@ -77,11 +85,11 @@ export function OverviewRecentTransactions({
     return undefined
   }
 
-  function openInLedger(id: string) {
+  function openEditInLedger(transaction: LedgerTransaction) {
     prefetchRoute(queryClient, '/ledger', { month: yearMonth })
     void navigateAfterPrefetch(router, queryClient, {
       to: '/ledger',
-      search: { month: yearMonth, edit: id },
+      search: { month: yearMonth, edit: transaction.id },
       month: yearMonth,
     })
   }
@@ -130,19 +138,9 @@ export function OverviewRecentTransactions({
     />
   )
 
-  const editLink = (id: string) => (
-    <Link
-      to="/ledger"
-      search={{ month: yearMonth, edit: id }}
-      onClick={onLedgerLinkClick({ month: yearMonth, edit: id })}
-    >
-      Edit in ledger
-    </Link>
-  )
-
   return (
     <Card data-tour="recent" className="min-w-0 gap-0 py-0">
-      <CardHeader className="border-b py-3">
+      <CardHeader className="border-b py-4">
         <CardTitle className="text-base">Recent transactions</CardTitle>
         <CardAction>
           <Button asChild variant="ghost" size="sm">
@@ -156,28 +154,25 @@ export function OverviewRecentTransactions({
           </Button>
         </CardAction>
       </CardHeader>
-      <CardContent className="px-0 pb-1">
+      <CardContent className="px-0 pb-2">
         <VirtualizedDataList
           layout="flow"
           listRootRef={listRef}
-          items={transactions}
+          items={displayItems}
           getItemKey={(row) => row.id}
-          mobileEstimateSize={64}
-          desktopEstimateSize={44}
-          colSpan={5}
+          mobileEstimateSize={72}
+          desktopEstimateSize={56}
+          colSpan={4}
           empty={empty}
-          mobileClassName="px-3 py-2"
+          mobileClassName="px-4 py-3"
           header={
             <TableHeader>
               <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="w-[7.5rem] text-right whitespace-nowrap">
+                <TableHead className="h-10 px-4">Description</TableHead>
+                <TableHead className="h-10 px-4">Category</TableHead>
+                <TableHead className="h-10 px-4">Date</TableHead>
+                <TableHead className="h-10 w-30 px-4 text-right whitespace-nowrap">
                   Amount
-                </TableHead>
-                <TableHead className="w-10 pr-3">
-                  <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -188,6 +183,7 @@ export function OverviewRecentTransactions({
               <MobileListRow
                 key={transaction.id}
                 flip={{ key: transaction.id, state, index }}
+                className="min-h-16 px-4 py-3.5"
                 title={transaction.description}
                 meta={`${
                   transaction.type === 'transfer'
@@ -207,19 +203,7 @@ export function OverviewRecentTransactions({
                   />
                 }
                 onClick={
-                  state === 'exit'
-                    ? undefined
-                    : () => openInLedger(transaction.id)
-                }
-                actions={
-                  state === 'exit' ? null : (
-                    <RowActionsMenu
-                      label={transaction.description}
-                      size="touch"
-                      editAsChild={editLink(transaction.id)}
-                      onDelete={() => onDelete(transaction)}
-                    />
-                  )
+                  state === 'exit' ? undefined : () => setDetailId(transaction.id)
                 }
               />
             )
@@ -239,21 +223,21 @@ export function OverviewRecentTransactions({
                       }
                     : undefined
                 }
-                className="cursor-pointer pressable-row"
+                className="cursor-pointer pressable-row [@media(hover:hover)]:hover:bg-muted/40"
                 onClick={
-                  state === 'exit'
-                    ? undefined
-                    : () => openInLedger(transaction.id)
+                  state === 'exit' ? undefined : () => setDetailId(transaction.id)
                 }
               >
-                <TableCell className="font-medium">
+                <TableCell className="px-4 py-3.5 font-medium">
                   {transaction.description}
                 </TableCell>
-                <TableCell>{recentCategoryBadge(transaction)}</TableCell>
-                <TableCell className="text-muted-foreground">
+                <TableCell className="px-4 py-3.5">
+                  {recentCategoryBadge(transaction)}
+                </TableCell>
+                <TableCell className="px-4 py-3.5 text-muted-foreground">
                   {formatIsoDate(transaction.date)}
                 </TableCell>
-                <TableCell className="text-right whitespace-nowrap tabular-nums">
+                <TableCell className="px-4 py-3.5 text-right whitespace-nowrap tabular-nums">
                   <SignedMoney
                     type={transaction.type}
                     amount={transaction.amount}
@@ -261,20 +245,22 @@ export function OverviewRecentTransactions({
                     transferDirection={transaction.transferDirection}
                   />
                 </TableCell>
-                <TableCell onClick={(event) => event.stopPropagation()}>
-                  {state === 'exit' ? null : (
-                    <RowActionsMenu
-                      label={transaction.description}
-                      editAsChild={editLink(transaction.id)}
-                      onDelete={() => onDelete(transaction)}
-                    />
-                  )}
-                </TableCell>
               </TableRow>
             )
           }}
         />
       </CardContent>
+
+      <TransactionDetailSheet
+        item={detailItem}
+        open={detailId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailId(null)
+        }}
+        currency={currency}
+        onEdit={openEditInLedger}
+        onDelete={onDelete}
+      />
     </Card>
   )
 }

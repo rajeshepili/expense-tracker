@@ -11,9 +11,10 @@
    50-view-transitions.css  ::view-transition-* + route/month/theme keyframes
    55-overlays.css          dialog/select/dropdown/toast/drawer @starting-style
    56-list-flip.css         FLIP enter/exit + composer/dismiss panes
-   60-components.css        skip-link, badges, stat-tile, animated-number, skeleton
-   65-landing.css           first-run landing layout + keyframes
+   57-panel-scroll.css      PanelScroll — native overflow + token scrollbar
+   60-components.css        skip-link, brand-wordmark, badges, stat-tile, skeleton
    70-reduced-motion.css    single global prefers-reduced-motion kill-switch (LAST)
+   Landing layout lives in Tailwind on src/components/landing/*.
 
    MOTION RULES — read before adding any animation:
    1. Use the generated utilities (ease-enter, duration-settle, animate-slide-up…).
@@ -42,7 +43,6 @@
 @import './styles/50-view-transitions.css';
 @import './styles/55-overlays.css';
 @import './styles/56-list-flip.css';
+@import './styles/57-panel-scroll.css';
 @import './styles/60-components.css';
-@import './styles/65-landing.css';
-@import './styles/66-marketing.css';
 @import './styles/70-reduced-motion.css';

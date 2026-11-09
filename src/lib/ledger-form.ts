@@ -20,7 +20,6 @@ import {
   emptyLedgerForm,
   formFromTransaction,
   formFromTransferLeg,
-  prepareTransferEdit,
   transactionMeta,
   transferBadgeClass,
 } from '#/features/ledger/form-state'
@@ -34,7 +33,6 @@ export {
   emptyLedgerForm,
   formFromTransaction,
   formFromTransferLeg,
-  prepareTransferEdit,
   transactionMeta,
   transferBadgeClass,
 }

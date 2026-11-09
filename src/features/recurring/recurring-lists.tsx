@@ -1,27 +1,14 @@
-import { useRef } from 'react'
-import { MoreHorizontal, Plus, Repeat } from 'lucide-react'
-import { Badge } from '#/components/ui/badge'
+import type { ReactNode } from 'react'
+import { ChevronDown, Plus, Repeat } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '#/components/ui/dropdown-menu'
-import { Switch } from '#/components/ui/switch'
-import {
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '#/components/ui/table'
-import { VirtualizedDataList } from '#/components/ui/virtualized-data-list'
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '#/components/ui/collapsible'
 import { DueStatusBadge } from '#/features/shared/due-status-badge'
 import { EmptyState } from '#/components/layout/empty-state'
-import { MobileListRow } from '#/components/layout/mobile-list'
 import { Kbd } from '#/components/ui/kbd'
-import { useFlipList } from '#/hooks/use-flip-list'
-import { useIsCompact } from '#/hooks/use-media-query'
 import type { useRecordRecurring } from '#/hooks/use-record-recurring'
 import {
   amountDue,
@@ -29,384 +16,245 @@ import {
   canOneTapRecord,
   formatIsoDate,
   money,
-  monthlyEquivalent,
-  percent,
 } from '#/lib/finance'
 import type { RecurringExpenseRow } from '#/lib/types'
+import { cn } from 'cn'
 
 type RecurringListsProps = {
-  items: RecurringExpenseRow[]
+  thisMonth: RecurringExpenseRow[]
+  later: RecurringExpenseRow[]
+  paused: RecurringExpenseRow[]
   currency: string
-  monthlyBudget: number
   recording: boolean
-  togglePending: boolean
   recorder: ReturnType<typeof useRecordRecurring>
-  onToggle: (id: string, active: boolean) => void
-  onEdit: (item: RecurringExpenseRow) => void
+  onOpenDetail: (item: RecurringExpenseRow) => void
   onCreate: () => void
-  onSkip: (item: RecurringExpenseRow) => void
-  onViewPayments: (item: RecurringExpenseRow) => void
-  onDelete: (item: RecurringExpenseRow) => void
 }
 
-type RowHandlers = Pick<
-  RecurringListsProps,
-  | 'currency'
-  | 'monthlyBudget'
-  | 'recording'
-  | 'togglePending'
-  | 'recorder'
-  | 'onToggle'
-  | 'onEdit'
-  | 'onSkip'
-  | 'onViewPayments'
-  | 'onDelete'
->
+function billMeta(item: RecurringExpenseRow) {
+  const parts = [
+    item.category,
+    cadenceLabel[item.cadence],
+    item.paymentMethod || null,
+  ].filter(Boolean)
+  return parts.join(' · ')
+}
 
-function RecordButton({
+function BillRow({
   item,
+  currency,
   recording,
   recorder,
-  touch,
+  onOpenDetail,
+  showRecord,
 }: {
   item: RecurringExpenseRow
+  currency: string
   recording: boolean
   recorder: ReturnType<typeof useRecordRecurring>
-  touch?: boolean
+  onOpenDetail: (item: RecurringExpenseRow) => void
+  showRecord: boolean
 }) {
-  if (!item.active) return null
-  const oneTap = canOneTapRecord(item.nextDate)
+  const due = amountDue(item)
+
   return (
-    <Button
-      size="sm"
-      variant={oneTap ? 'default' : 'outline'}
-      className={touch ? 'min-h-11 active:scale-[0.97]' : 'active:scale-[0.97]'}
-      disabled={recording}
-      onClick={() =>
-        oneTap ? recorder.recordOneTap(item) : recorder.openAdjust(item)
-      }
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpenDetail(item)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpenDetail(item)
+        }
+      }}
+      className={cn(
+        'flex cursor-pointer items-center gap-3 rounded-xl border bg-card px-3.5 py-3.5 pressable',
+        '[@media(hover:hover)]:hover:bg-muted/40',
+        !item.active && 'opacity-60',
+      )}
     >
-      {oneTap ? 'Record' : 'Pay early'}
-    </Button>
-  )
-}
+      <div className="min-w-0 flex-1 text-left">
+        <p className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="truncate font-medium">{item.name}</span>
+          {item.active ? <DueStatusBadge nextDate={item.nextDate} /> : null}
+        </p>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+          {item.active
+            ? `${formatIsoDate(item.nextDate, true)} · ${billMeta(item)}`
+            : `Paused · ${billMeta(item)}`}
+          {item.remainingAmount !== null
+            ? ` · ${money(due, currency)} left`
+            : ''}
+        </p>
+      </div>
 
-function RecurringActionsMenu({
-  item,
-  recording,
-  recorder,
-  onEdit,
-  onSkip,
-  onViewPayments,
-  onDelete,
-  touch,
-}: {
-  item: RecurringExpenseRow
-  recording: boolean
-  recorder: ReturnType<typeof useRecordRecurring>
-  onEdit: (item: RecurringExpenseRow) => void
-  onSkip: (item: RecurringExpenseRow) => void
-  onViewPayments?: (item: RecurringExpenseRow) => void
-  onDelete: (item: RecurringExpenseRow) => void
-  touch?: boolean
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size={touch ? 'icon' : 'icon-sm'}
-          className={touch ? 'min-h-11 min-w-11' : undefined}
-          aria-label={`Actions for ${item.name}`}
+      <div className="flex shrink-0 items-center gap-1.5">
+        <span
+          className={cn(
+            'pr-0.5 text-right text-[0.95rem] font-medium tabular-nums',
+            item.kind === 'income' && 'text-emerald-600 dark:text-emerald-400',
+          )}
         >
-          <MoreHorizontal />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {item.active ? (
-          <>
-            <DropdownMenuItem
-              onClick={() => recorder.openAdjust(item)}
-              disabled={recording}
+          {item.kind === 'income' ? '+' : ''}
+          {money(due, currency)}
+        </span>
+        {showRecord ? (
+          <Button
+            size="sm"
+            className="min-h-10 active:scale-[0.97]"
+            disabled={recording}
+            onClick={(event) => {
+              event.stopPropagation()
+              recorder.recordOneTap(item)
+            }}
+          >
+            Record
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function BillSection({
+  title,
+  description,
+  count,
+  defaultOpen = true,
+  children,
+}: {
+  title: string
+  description?: string
+  count: number
+  defaultOpen?: boolean
+  children: ReactNode
+}) {
+  if (count === 0) return null
+
+  return (
+    <Collapsible defaultOpen={defaultOpen} className="space-y-2">
+      <div className="flex items-end justify-between gap-3 px-0.5">
+        <div className="min-w-0">
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="group flex items-center gap-1.5 text-left"
             >
-              {canOneTapRecord(item.nextDate) ? 'Adjust…' : 'Pay early…'}
-            </DropdownMenuItem>
-            {onViewPayments ? (
-              <DropdownMenuItem onClick={() => onViewPayments(item)}>
-                View payments
-              </DropdownMenuItem>
-            ) : null}
-            <DropdownMenuItem onClick={() => onSkip(item)} disabled={recording}>
-              Skip
-            </DropdownMenuItem>
-          </>
-        ) : null}
-        <DropdownMenuItem onClick={() => onEdit(item)}>Edit</DropdownMenuItem>
-        <DropdownMenuItem variant="destructive" onClick={() => onDelete(item)}>
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+              <h2 className="text-sm font-medium tracking-tight">{title}</h2>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {count}
+              </span>
+              <ChevronDown className="size-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+            </button>
+          </CollapsibleTrigger>
+          {description ? (
+            <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+      </div>
+      <CollapsibleContent className="space-y-2">{children}</CollapsibleContent>
+    </Collapsible>
   )
 }
 
-function RecurringMobileRow({
-  item,
-  index,
-  flipState,
+export function RecurringLists({
+  thisMonth,
+  later,
+  paused,
   currency,
   recording,
-  togglePending,
   recorder,
-  onToggle,
-  onEdit,
-  onSkip,
-  onViewPayments,
-  onDelete,
-}: {
-  item: RecurringExpenseRow
-  index: number
-  flipState?: 'enter' | 'exit'
-} & Omit<RowHandlers, 'monthlyBudget'>) {
-  return (
-    <MobileListRow
-      className={!item.active ? 'opacity-60' : undefined}
-      flip={
-        flipState
-          ? { key: item.id, state: flipState, index }
-          : { key: item.id, index }
-      }
-      title={
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate">{item.name}</span>
-          {item.active ? <DueStatusBadge nextDate={item.nextDate} /> : null}
-        </span>
-      }
-      meta={`${item.category}${item.paymentMethod ? ` · ${item.paymentMethod}` : ''} · ${cadenceLabel[item.cadence]} · next ${formatIsoDate(item.nextDate, true)}${item.remainingAmount !== null ? ` · ${money(amountDue(item), currency)} left` : ''}`}
-      trailing={
-        <span className="tabular-nums">{money(amountDue(item), currency)}</span>
-      }
-      onClick={flipState === 'exit' ? undefined : () => onEdit(item)}
-      actions={
-        flipState === 'exit' ? null : (
+  onOpenDetail,
+  onCreate,
+}: RecurringListsProps) {
+  const total = thisMonth.length + later.length + paused.length
+
+  if (total === 0) {
+    return (
+      <EmptyState
+        icon={<Repeat />}
+        title="No recurring expenses"
+        description={
           <>
-            <RecordButton
-              item={item}
-              recording={recording}
-              recorder={recorder}
-              touch
-            />
-            <Switch
-              checked={item.active}
-              disabled={togglePending}
-              onCheckedChange={(checked) => onToggle(item.id, checked)}
-              aria-label={`Toggle ${item.name}`}
-              className="mr-1"
-            />
-            <RecurringActionsMenu
-              item={item}
-              recording={recording}
-              recorder={recorder}
-              onEdit={onEdit}
-              onSkip={onSkip}
-              onViewPayments={onViewPayments}
-              onDelete={onDelete}
-              touch
-            />
+            <p className="mb-2">Track rent, subscriptions, and other repeats.</p>
+            <p className="text-xs text-muted-foreground">
+              Tap <Kbd className="mx-1">N</Kbd> or the button below to create your
+              first one.
+            </p>
           </>
-        )
-      }
-    />
-  )
-}
-
-function RecurringTableRow({
-  item,
-  index,
-  flipState,
-  currency,
-  monthlyBudget,
-  recording,
-  togglePending,
-  recorder,
-  onToggle,
-  onEdit,
-  onSkip,
-  onViewPayments,
-  onDelete,
-}: {
-  item: RecurringExpenseRow
-  index: number
-  flipState?: 'enter' | 'exit'
-} & RowHandlers) {
-  const monthly = monthlyEquivalent(item.amount, item.cadence)
-  const itemOfBudget = monthlyBudget > 0 ? monthly / monthlyBudget : 0
-
-  return (
-    <TableRow
-      key={item.id}
-      data-flip-key={item.id}
-      data-flip-enter={flipState === 'enter' ? '' : undefined}
-      data-flip-exit={flipState === 'exit' ? '' : undefined}
-      style={
-        flipState === 'enter'
-          ? {
-              ['--flip-enter-delay' as string]: `${Math.min(index, 8) * 40}ms`,
-            }
-          : undefined
-      }
-      className={!item.active ? 'opacity-60' : undefined}
-    >
-      <TableCell className="font-medium">
-        <span className="inline-flex flex-wrap items-center gap-2">
-          {item.name}
-          {item.active ? <DueStatusBadge nextDate={item.nextDate} /> : null}
-        </span>
-      </TableCell>
-      <TableCell className="hidden sm:table-cell">
-        <Badge variant="secondary">{item.category}</Badge>
-      </TableCell>
-      <TableCell className="hidden text-muted-foreground md:table-cell">
-        {item.paymentMethod ?? '—'}
-      </TableCell>
-      <TableCell className="hidden lg:table-cell">
-        <Badge variant="outline">{cadenceLabel[item.cadence]}</Badge>
-      </TableCell>
-      <TableCell className="hidden text-muted-foreground xl:table-cell">
-        {formatIsoDate(item.nextDate, true)}
-      </TableCell>
-      <TableCell className="text-right whitespace-nowrap tabular-nums">
-        <span className="block">{money(amountDue(item), currency)}</span>
-        {item.remainingAmount !== null ? (
-          <span className="block text-xs text-muted-foreground">
-            of {money(item.amount, currency)}
-          </span>
-        ) : null}
-      </TableCell>
-      <TableCell className="hidden text-right whitespace-nowrap tabular-nums md:table-cell">
-        {money(monthly, currency)}
-      </TableCell>
-      <TableCell className="hidden text-right whitespace-nowrap tabular-nums lg:table-cell">
-        {item.active ? percent(itemOfBudget) : '—'}
-      </TableCell>
-      <TableCell>
-        <Switch
-          checked={item.active}
-          disabled={togglePending}
-          onCheckedChange={(checked) => onToggle(item.id, checked)}
-          aria-label={`Toggle ${item.name}`}
-        />
-      </TableCell>
-      <TableCell>
-        <RecordButton item={item} recording={recording} recorder={recorder} />
-      </TableCell>
-      <TableCell>
-        <RecurringActionsMenu
-          item={item}
-          recording={recording}
-          recorder={recorder}
-          onEdit={onEdit}
-          onSkip={onSkip}
-          onViewPayments={onViewPayments}
-          onDelete={onDelete}
-        />
-      </TableCell>
-    </TableRow>
-  )
-}
-
-export function RecurringLists(props: RecurringListsProps) {
-  const { items, onCreate } = props
-  const listRef = useRef<HTMLElement | null>(null)
-  const isCompact = useIsCompact()
-  const { isEntering, isExiting } = useFlipList(
-    listRef,
-    items,
-    (item) => item.id,
-    { waapi: !isCompact, enters: !isCompact },
-  )
-
-  function flipState(id: string): 'enter' | 'exit' | undefined {
-    if (isCompact) return undefined
-    if (isExiting(id)) return 'exit'
-    if (isEntering(id)) return 'enter'
-    return undefined
+        }
+        action={
+          <Button size="sm" onClick={onCreate} className="w-full sm:w-auto">
+            <Plus data-icon="inline-start" />
+            Add Recurring Expense
+          </Button>
+        }
+      />
+    )
   }
 
-  const empty = (
-    <EmptyState
-      icon={<Repeat />}
-      title="No recurring expenses"
-      description={
-        <>
-          <p className="mb-2">Track rent, subscriptions, and other repeats.</p>
-          <p className="text-xs text-muted-foreground">
-            Tap <Kbd className="mx-1">N</Kbd> or the button below to create your
-            first one.
-          </p>
-        </>
-      }
-      action={
-        <Button size="sm" onClick={onCreate} className="w-full sm:w-auto">
-          <Plus data-icon="inline-start" />
-          Add Recurring Expense
-        </Button>
-      }
-    />
-  )
-
   return (
-    <VirtualizedDataList
-      listRootRef={listRef}
-      items={items}
-      getItemKey={(item) => item.id}
-      mobileEstimateSize={88}
-      desktopEstimateSize={52}
-      colSpan={10}
-      empty={empty}
-      header={
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead className="hidden sm:table-cell">Category</TableHead>
-            <TableHead className="hidden md:table-cell">Method</TableHead>
-            <TableHead className="hidden lg:table-cell">Cadence</TableHead>
-            <TableHead className="hidden lg:table-cell">Next</TableHead>
-            <TableHead className="text-right whitespace-nowrap">
-              Amount
-            </TableHead>
-            <TableHead className="hidden text-right whitespace-nowrap md:table-cell">
-              Monthly
-            </TableHead>
-            <TableHead className="hidden text-right whitespace-nowrap lg:table-cell">
-              Of budget
-            </TableHead>
-            <TableHead>Active</TableHead>
-            <TableHead className="w-28">
-              <span className="sr-only">Record</span>
-            </TableHead>
-            <TableHead className="w-10">
-              <span className="sr-only">Actions</span>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-      }
-      renderMobile={(item, index) => (
-        <RecurringMobileRow
-          item={item}
-          index={index}
-          flipState={flipState(item.id)}
-          {...props}
-        />
+    <div className="flex flex-col gap-6">
+      {thisMonth.length === 0 ? (
+        <div className="rounded-xl border border-dashed px-4 py-8 text-center">
+          <p className="text-sm font-medium">Nothing due this month</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Later bills are listed in the next section.
+          </p>
+        </div>
+      ) : (
+        <BillSection
+          title="This month"
+          description="Due soon, overdue, or still ahead in this cycle."
+          count={thisMonth.length}
+        >
+          {thisMonth.map((item) => (
+            <BillRow
+              key={item.id}
+              item={item}
+              currency={currency}
+              recording={recording}
+              recorder={recorder}
+              onOpenDetail={onOpenDetail}
+              showRecord={canOneTapRecord(item.nextDate)}
+            />
+          ))}
+        </BillSection>
       )}
-      renderDesktop={(item, index) => (
-        <RecurringTableRow
-          item={item}
-          index={index}
-          flipState={flipState(item.id)}
-          {...props}
-        />
-      )}
-    />
+
+      <BillSection
+        title="Coming later"
+        description="Hidden from this month. Open a bill to pay early."
+        count={later.length}
+        defaultOpen={thisMonth.length === 0}
+      >
+        {later.map((item) => (
+          <BillRow
+            key={item.id}
+            item={item}
+            currency={currency}
+            recording={recording}
+            recorder={recorder}
+            onOpenDetail={onOpenDetail}
+            showRecord={false}
+          />
+        ))}
+      </BillSection>
+
+      <BillSection title="Paused" count={paused.length} defaultOpen={false}>
+        {paused.map((item) => (
+          <BillRow
+            key={item.id}
+            item={item}
+            currency={currency}
+            recording={recording}
+            recorder={recorder}
+            onOpenDetail={onOpenDetail}
+            showRecord={false}
+          />
+        ))}
+      </BillSection>
+    </div>
   )
 }

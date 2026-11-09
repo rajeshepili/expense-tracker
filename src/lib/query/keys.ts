@@ -20,6 +20,7 @@ export type TransactionsSummaryKey = {
 
 export const queryKeys = {
   settings: ['settings'] as const,
+  monthBudget: ['settings', 'month-budget'] as const,
   onboarding: ['onboarding'] as const,
   transactions: ['transactions'] as const,
   transactionsList: (filters: TransactionsListKey) =>

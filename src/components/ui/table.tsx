@@ -79,7 +79,7 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
     <td
       data-slot="table-cell"
       className={cn(
-        'px-3 py-1.5 align-middle break-words [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        'px-3 py-1.5 align-middle break-words has-[[role=checkbox]]:pr-0 *:[[role=checkbox]]:translate-y-0.5',
         className,
       )}
       {...props}

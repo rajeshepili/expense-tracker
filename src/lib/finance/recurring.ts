@@ -1,5 +1,5 @@
-import type { RecurrenceCadence } from '#/lib/types'
-import { compareIsoDate, todayIso } from './dates'
+import type { RecurrenceCadence, RecurringExpenseRow } from '#/lib/types'
+import { compareIsoDate, currentYearMonth, todayIso, yearMonthRange } from './dates'
 import { roundMoney } from './budget'
 
 export type DueStatus = 'upcoming' | 'due' | 'overdue'
@@ -85,4 +85,37 @@ export function monthlyEquivalent(
   if (cadence === 'weekly') return amount * (52 / 12)
   if (cadence === 'yearly') return amount / 12
   return amount
+}
+
+export type RecurringMonthPartition = {
+  /** Active bills with nextDate before the next month (includes overdue). */
+  thisMonth: RecurringExpenseRow[]
+  /** Active bills whose next hit is after this month. */
+  later: RecurringExpenseRow[]
+  paused: RecurringExpenseRow[]
+}
+
+/** Active due this month vs later vs paused. */
+export function partitionRecurringForMonth(
+  items: RecurringExpenseRow[],
+  yearMonth = currentYearMonth(),
+): RecurringMonthPartition {
+  const { to } = yearMonthRange(yearMonth)
+  const thisMonth: RecurringExpenseRow[] = []
+  const later: RecurringExpenseRow[] = []
+  const paused: RecurringExpenseRow[] = []
+
+  for (const item of items) {
+    if (!item.active) {
+      paused.push(item)
+      continue
+    }
+    if (item.nextDate < to) {
+      thisMonth.push(item)
+    } else {
+      later.push(item)
+    }
+  }
+
+  return { thisMonth, later, paused }
 }

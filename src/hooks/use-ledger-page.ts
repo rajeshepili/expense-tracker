@@ -7,6 +7,7 @@ import type {
   LedgerTransaction,
   TransactionType,
 } from '#/lib/types'
+import { getErrorMessage } from '#/lib/errors'
 import { currentYearMonth } from '#/lib/finance'
 import { readTransactionDefaults } from '#/lib/transaction-defaults'
 import { useLedgerList } from '#/lib/ledger-list'
@@ -15,7 +16,7 @@ import {
   useLedgerForm,
   emptyLedgerForm,
   formFromTransaction,
-  prepareTransferEdit,
+  formFromTransferLeg,
 } from '#/lib/ledger-form'
 import type { LedgerFormState } from '#/lib/ledger-form'
 import { useComposer } from '#/hooks/use-composer'
@@ -114,14 +115,12 @@ export function useLedgerPage({
       void (async () => {
         setSaveError(null)
         try {
-          const next = await prepareTransferEdit(row)
+          const next = await formFromTransferLeg(row)
           setEditing(row)
           setForm(next)
           setComposerOpen(true)
         } catch (error) {
-          setSaveError(
-            error instanceof Error ? error.message : 'Could not open transfer',
-          )
+          setSaveError(getErrorMessage(error, 'Could not open transfer'))
           setComposerOpen(true)
         }
       })()

@@ -270,13 +270,19 @@ export async function getOverview(yearMonth = currentYearMonth()) {
     const today = todayIso()
     const recurringRows = activeRecurring as RecurringExpenseRow[]
     const dueRecurring = recurringRows.filter((row) => {
+      if (row.kind !== 'expense') return false
+      if (row.nextDate < monthDates.from || row.nextDate >= monthDates.to) return false
       const status = dueStatus(row.nextDate, today)
       return status === 'due' || status === 'overdue'
     })
+    const upcomingInMonth = recurringRows.filter(
+      (row) =>
+        row.nextDate >= monthDates.from && row.nextDate < monthDates.to,
+    )
     const upcomingRecurring =
       dueRecurring.length > 0
         ? dueRecurring.slice(0, DUE_RECURRING_LIMIT)
-        : recurringRows.slice(0, UPCOMING_RECURRING_LIMIT)
+        : upcomingInMonth.slice(0, UPCOMING_RECURRING_LIMIT)
 
     return {
       settings: settingsData,

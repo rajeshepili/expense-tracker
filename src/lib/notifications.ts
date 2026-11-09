@@ -3,7 +3,7 @@ import { compareIsoDate, formatIsoDate, todayIso } from '#/lib/finance'
 import type { RecurringExpenseRow } from '#/lib/types'
 
 const REMINDERS_ENABLED_KEY = 'pocketbook-reminders-enabled'
-export const REMINDER_WINDOW_DAYS = 2
+const REMINDER_WINDOW_DAYS = 2
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export function isRemindersEnabled(): boolean {
@@ -40,7 +40,7 @@ function daysUntil(isoDate: string, today: string) {
   return Math.round((a - b) / DAY_MS)
 }
 
-export type BillReminder = {
+type BillReminder = {
   id: string
   name: string
   amount: number
@@ -69,7 +69,6 @@ export function dueSoonReminders(
     .sort((a, b) => compareIsoDate(a.nextDate, b.nextDate))
 }
 
-/** Due-soon bill notifications (needs permission + setting). */
 export async function scheduleBillReminders(
   opts: { windowDays?: number; force?: boolean } = {},
 ): Promise<BillReminder[]> {

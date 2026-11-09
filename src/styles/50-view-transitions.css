@@ -10,6 +10,50 @@
   background-color: var(--background);
 }
 
+/*
+ * App chrome leaves the root VT snapshot. Fixed mobile tabs otherwise morph
+ * with root and flicker on every tab switch. Unique names — never reuse the
+ * same view-transition-name on two nodes in one frame.
+ */
+[data-app-chrome='top-desktop'] {
+  view-transition-name: app-top-desktop;
+}
+[data-app-chrome='top-mobile'] {
+  view-transition-name: app-top-mobile;
+}
+[data-app-chrome='tabs'] {
+  view-transition-name: app-tab-bar;
+}
+[data-app-chrome='nudge'] {
+  view-transition-name: app-install-nudge;
+}
+/* Sonner mounts [data-sonner-toaster] as fixed chrome. */
+[data-sonner-toaster] {
+  view-transition-name: app-toaster;
+}
+
+::view-transition-group(app-top-desktop),
+::view-transition-group(app-top-mobile),
+::view-transition-group(app-tab-bar),
+::view-transition-group(app-install-nudge),
+::view-transition-group(app-toaster) {
+  animation-duration: 0s;
+}
+
+::view-transition-old(app-top-desktop),
+::view-transition-new(app-top-desktop),
+::view-transition-old(app-top-mobile),
+::view-transition-new(app-top-mobile),
+::view-transition-old(app-tab-bar),
+::view-transition-new(app-tab-bar),
+::view-transition-old(app-install-nudge),
+::view-transition-new(app-install-nudge),
+::view-transition-old(app-toaster),
+::view-transition-new(app-toaster) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 html[data-vt-route='forward'] .page-content {
   view-transition-name: page-forward;
 }
@@ -21,6 +65,11 @@ html[data-motion='theme'] .page-content,
 html[data-motion='theme'] .month-view,
 html[data-motion='month'] .page-content {
   view-transition-name: none;
+}
+
+/* No root crossfade morph — page slides live on page-*; theme blooms on old/new. */
+::view-transition-group(root) {
+  animation-duration: 0s;
 }
 
 ::view-transition-old(root) {

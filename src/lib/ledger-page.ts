@@ -1,4 +1,3 @@
-/** Whether the ledger should show a Load more control. */
 export function ledgerHasMore(opts: {
   rowCount: number
   totalCount: number

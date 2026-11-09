@@ -33,9 +33,9 @@ Personal, local-only money tracker. Not tax software, payroll, banking, or multi
 | `src/app/` | Shell: gate, nav, theme, onboarding |
 | `src/routes/` | Screens (Overview, Ledger, Recurring, Savings, Categories) |
 | `src/features/` | Domain UI (ledger, overview, recurring, categories, savings, settings, shared) |
-| `src/components/ui/` | shadcn primitives |
+| `src/components/ui/` | shadcn primitives + `panel-scroll` (native nested scroll) |
 | `src/components/layout/` | Page chrome (shell, header, month nav, empty/loading) |
-| `src/components/landing/` | Marketing site pages |
+| `src/components/landing/` | Landing host pages (home, 404) |
 | `src/data/` | Public `repository.ts` barrel, seed, sample ledger |
 | `src/data/repo/` | Entity modules (settings, transactions, recurring, savings, …) |
 | `src/db/` | Drizzle schema + SQLocal client + migrator |

@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
-import { Plus, Target, ArrowRight } from 'lucide-react'
+import { Plus, Target } from 'lucide-react'
 import { ComposerFormModal } from '#/features/shared/composer-form-modal'
 import { ConfirmDeleteDialog } from '#/features/shared/confirm-delete-dialog'
 import { ContributeProgressDialog } from '#/features/savings/contribute-progress-dialog'
+import { GoalDetailSheet } from '#/features/savings/goal-detail-sheet'
 import { CategorySelect } from '#/features/shared/entity-selects'
 import { Button } from '#/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '#/components/ui/field'
@@ -41,9 +42,18 @@ export function SavingsScreen() {
   const [editing, setEditing] = useState<SavingsGoalRow | null>(null)
   const [deleting, setDeleting] = useState<SavingsGoalRow | null>(null)
   const [contributing, setContributing] = useState<SavingsGoalRow | null>(null)
+  const [detailId, setDetailId] = useState<string | null>(null)
   const [form, setForm] = useState(emptySavingsForm())
   const [composerOpen, setComposerOpen] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+
+  const detailItem = useMemo(
+    () => (detailId ? (goals.find((goal) => goal.id === detailId) ?? null) : null),
+    [detailId, goals],
+  )
+  const detailCompleted = Boolean(
+    detailItem && completedGoals.some((goal) => goal.id === detailItem.id),
+  )
 
   function reset() {
     setEditing(null)
@@ -158,38 +168,7 @@ export function SavingsScreen() {
                   key={goal.id}
                   goal={goal}
                   currency={currency}
-                  actions={
-                    <div className="flex shrink-0 flex-col gap-1.5">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => setContributing(goal)}
-                      >
-                        Add progress
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="w-full"
-                        onClick={() => openEdit(goal)}
-                      >
-                        Edit
-                        <ArrowRight className="size-4" data-icon="inline-end" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="w-full text-destructive hover:text-destructive"
-                        onClick={() => {
-                          deleteMutation.reset()
-                          setDeleting(goal)
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  }
+                  onOpen={(row) => setDetailId(row.id)}
                 />
               ))}
             </div>
@@ -200,35 +179,29 @@ export function SavingsScreen() {
                 <CompletedGoalRow
                   key={goal.id}
                   goal={goal}
-                  action={
-                    <div className="flex shrink-0 items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => openEdit(goal)}
-                      >
-                        Edit
-                        <ArrowRight className="size-4" data-icon="inline-end" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => {
-                          deleteMutation.reset()
-                          setDeleting(goal)
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  }
+                  onOpen={(row) => setDetailId(row.id)}
                 />
               ))}
             </div>
           ) : null}
         </>
       )}
+
+      <GoalDetailSheet
+        item={detailItem}
+        open={detailId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailId(null)
+        }}
+        currency={currency}
+        completed={detailCompleted}
+        onContribute={setContributing}
+        onEdit={openEdit}
+        onDelete={(goal) => {
+          deleteMutation.reset()
+          setDeleting(goal)
+        }}
+      />
 
       <ComposerFormModal
         open={composerOpen}

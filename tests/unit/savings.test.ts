@@ -7,7 +7,6 @@ import {
   findRankedGoal,
   formatDaysUntilLabel,
   hasOpenSavingsGoal,
-  MONEY_EPSILON,
   normalizeSavingsGoalCreate,
   normalizeSavingsGoalUpdate,
   parsePositiveAmount,
@@ -17,6 +16,7 @@ import {
   savingsRemaining,
   shouldPromptFundGoal,
 } from '#/lib/savings'
+import { MONEY_EPSILON } from '#/lib/finance'
 import type { SavingsGoalRow } from '#/lib/types'
 
 function goal(

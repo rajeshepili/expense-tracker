@@ -6,7 +6,7 @@ import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
 import { autoUpdate } from '@floating-ui/react-dom'
 import { XIcon } from 'lucide-react'
 
-import { cn } from '#/lib/utils'
+import { cn } from 'cn'
 import { Button } from '#/components/ui/button'
 
 type TourSide = 'top' | 'right' | 'bottom' | 'left'

@@ -14,12 +14,12 @@ export function useMediaQuery(query: string) {
   )
 }
 
-/** Phone-only: bottom tabs + compact top bar (`md` / 768px). */
+/** ≤767px — bottom tabs / Vaul drawers. */
 export function useIsMobile() {
   return useMediaQuery('(max-width: 767px)')
 }
 
-/** Phone + tablet: list rows, drawers, compact chrome until `lg` / 1024px. */
+/** ≤1023px — compact list density (tablet still uses dialogs). */
 export function useIsCompact() {
   return useMediaQuery('(max-width: 1023px)')
 }

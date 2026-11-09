@@ -5,7 +5,7 @@ import { Badge } from '#/components/ui/badge'
 import { Progress } from '#/components/ui/progress'
 import { StatTile } from '#/features/shared/stat-tile'
 import { money } from '#/lib/finance'
-import { quietDelta } from '#/lib/overview-helpers'
+import { priorDeltaLabel } from '#/lib/overview-helpers'
 import { navigateAfterPrefetch } from '#/lib/navigate-after-prefetch'
 import { prefetchRoute } from '#/lib/query/prefetch'
 import { useIsCompact } from '#/hooks/use-media-query'
@@ -54,7 +54,7 @@ export function OverviewMonthStats({
       tone: 'income',
       icon: <ArrowDownLeft />,
       value: summary.income,
-      delta: quietDelta(summary.income, priorSummary.income),
+      delta: priorDeltaLabel(summary.income, priorSummary.income),
       goodWhen: 'up',
       link: true,
       ledgerType: 'income',
@@ -64,7 +64,7 @@ export function OverviewMonthStats({
       tone: 'expense',
       icon: <ArrowUpRight />,
       value: summary.expenses,
-      delta: quietDelta(summary.expenses, priorSummary.expenses),
+      delta: priorDeltaLabel(summary.expenses, priorSummary.expenses),
       goodWhen: 'down',
       link: true,
       ledgerType: 'expense',

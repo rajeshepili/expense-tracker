@@ -16,10 +16,6 @@ export type TransactionDeltaRow = {
   transferDirection?: TransferDirection | null
 }
 
-export function isCashflowTransaction(type: TransactionType): boolean {
-  return type === 'income' || type === 'expense'
-}
-
 export function signedDelta(
   accountType: AccountType,
   row: TransactionDeltaRow,

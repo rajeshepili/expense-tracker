@@ -2,21 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   accountBalance,
   inferAccountTypeFromName,
-  isCashflowTransaction,
   isIsoDate,
   MONEY_EPSILON,
   netWorth,
   orphanTransferIds,
   signedDelta,
 } from '#/lib/finance'
-
-describe('isCashflowTransaction', () => {
-  it('includes income and expense only', () => {
-    expect(isCashflowTransaction('income')).toBe(true)
-    expect(isCashflowTransaction('expense')).toBe(true)
-    expect(isCashflowTransaction('transfer')).toBe(false)
-  })
-})
 
 describe('signedDelta', () => {
   it('applies the asset matrix', () => {
@@ -88,7 +79,7 @@ describe('accountBalance and netWorth', () => {
     const cardDebt = accountBalance(0, [cardPurchase, paymentIn], 'liability')
     const checking = accountBalance(200, [paymentOut], 'asset')
     const cashflowExpenses = [cardPurchase, paymentOut, paymentIn]
-      .filter((row) => isCashflowTransaction(row.type))
+      .filter((row) => row.type === 'expense')
       .reduce((sum, row) => sum + row.amount, 0)
 
     expect(cardDebt).toBe(0)

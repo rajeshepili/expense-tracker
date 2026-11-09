@@ -1,7 +1,7 @@
 import { cloneElement, isValidElement, useEffect, useRef } from 'react'
 import type { ReactNode, ForwardedRef } from 'react'
 import { Button } from '#/components/ui/button'
-import { useIsCompact } from '#/hooks/use-media-query'
+import { useIsMobile } from '#/hooks/use-media-query'
 import { FieldError } from '#/components/ui/field'
 import {
   ResponsiveModal,
@@ -69,18 +69,18 @@ export function ComposerFormModal({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const wasOpen = useRef(open)
-  const isCompact = useIsCompact()
+  const isMobile = useIsMobile()
 
-  // Focus first input on desktop dialogs only — on compact the sheet is a vaul
-  // drawer and autofocus mid-animation shoves it off-screen (vaul#503).
+  // Focus first input on dialogs only — phone Vaul drawers shove off-screen
+  // if focused mid-animation (vaul#503). Tablet+ uses dialogs.
   useEffect(() => {
-    if (open && !wasOpen.current && !isCompact) {
+    if (open && !wasOpen.current && !isMobile) {
       requestAnimationFrame(() => {
         focusFirstInput(contentRef.current)
       })
     }
     wasOpen.current = open
-  }, [open, isCompact])
+  }, [open, isMobile])
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen && triggerRef.current) {

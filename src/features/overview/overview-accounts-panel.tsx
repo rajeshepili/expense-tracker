@@ -11,12 +11,13 @@ import {
   CardTitle,
 } from '#/components/ui/card'
 import { EmptyState } from '#/components/layout/empty-state'
+import { typeLabel } from '#/features/categories/account-form'
 import { money } from '#/lib/finance'
 import { prefetchRoute } from '#/lib/query/prefetch'
 import type { AccountType } from '#/lib/types'
 import { cn } from 'cn'
 
-export type OverviewAccount = {
+type OverviewAccount = {
   id: string
   name: string
   type: AccountType
@@ -27,10 +28,6 @@ type OverviewAccountsPanelProps = {
   currency: string
   accounts: OverviewAccount[]
   netWorth: number
-}
-
-function typeLabel(type: AccountType) {
-  return type === 'liability' ? 'Liability' : 'Asset'
 }
 
 export function OverviewAccountsPanel({

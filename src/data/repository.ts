@@ -22,20 +22,16 @@ export {
 export {
   listAccounts,
   listAccountsWithBalances,
-  getAccount,
-  getAccountBalance,
   createAccount,
   updateAccount,
   closeAccount,
   deleteAccount,
-  assertAccountOpen,
 } from '#/data/repo/accounts'
 
 export type { ListTransactionsFilters } from '#/data/repo/transactions'
 export {
   listTransactions,
   summarizeTransactions,
-  listRecentTransactions,
   listAllTransactions,
   createTransaction,
   updateTransaction,
@@ -46,9 +42,7 @@ export {
 export {
   createTransfer,
   updateTransfer,
-  deleteTransfer,
   getTransferPair,
-  linkAsTransfer,
   repairOrphanTransfers,
 } from '#/data/repo/transfers'
 

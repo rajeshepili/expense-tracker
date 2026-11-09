@@ -4,7 +4,7 @@ The repo deploys to **two** Hobby-tier Vercel projects under `linux-res-projects
 
 | Project               | Hostname                                  | Config file             | Serves                                            |
 | --------------------- | ----------------------------------------- | ----------------------- | ------------------------------------------------- |
-| `expense-tracker-mkt` | `expense-tracker-mkt.vercel.app`          | `vercel.marketing.json` | Marketing: `/` (landing), `/features`, `/privacy` |
+| `expense-tracker-mkt` | `expense-tracker-mkt.vercel.app`          | `vercel.marketing.json` | Landing host: `/` (home); `/features`+`/privacy` redirect home |
 | `expense-tracker`     | `expense-tracker-amber-two-58.vercel.app` | `vercel.app.json`       | The app: all routes, gate, OPFS database          |
 
 Both projects import the same GitHub repo. In each project's Vercel settings, set:
@@ -18,7 +18,7 @@ The build-time split is a **dual route tree**:
 | Mode        | Routes dir              | Generated tree                   | Contains                                                                 |
 | ----------- | ----------------------- | -------------------------------- | ------------------------------------------------------------------------ |
 | `app`       | `src/routes/app/`       | `src/routeTree.app.gen.ts`       | Overview, ledger, bills, goals, categories, year + AppGate/DB            |
-| `marketing` | `src/routes/marketing/` | `src/routeTree.marketing.gen.ts` | Home, features, privacy only — **no** product routes, AppGate, or SQLite |
+| `marketing` | `src/routes/marketing/` | `src/routeTree.marketing.gen.ts` | Landing home (+ stub redirects) — **no** product routes, AppGate, or SQLite |
 
 `VITE_SITE_MODE` selects the tree via Vite alias + `tanstackStart({ router: … })`. Run `pnpm generate-routes` after adding/renaming routes (writes both trees). After a marketing build, `pnpm assert:mkt-bundle` fails if product/SQLite markers leak into `.output`.
 
@@ -31,13 +31,13 @@ Wrong-host routes:
 
 - Marketing **Get started** (topbar + hero) links to `APP_URL/?from=mkt` (see `APP_SETUP_URL` in `src/lib/brand.ts`).
 - Returning users: hero text **Already using Pocketbook? Open app** and footer **Open app** → bare `APP_URL`.
-- App onboarding is a compact wizard only — **no** marketing-style hero/product mock; wizard header has no Features/Privacy exits.
+- App onboarding is a compact wizard only — **no** landing hero/product mock.
 - Wizard: Welcome → Currency & budget → First account → **Categories** (multi-select expense tags; Income always seeded; “Select common” for Food/Housing/Transport/Other). `?from=mkt` (or a marketing referrer) **skips Welcome**; cold app visits still see Welcome + restore.
 - Restore a `.sqlite3` backup is available from Welcome / Money; it replaces OPFS data and reloads.
 - After setup, more income tags (Salary, Freelance, …) are added on Categories — not as extra accounts. Transfer appears in the ledger only once you have 2+ accounts.
-- After setup, Overview **Privacy** opens the marketing privacy page (new tab). Marketing HTML `preconnect`s to `APP_URL`.
+- Marketing HTML `preconnect`s to `APP_URL`. Legacy `/features` and `/privacy` redirect to `/`.
 
-OPFS is per-origin, so only the app host has a database; the marketing host never initializes one and says so on `/privacy`.
+OPFS is per-origin, so only the app host has a database; the marketing host never initializes one.
 
 ### CSP
 
@@ -94,7 +94,7 @@ node scripts/verify-deploy.mjs                 # production hosts
 node scripts/verify-deploy.mjs <mkt-url> <app-url>   # preview URLs
 ```
 
-Checks: 200s, marketing has **no** COEP, app **has** COEP, both have HSTS/CSP/nosniff, `data-site-mode` on HTML, `/features`+`/privacy` 200 on marketing, `/ledger` on marketing and `/features` on app return edge redirects to the sibling host.
+Checks: 200s, marketing has **no** COEP, app **has** COEP, both have HSTS/CSP/nosniff, `data-site-mode` on HTML, `/features`+`/privacy` resolve on marketing (redirect home), `/ledger` on marketing and `/features` on app return edge redirects to the sibling host.
 
 ## Runbook when a deploy looks wrong
 

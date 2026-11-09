@@ -53,6 +53,7 @@ export function InstallNudge() {
 
   return (
     <div
+      data-app-chrome="nudge"
       className={cn(
         'fixed bottom-[calc(var(--tab-bar-h)+1rem)] left-4 right-4 md:bottom-4 md:left-auto md:right-4 md:w-[320px] z-50',
         phase === 'out' ? 'animate-slide-down-out' : 'animate-slide-up',

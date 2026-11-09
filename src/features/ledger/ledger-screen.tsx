@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { getRouteApi } from '@tanstack/react-router'
 import { Plus, Receipt } from 'lucide-react'
 import { Button } from '#/components/ui/button'
@@ -19,9 +20,12 @@ import { PageShell } from '#/components/layout/page-shell'
 import { LedgerFilters } from '#/features/ledger/ledger-filters'
 import { LedgerFormFields } from '#/features/ledger/ledger-form-fields'
 import { LedgerLists } from '#/features/ledger/ledger-lists'
+import { TransactionDetailSheet } from '#/features/ledger/transaction-detail-sheet'
 import { Kbd } from '#/components/ui/kbd'
 import { useLedgerPage } from '#/hooks/use-ledger-page'
+import { useIsMobile } from '#/hooks/use-media-query'
 import { formatYearMonth, money } from '#/lib/finance'
+import type { LedgerTransaction } from '#/lib/types'
 
 const routeApi = getRouteApi('/ledger')
 
@@ -30,6 +34,16 @@ export function LedgerScreen() {
     search: routeApi.useSearch(),
     navigate: routeApi.useNavigate(),
   })
+  const isMobile = useIsMobile()
+  const [detailId, setDetailId] = useState<string | null>(null)
+  const rowsForDetail = ledger.status === 'ready' ? ledger.rows : []
+  const detailItem = useMemo(
+    () =>
+      detailId
+        ? (rowsForDetail.find((row) => row.id === detailId) ?? null)
+        : null,
+    [detailId, rowsForDetail],
+  )
 
   if (ledger.status === 'loading') {
     return <PageLoading label="Loading ledger…" variant="ledger" />
@@ -150,6 +164,61 @@ export function LedgerScreen() {
     />
   )
 
+  const listSummary = (
+    <>
+      {rows.length}
+      {hasMore ? '+' : ''} shown
+      {totalCount > rows.length ? ` of ${totalCount}` : ''} ·{' '}
+      <span className="tabular-nums">{money(totals.expenses, currency)}</span>{' '}
+      spent ·{' '}
+      <span className="tabular-nums">{money(totals.income, currency)}</span>{' '}
+      income
+    </>
+  )
+
+  const filtersAndList = (
+    <>
+      <LedgerFilters
+        filter={filter}
+        onFilterChange={setFilter}
+        query={query}
+        onQueryChange={setQuery}
+        categoryFilter={categoryFilter}
+        methodFilter={methodFilter}
+        categories={categories}
+        methods={methods}
+        onCategoryChange={(category) => setSearchFilter({ category })}
+        onMethodChange={(method) => setSearchFilter({ method })}
+        chips={filterChips}
+        onClearFilters={clearFilters}
+        onClearChip={clearChip}
+      />
+      <LedgerLists
+        rows={rows}
+        listMode={listMode}
+        currency={currency}
+        emptyLedger={emptyLedger}
+        emptyFiltered={emptyFiltered}
+        onOpenDetail={(row: LedgerTransaction) => setDetailId(row.id)}
+        onFilterByMethod={filterByMethod}
+      />
+      {hasMore ? (
+        <div className="shrink-0 pt-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
+            onClick={loadMore}
+            disabled={monthFetching}
+          >
+            Load more
+          </Button>
+        </div>
+      ) : null}
+    </>
+  )
+
   return (
     <PageShell>
       <PageHeader
@@ -206,69 +275,40 @@ export function LedgerScreen() {
         }
       />
 
-      <Card
-        className="month-view flex min-h-0 flex-1 flex-col gap-0 py-0"
-        aria-busy={monthFetching || undefined}
-      >
-        <CardHeader className="shrink-0 border-b py-3">
-          <CardTitle className="text-base">Transactions</CardTitle>
-          <CardDescription>
-            {rows.length}
-            {hasMore ? '+' : ''} shown
-            {totalCount > rows.length ? ` of ${totalCount}` : ''} ·{' '}
-            <span className="tabular-nums">
-              {money(totals.expenses, currency)}
-            </span>{' '}
-            spent ·{' '}
-            <span className="tabular-nums">
-              {money(totals.income, currency)}
-            </span>{' '}
-            income
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 px-4 py-4">
-          <LedgerFilters
-            filter={filter}
-            onFilterChange={setFilter}
-            query={query}
-            onQueryChange={setQuery}
-            categoryFilter={categoryFilter}
-            methodFilter={methodFilter}
-            categories={categories}
-            methods={methods}
-            onCategoryChange={(category) => setSearchFilter({ category })}
-            onMethodChange={(method) => setSearchFilter({ method })}
-            chips={filterChips}
-            onClearFilters={clearFilters}
-            onClearChip={clearChip}
-          />
-          <LedgerLists
-            rows={rows}
-            listMode={listMode}
-            currency={currency}
-            emptyLedger={emptyLedger}
-            emptyFiltered={emptyFiltered}
-            onEdit={openEdit}
-            onDuplicate={openDuplicate}
-            onDelete={askDelete}
-            onFilterByMethod={filterByMethod}
-          />
-          {hasMore ? (
-            <div className="shrink-0 pt-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full sm:w-auto"
-                onClick={loadMore}
-                disabled={monthFetching}
-              >
-                Load more
-              </Button>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+      {isMobile ? (
+        <div
+          className="month-view flex min-h-0 flex-1 flex-col gap-3"
+          aria-busy={monthFetching || undefined}
+        >
+          <p className="shrink-0 text-xs text-muted-foreground">{listSummary}</p>
+          <div className="flex min-h-0 flex-1 flex-col gap-3">{filtersAndList}</div>
+        </div>
+      ) : (
+        <Card
+          className="month-view flex min-h-0 flex-1 flex-col gap-0 py-0"
+          aria-busy={monthFetching || undefined}
+        >
+          <CardHeader className="shrink-0 border-b py-3">
+            <CardTitle className="text-base">Transactions</CardTitle>
+            <CardDescription>{listSummary}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex min-h-0 flex-1 flex-col gap-4 px-4 py-4">
+            {filtersAndList}
+          </CardContent>
+        </Card>
+      )}
+
+      <TransactionDetailSheet
+        item={detailItem}
+        open={detailId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailId(null)
+        }}
+        currency={currency}
+        onEdit={openEdit}
+        onDuplicate={openDuplicate}
+        onDelete={askDelete}
+      />
 
       <ConfirmDeleteDialog
         open={Boolean(deleting)}

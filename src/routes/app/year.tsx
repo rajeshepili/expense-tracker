@@ -1,8 +1,17 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '#/components/ui/button'
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '#/components/ui/chart'
+import type { ChartConfig } from '#/components/ui/chart'
 import { PageHeader } from '#/components/layout/page-header'
 import { PageError, PageLoading } from '#/components/layout/page-query-state'
 import { PageShell } from '#/components/layout/page-shell'
@@ -37,7 +46,23 @@ const MONTH_LABELS = [
   'Oct',
   'Nov',
   'Dec',
-]
+] as const
+
+const monthlyFlowConfig = {
+  income: {
+    label: 'Income',
+    color: 'var(--income)',
+  },
+  expenses: {
+    label: 'Expenses',
+    color: 'var(--expense)',
+  },
+} satisfies ChartConfig
+
+const compactAxis = new Intl.NumberFormat(undefined, {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+})
 
 function YearBarChart({
   months,
@@ -46,56 +71,74 @@ function YearBarChart({
   months: Array<{ yearMonth: string; income: number; expenses: number }>
   currency: string
 }) {
-  const max = Math.max(1, ...months.map((m) => Math.max(m.income, m.expenses)))
+  const chartData = useMemo(
+    () =>
+      months.map((m) => ({
+        month: MONTH_LABELS[Number(m.yearMonth.slice(5)) - 1] ?? m.yearMonth,
+        income: m.income,
+        expenses: m.expenses,
+      })),
+    [months],
+  )
+
   return (
-    <div className="flex flex-col gap-3">
-      <div
-        className="grid grid-cols-12 items-end gap-1 md:gap-1.5"
-        role="img"
-        aria-label="Monthly income and expenses bar chart"
-        style={{ height: 160 }}
-      >
-        {months.map((m) => (
-          <div
-            key={m.yearMonth}
-            className="flex h-full flex-col items-center justify-end gap-1"
-          >
-            <div className="flex h-full w-full items-end gap-[2px]">
-              <div
-                className="w-1/2 rounded-t-sm bg-emerald-500/70"
-                style={{ height: `${(m.income / max) * 100}%` }}
-                title={`${MONTH_LABELS[Number(m.yearMonth.slice(5)) - 1]} income ${money(m.income, currency)}`}
-              />
-              <div
-                className="w-1/2 rounded-t-sm bg-red-500/70"
-                style={{ height: `${(m.expenses / max) * 100}%` }}
-                title={`${MONTH_LABELS[Number(m.yearMonth.slice(5)) - 1]} expenses ${money(m.expenses, currency)}`}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-12 gap-1 md:gap-1.5">
-        {months.map((m) => (
-          <span
-            key={m.yearMonth}
-            className="text-center text-[9px] text-muted-foreground md:text-[10px]"
-          >
-            {MONTH_LABELS[Number(m.yearMonth.slice(5)) - 1]}
-          </span>
-        ))}
-      </div>
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="size-2 rounded-sm bg-emerald-500/70" aria-hidden />{' '}
-          Income
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="size-2 rounded-sm bg-red-500/70" aria-hidden />{' '}
-          Expenses
-        </span>
-      </div>
-    </div>
+    <ChartContainer
+      config={monthlyFlowConfig}
+      className="aspect-auto h-60 w-full"
+    >
+      <BarChart accessibilityLayer data={chartData} margin={{ left: 4, right: 8 }}>
+        <CartesianGrid vertical={false} />
+        <XAxis
+          dataKey="month"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+        />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          width={40}
+          tickMargin={4}
+          tickFormatter={(value) => compactAxis.format(Number(value))}
+        />
+        <ChartTooltip
+          cursor={false}
+          content={
+            <ChartTooltipContent
+              formatter={(value, name, item) => (
+                <>
+                  <div
+                    className="size-2.5 shrink-0 rounded-[2px]"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <div className="flex flex-1 items-center justify-between gap-4 leading-none">
+                    <span className="text-muted-foreground">
+                      {monthlyFlowConfig[
+                        name as keyof typeof monthlyFlowConfig
+                      ]?.label ?? name}
+                    </span>
+                    <span className="font-medium tabular-nums text-foreground">
+                      {money(Number(value), currency)}
+                    </span>
+                  </div>
+                </>
+              )}
+            />
+          }
+        />
+        <ChartLegend content={<ChartLegendContent />} />
+        <Bar
+          dataKey="income"
+          fill="var(--color-income)"
+          radius={[3, 3, 0, 0]}
+        />
+        <Bar
+          dataKey="expenses"
+          fill="var(--color-expenses)"
+          radius={[3, 3, 0, 0]}
+        />
+      </BarChart>
+    </ChartContainer>
   )
 }
 

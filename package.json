@@ -54,6 +54,7 @@
     "radix-ui": "^1.8.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "recharts": "3.8.0",
     "serwist": "^9.5.13",
     "sonner": "^2.0.8",
     "sqlocal": "^0.18.0",

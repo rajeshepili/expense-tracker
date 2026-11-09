@@ -27,7 +27,7 @@ export function emptySavingsForm(): SavingsFormState {
   }
 }
 
-export function formFromGoal(goal: SavingsGoalRow): SavingsFormState {
+function formFromGoal(goal: SavingsGoalRow): SavingsFormState {
   return {
     name: goal.name,
     targetAmount: String(goal.targetAmount),
@@ -176,7 +176,6 @@ export function useSavingsForm({
     openEdit,
     handleSubmit,
     handleContribute,
-    formFromGoal,
     isSubmitting,
   }
 }

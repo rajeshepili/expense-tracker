@@ -1,12 +1,44 @@
-import { describe, expect, it } from 'vitest'
-import { formatBytes } from '#/lib/storage-usage'
+import { describe, expect, it, vi } from 'vitest'
+import { cleanupOrphanedOpfsBackups } from '#/lib/storage-usage'
 
-describe('formatBytes', () => {
-  it('labels common sizes', () => {
-    expect(formatBytes(null)).toBe('—')
-    expect(formatBytes(512)).toBe('512 B')
-    expect(formatBytes(2048)).toBe('2 KB')
-    expect(formatBytes(5 * 1024 * 1024)).toBe('5 MB')
-    expect(formatBytes(4 * 1024 * 1024 * 1024)).toBe('4 GB')
+describe('cleanupOrphanedOpfsBackups', () => {
+  it('no-ops when OPFS is unavailable', async () => {
+    const original = navigator.storage
+    Object.defineProperty(navigator, 'storage', {
+      configurable: true,
+      value: undefined,
+    })
+    try {
+      expect(await cleanupOrphanedOpfsBackups()).toBe(0)
+    } finally {
+      Object.defineProperty(navigator, 'storage', {
+        configurable: true,
+        value: original,
+      })
+    }
+  })
+
+  it('removes matching backup orphans', async () => {
+    const removeEntry = vi.fn().mockResolvedValue(undefined)
+    const entries = (async function* () {
+      yield ['backup-1--expense-tracker.sqlite3', { kind: 'file' }] as const
+      yield ['expense-tracker.sqlite3', { kind: 'file' }] as const
+      yield ['backup-2--other.db', { kind: 'file' }] as const
+      yield ['notes', { kind: 'directory' }] as const
+    })()
+    Object.defineProperty(navigator, 'storage', {
+      configurable: true,
+      value: {
+        getDirectory: vi.fn().mockResolvedValue({
+          entries: () => entries,
+          removeEntry,
+        }),
+      },
+    })
+
+    expect(await cleanupOrphanedOpfsBackups()).toBe(1)
+    expect(removeEntry).toHaveBeenCalledWith(
+      'backup-1--expense-tracker.sqlite3',
+    )
   })
 })

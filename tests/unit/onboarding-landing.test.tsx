@@ -88,7 +88,7 @@ describe('onboarding wizard', () => {
       screen.getByRole('heading', { name: 'Currency & budget' }),
     ).toBeTruthy()
     expect(
-      screen.getByText(/Ledger storage starts on this device/i),
+      screen.getByText(/Your ledger will be stored in this browser only/i),
     ).toBeTruthy()
     expect(
       screen.queryByRole('heading', { name: 'Set up your ledger' }),

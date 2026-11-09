@@ -1,6 +1,6 @@
 import { percent, priorDeltaRatio } from '#/lib/finance'
 
-export function quietDelta(current: number, prior: number) {
+export function priorDeltaLabel(current: number, prior: number) {
   if (prior === 0)
     return current === 0 ? 'no activity yet' : 'first month tracked'
   const ratio = priorDeltaRatio(current, prior)

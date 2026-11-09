@@ -33,7 +33,11 @@ export function CategoryLists({
   onDelete,
 }: CategoryListsProps) {
   const listRef = useRef<HTMLElement | null>(null)
-  const { isEntering, isExiting } = useFlipList(listRef, rows, (row) => row.id)
+  const { displayItems, isEntering, isExiting } = useFlipList(
+    listRef,
+    rows,
+    (row) => row.id,
+  )
 
   function flipState(id: string): 'enter' | 'exit' | undefined {
     if (isExiting(id)) return 'exit'
@@ -66,13 +70,12 @@ export function CategoryLists({
     <VirtualizedDataList
       layout="flow"
       listRootRef={listRef}
-      items={rows}
+      items={displayItems}
       getItemKey={(row) => row.id}
       mobileEstimateSize={56}
       desktopEstimateSize={40}
       colSpan={5}
       empty={empty}
-      mobileClassName="overflow-y-auto overscroll-contain"
       header={
         <TableHeader>
           <TableRow>

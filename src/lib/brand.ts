@@ -2,10 +2,10 @@ export const APP_NAME = 'Pocketbook'
 
 export const APP_SHORT_NAME = 'Pocketbook'
 
-export const APP_TAGLINE = 'A private ledger that never leaves this browser.'
+export const APP_TAGLINE = 'A ledger that stays in this browser.'
 
 export const APP_DESCRIPTION =
-  'No account. No cloud sync. Install from Chrome on Android, or use Chrome / Edge on desktop.'
+  'No account or cloud sync. Chrome on Android, or Chrome / Edge on desktop.'
 
 // Dev defaults: docs/deploy.md (portless). Prod: two-project split.
 const LOCAL_APP_URL = 'https://app.pocketbook.localhost'
@@ -25,3 +25,8 @@ export const APP_SETUP_URL = `${APP_URL.replace(/\/$/, '')}/?from=mkt`
 
 export const SITE_MODE: 'app' | 'marketing' =
   (import.meta.env.VITE_SITE_MODE as 'app' | 'marketing' | undefined) ?? 'app'
+
+/** Absolute marketing-home URL when the app host needs a cross-origin link. */
+export function marketingHomeHref() {
+  return SITE_MODE === 'marketing' ? '/' : MARKETING_URL
+}

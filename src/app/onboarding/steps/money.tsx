@@ -50,8 +50,7 @@ export function MoneyStep({
         </h1>
         {fromMkt ? (
           <p className="text-pretty text-sm text-muted-foreground">
-            Ledger storage starts on this device — the marketing site kept
-            nothing.
+            Your ledger will be stored in this browser only.
           </p>
         ) : (
           <p className="text-pretty text-sm text-muted-foreground">

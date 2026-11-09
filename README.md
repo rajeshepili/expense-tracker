@@ -67,7 +67,7 @@ pnpm preview   # Nitro Node server (applies COEP to HTML + /assets)
 | `src/features/`                      | Domain UI (ledger, overview, recurring, categories, savings, settings, shared) |
 | `src/components/ui/`                 | shadcn primitives                                                              |
 | `src/components/layout/`             | Page shell, header, month nav, empty / loading                                 |
-| `src/components/landing/`            | Marketing site pages                                                           |
+| `src/components/landing/`            | Landing host pages                                                             |
 | `src/data/`                          | Public `repository.ts` barrel, seed, sample ledger                             |
 | `src/data/repo/`                     | Entity modules (settings, transactions, savings, …)                            |
 | `src/db/`                            | Drizzle schema + browser SQLite client + migrator                              |

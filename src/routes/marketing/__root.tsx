@@ -76,18 +76,43 @@ const NotFoundPage = lazy(() =>
   })),
 )
 
-/** Marketing layout (scrollable; no app gate/DB). */
-function MarketingShell({ children }: { children: React.ReactNode }) {
+function useLandingDocumentScroll() {
   useEffect(() => {
-    document.body.classList.add('mkt-page-scroll')
-    return () => document.body.classList.remove('mkt-page-scroll')
+    const html = document.documentElement
+    const { body } = document
+    const prev = {
+      htmlHeight: html.style.height,
+      htmlOverflowX: html.style.overflowX,
+      htmlOverflowY: html.style.overflowY,
+      bodyHeight: body.style.height,
+      bodyMinHeight: body.style.minHeight,
+      bodyOverflow: body.style.overflow,
+    }
+    html.style.height = 'auto'
+    html.style.overflowX = 'clip'
+    html.style.overflowY = 'auto'
+    body.style.height = 'auto'
+    body.style.minHeight = '100dvh'
+    body.style.overflow = 'visible'
+    return () => {
+      html.style.height = prev.htmlHeight
+      html.style.overflowX = prev.htmlOverflowX
+      html.style.overflowY = prev.htmlOverflowY
+      body.style.height = prev.bodyHeight
+      body.style.minHeight = prev.bodyMinHeight
+      body.style.overflow = prev.bodyOverflow
+    }
   }, [])
+}
+
+function LandingShell({ children }: { children: React.ReactNode }) {
+  useLandingDocumentScroll()
   return (
     <>
       <a href="#main" className="skip-link">
         Skip to content
       </a>
-      <main id="main" className="min-h-dvh">
+      <main id="main" className="min-h-dvh w-full">
         {children}
       </main>
     </>
@@ -100,15 +125,15 @@ function RootComponent() {
   })
   if (matchedIds.length <= 1) {
     return (
-      <MarketingShell>
+      <LandingShell>
         <NotFoundPage />
-      </MarketingShell>
+      </LandingShell>
     )
   }
   return (
-    <MarketingShell>
-      <Outlet />
-    </MarketingShell>
+      <LandingShell>
+        <Outlet />
+      </LandingShell>
   )
 }
 

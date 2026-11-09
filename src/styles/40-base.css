@@ -20,14 +20,19 @@
     @apply h-dvh overflow-hidden bg-background font-sans text-foreground antialiased;
     background-image:
       radial-gradient(
-        120% 80% at 0% -10%,
-        color-mix(in oklch, var(--ring) 13%, transparent),
+        110% 75% at 0% -8%,
+        color-mix(in oklch, var(--primary) 10%, transparent),
         transparent 55%
       ),
       radial-gradient(
-        90% 60% at 100% 0%,
-        color-mix(in oklch, var(--income) 9%, transparent),
+        85% 55% at 100% 0%,
+        color-mix(in oklch, var(--income) 8%, transparent),
         transparent 50%
+      ),
+      radial-gradient(
+        60% 40% at 70% 100%,
+        color-mix(in oklch, var(--expense) 5%, transparent),
+        transparent 55%
       );
     background-attachment: fixed;
   }
@@ -35,14 +40,19 @@
   .dark body {
     background-image:
       radial-gradient(
-        120% 80% at 0% -10%,
-        color-mix(in oklch, var(--ring) 16%, transparent),
+        110% 75% at 0% -8%,
+        color-mix(in oklch, var(--primary) 12%, transparent),
         transparent 55%
       ),
       radial-gradient(
-        90% 60% at 100% 0%,
-        color-mix(in oklch, var(--income) 11%, transparent),
+        85% 55% at 100% 0%,
+        color-mix(in oklch, var(--income) 9%, transparent),
         transparent 50%
+      ),
+      radial-gradient(
+        60% 40% at 70% 100%,
+        color-mix(in oklch, var(--expense) 6%, transparent),
+        transparent 55%
       );
   }
 

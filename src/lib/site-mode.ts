@@ -2,10 +2,10 @@ import { APP_URL, MARKETING_URL, SITE_MODE } from '#/lib/brand'
 
 export type SiteMode = 'app' | 'marketing'
 
-/** Marketing-only routes. */
+/** Landing-host routes. */
 export const MARKETING_ROUTE_PATHS = ['/features', '/privacy'] as const
 
-/** App-only routes (marketing host redirects these away). */
+/** App-only paths (landing host redirects these to the app URL). */
 export const APP_ROUTE_PATHS = [
   '/ledger',
   '/recurring',

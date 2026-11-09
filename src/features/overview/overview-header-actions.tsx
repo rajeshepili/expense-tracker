@@ -50,9 +50,9 @@ export function OverviewHeaderActions({
             Budget
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <a href={`${MARKETING_URL}/privacy`} rel="noopener" target="_blank">
+            <a href={MARKETING_URL} rel="noopener" target="_blank">
               <Shield aria-hidden />
-              Privacy
+              About
             </a>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -81,9 +81,9 @@ export function OverviewHeaderActions({
         size="sm"
         className="hidden lg:inline-flex"
       >
-        <a href={`${MARKETING_URL}/privacy`} rel="noopener" target="_blank">
+        <a href={MARKETING_URL} rel="noopener" target="_blank">
           <Shield aria-hidden="true" data-icon="inline-start" />
-          Privacy
+          About
         </a>
       </Button>
       <Button

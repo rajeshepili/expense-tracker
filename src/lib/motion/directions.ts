@@ -3,21 +3,6 @@ import { NAV_PATHS } from '#/lib/app-config'
 export type NavDirection = 'nav-forward' | 'nav-back'
 export type MonthDirection = 'month-forward' | 'month-back'
 
-export function routeKeyframes(back: boolean): { out: string; in: string } {
-  return back
-    ? { out: 'route-out-right', in: 'route-in-left' }
-    : { out: 'route-out-left', in: 'route-in-right' }
-}
-
-export function monthKeyframes(direction: MonthDirection): {
-  out: string
-  in: string
-} {
-  return direction === 'month-back'
-    ? { out: 'month-out-down', in: 'month-in-up' }
-    : { out: 'month-out-up', in: 'month-in-down' }
-}
-
 export function resolveNavDirection(args: {
   fromPathname?: string
   toPathname: string

@@ -1,3 +1,9 @@
+.brand-wordmark {
+  font-family: var(--font-sans);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+
 .skip-link {
   position: absolute;
   left: 1rem;
@@ -25,55 +31,6 @@
 
 .text-expense {
   color: var(--expense);
-}
-
-.animated-number-root {
-  position: relative;
-  display: inline-flex;
-  align-items: baseline;
-  max-width: 100%;
-}
-
-.animated-number-value {
-  display: inline-block;
-  transform-origin: left center;
-  will-change: transform, opacity, filter;
-}
-
-.animated-number-delta {
-  position: absolute;
-  left: calc(100% + 0.4rem);
-  top: 50%;
-  z-index: 1;
-  margin: 0;
-  padding: 0.1rem 0.35rem;
-  border-radius: 0.25rem;
-  background: color-mix(in oklch, var(--card) 88%, var(--foreground));
-  border: 1px solid var(--border);
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  line-height: 1.2;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-50%);
-}
-
-.animated-number-delta[data-show='true'] {
-  animation: var(--animate-delta-pop);
-}
-
-.animated-number-delta[data-tone='good'] {
-  color: var(--income);
-  border-color: color-mix(in oklch, var(--income) 35%, var(--border));
-  background: color-mix(in oklch, var(--card) 82%, var(--income));
-}
-
-.animated-number-delta[data-tone='bad'] {
-  color: var(--expense);
-  border-color: color-mix(in oklch, var(--expense) 35%, var(--border));
-  background: color-mix(in oklch, var(--card) 82%, var(--expense));
 }
 
 .animate-icon-swap {

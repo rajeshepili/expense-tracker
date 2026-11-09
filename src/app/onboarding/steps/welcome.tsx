@@ -33,8 +33,7 @@ export function WelcomeStep({
           Set up your ledger
         </h1>
         <p className="text-pretty text-sm text-muted-foreground">
-          Everything stays in this browser — no account, no cloud. Takes about a
-          minute.
+          No account or cloud sync. Data stays in this browser.
         </p>
         <LocalDataCallout />
       </div>

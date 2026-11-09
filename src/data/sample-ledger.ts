@@ -39,7 +39,7 @@ function monthsAgoIso(
   return `${y}-${m}-${dd}`
 }
 
-export type SampleTransaction = {
+type SampleTransaction = {
   id: string
   description: string
   category: string
@@ -336,7 +336,7 @@ export const sampleTransfers = [
   },
 ] as const
 
-export type SampleRecurring = {
+type SampleRecurring = {
   id: string
   name: string
   kind?: 'expense' | 'income'

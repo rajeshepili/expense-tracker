@@ -1,5 +1,5 @@
 import { cn } from 'cn'
-import type { ComponentPropsWithoutRef, HTMLAttributes } from 'react'
+import type { ComponentPropsWithoutRef } from 'react'
 
 type KbdProps = ComponentPropsWithoutRef<'kbd'> & {
   responsive?: boolean
@@ -24,18 +24,6 @@ export function Kbd({
           : 'border-border/80 bg-muted/70 text-muted-foreground shadow-[inset_0_-1px_0_color-mix(in_oklch,var(--border)_70%,transparent)]',
         className,
       )}
-      {...props}
-    />
-  )
-}
-
-type KbdGroupProps = HTMLAttributes<HTMLDivElement>
-
-export function KbdGroup({ className, ...props }: KbdGroupProps) {
-  return (
-    <div
-      data-slot="kbd-group"
-      className={cn('inline-flex items-center gap-1', className)}
       {...props}
     />
   )
