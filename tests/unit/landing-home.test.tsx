@@ -8,7 +8,7 @@ vi.mock('#/app/mode-toggle', () => ({
 }))
 
 vi.mock('#/lib/brand', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('#/lib/brand')>()
+  const actual = await importOriginal<Record<string, unknown>>()
   return {
     ...actual,
     SITE_MODE: 'marketing',

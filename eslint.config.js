@@ -30,6 +30,10 @@ export default [
       'components.json',
       'package-lock.json',
       'pnpm-lock.yaml',
+      // Sidecar route trees + marketing routes are out of the app tsconfig project.
+      'src/routeTree.app.gen.ts',
+      'src/routeTree.marketing.gen.ts',
+      'src/routes/marketing/**',
     ],
   },
 ]

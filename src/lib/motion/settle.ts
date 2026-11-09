@@ -1,9 +1,7 @@
-import {
-  animate,
-  scroll,
-  stagger,
-  type AnimationPlaybackControls,
-  type DOMKeyframesDefinition,
+import { animate, scroll, stagger } from 'motion'
+import type {
+  AnimationPlaybackControls,
+  DOMKeyframesDefinition,
 } from 'motion'
 import { prefersReducedMotion } from './reduced'
 
