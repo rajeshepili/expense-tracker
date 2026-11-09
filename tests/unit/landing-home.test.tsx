@@ -7,6 +7,14 @@ vi.mock('#/app/mode-toggle', () => ({
   ModeToggle: () => <button type="button">Theme</button>,
 }))
 
+vi.mock('#/lib/brand', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/lib/brand')>()
+  return {
+    ...actual,
+    SITE_MODE: 'marketing',
+  }
+})
+
 describe('landing home', () => {
   it('shows brand, get-started, and open-app links', () => {
     render(<LandingHome />)

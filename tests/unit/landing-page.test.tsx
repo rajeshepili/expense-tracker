@@ -16,11 +16,7 @@ function renderChrome() {
   const client = new QueryClient()
   return render(
     <QueryClientProvider client={client}>
-      <LandingPage
-        title="Test page"
-        description="desc"
-        cta={{ label: 'Get started', href: 'https://example.com/?from=mkt' }}
-      >
+      <LandingPage title="Test page" description="desc">
         <p>content</p>
       </LandingPage>
     </QueryClientProvider>,
@@ -28,16 +24,15 @@ function renderChrome() {
 }
 
 describe('landing chrome', () => {
-  it('renders wordmark, CTA, and footer Open app', () => {
+  it('renders wordmark, content, and footer Open app', () => {
     renderChrome()
     expect(screen.getAllByText(APP_NAME).length).toBe(2)
     expect(screen.getByRole('heading', { name: 'Test page' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Get started' })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Get started' })).toBeNull()
     expect(screen.getByText('content')).toBeTruthy()
 
     const footer = screen.getByRole('navigation', { name: 'Footer' })
     expect(footer.textContent).toContain('Open app')
-    expect(footer.textContent).not.toContain('Get started')
     const openApp = screen.getByRole('link', { name: 'Open app' })
     expect(openApp.getAttribute('href')).toBe(APP_URL)
   })
