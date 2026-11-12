@@ -44,6 +44,35 @@ for (const swPath of present) {
   }
 }
 
+// Nitro bakes public asset paths at Vite time. Without a pre-build stub in
+// public/sw.js, /sw.js 404s under `pnpm preview` even after inject. After
+// inject, serwist-inject must sync size/etag or Content-Length truncates.
+const nitroIndex = path.join(root, '.output/server/index.mjs')
+const publicSw = path.join(root, '.output/public/sw.js')
+if (existsSync(nitroIndex)) {
+  const nitro = readFileSync(nitroIndex, 'utf8')
+  if (!nitro.includes('"/sw.js"')) {
+    console.error(
+      'FAIL  Nitro public_assets_data missing "/sw.js" — keep public/sw.js stub so Vite registers it',
+    )
+    failures++
+  } else {
+    console.log('PASS  Nitro public_assets_data lists /sw.js')
+  }
+  if (existsSync(publicSw)) {
+    const size = readFileSync(publicSw).byteLength
+    const sizeOk = nitro.includes(`"size": ${size}`)
+    if (!sizeOk) {
+      console.error(
+        `FAIL  Nitro /sw.js size meta not synced to ${size} — serwist-inject must update public_assets_data`,
+      )
+      failures++
+    } else {
+      console.log(`PASS  Nitro /sw.js size meta matches file (${size})`)
+    }
+  }
+}
+
 if (failures > 0) {
   console.error(`\n${failures} app SW check(s) failed`)
   process.exit(1)

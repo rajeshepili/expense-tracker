@@ -85,7 +85,7 @@ Edge `redirects` in the vercel JSON files hardcode production hosts. Preview dep
 
 - **App** (`vercel.app.json`): COEP `require-corp` + COOP `same-origin` + CORP `same-origin` (required for OPFS/shared memory), HSTS, self-only CSP (`worker-src 'self'`), nosniff, `X-Frame-Options: DENY`, strict referrer policy, restrictive permissions policy (camera/mic/geo/payment/usb off). Notification permission is requested via the Notification API, not Permissions-Policy — Chromium does not recognize a `notifications` feature token. `sw.js` is `no-cache` + `Service-Worker-Allowed: /`.
 - **Marketing** (`vercel.marketing.json`): same minus COEP/COOP/CORP (no OPFS there).
-- App builds run `scripts/serwist-inject.mjs` after Vite so `sw.js` embeds a fresh precache of hashed assets (and the SPA shell URLs).
+- App builds run `scripts/serwist-inject.mjs` after Vite so `sw.js` embeds a fresh precache of hashed assets (and the SPA shell URLs). A stub `public/sw.js` exists so Nitro registers `/sw.js` during Vite; inject overwrites it and syncs Nitro’s baked size/etag (otherwise preview truncates the SW). Marketing `build:mkt` deletes `sw.js` from output.
 
 ## Verify a deploy
 

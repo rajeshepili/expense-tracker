@@ -15,7 +15,7 @@
     "generate-routes": "node scripts/generate-routes.mjs",
     "build": "vite build && node scripts/serwist-inject.mjs",
     "build:app": "VITE_SITE_MODE=app vite build && node scripts/serwist-inject.mjs",
-    "build:mkt": "VITE_SITE_MODE=marketing vite build",
+    "build:mkt": "VITE_SITE_MODE=marketing vite build && rm -f .output/public/sw.js .vercel/output/static/sw.js",
     "serwist:inject": "node scripts/serwist-inject.mjs",
     "assert:app-sw": "node scripts/assert-app-sw.mjs",
     "assert:mkt-bundle": "node scripts/assert-marketing-bundle.mjs",

@@ -5,12 +5,19 @@
  * this has to run as a separate step (not a Vite plugin hook).
  *
  *   VITE_SITE_MODE=app vite build && node scripts/serwist-inject.mjs
+ *
+ * `public/sw.js` must exist *before* Vite so Nitro registers `/sw.js` in its
+ * public-assets map (otherwise local preview 404s the SW and Lighthouse
+ * flags a console network error). This script overwrites that stub, then
+ * rewrites Nitro's baked size/etag/mtime so Content-Length is not truncated
+ * to the stub.
  */
 import { existsSync, mkdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { injectManifest } from '@serwist/build'
 import * as esbuild from 'esbuild'
+import { syncNitroSwAssetMeta } from './nitro-sw-meta.mjs'
 import {
   SERWIST_GLOB_PATTERNS,
   SERWIST_SHELL_URLS,
@@ -105,6 +112,7 @@ async function main() {
   for (const dir of publicDirs) {
     await injectInto(dir)
   }
+  syncNitroSwAssetMeta(root)
 }
 
 const isMain =
