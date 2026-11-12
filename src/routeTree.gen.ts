@@ -8,20 +8,29 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/marketing/__root'
-import { Route as IndexRouteImport } from './routes/marketing/index'
-import { Route as FeaturesRouteImport } from './routes/marketing/features'
-import { Route as NotFoundRouteImport } from './routes/marketing/not-found'
-import { Route as PrivacyRouteImport } from './routes/marketing/privacy'
+import { Route as rootRouteImport } from './routes/app/__root'
+import { Route as IndexRouteImport } from './routes/app/index'
+import { Route as CategoriesRouteImport } from './routes/app/categories'
+import { Route as LedgerRouteImport } from './routes/app/ledger'
+import { Route as NotFoundRouteImport } from './routes/app/not-found'
+import { Route as RecurringRouteImport } from './routes/app/recurring'
+import { Route as SavingsRouteImport } from './routes/app/savings'
+import { Route as YearRouteImport } from './routes/app/year'
+import { Route as DevLoadersRouteImport } from './routes/app/dev/loaders'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FeaturesRoute = FeaturesRouteImport.update({
-  id: '/features',
-  path: '/features',
+const CategoriesRoute = CategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LedgerRoute = LedgerRouteImport.update({
+  id: '/ledger',
+  path: '/ledger',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotFoundRoute = NotFoundRouteImport.update({
@@ -29,44 +38,100 @@ const NotFoundRoute = NotFoundRouteImport.update({
   path: '/not-found',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
+const RecurringRoute = RecurringRouteImport.update({
+  id: '/recurring',
+  path: '/recurring',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SavingsRoute = SavingsRouteImport.update({
+  id: '/savings',
+  path: '/savings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const YearRoute = YearRouteImport.update({
+  id: '/year',
+  path: '/year',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevLoadersRoute = DevLoadersRouteImport.update({
+  id: '/dev/loaders',
+  path: '/dev/loaders',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/features': typeof FeaturesRoute
+  '/categories': typeof CategoriesRoute
+  '/ledger': typeof LedgerRoute
   '/not-found': typeof NotFoundRoute
-  '/privacy': typeof PrivacyRoute
+  '/recurring': typeof RecurringRoute
+  '/savings': typeof SavingsRoute
+  '/year': typeof YearRoute
+  '/dev/loaders': typeof DevLoadersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/features': typeof FeaturesRoute
+  '/categories': typeof CategoriesRoute
+  '/ledger': typeof LedgerRoute
   '/not-found': typeof NotFoundRoute
-  '/privacy': typeof PrivacyRoute
+  '/recurring': typeof RecurringRoute
+  '/savings': typeof SavingsRoute
+  '/year': typeof YearRoute
+  '/dev/loaders': typeof DevLoadersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/features': typeof FeaturesRoute
+  '/categories': typeof CategoriesRoute
+  '/ledger': typeof LedgerRoute
   '/not-found': typeof NotFoundRoute
-  '/privacy': typeof PrivacyRoute
+  '/recurring': typeof RecurringRoute
+  '/savings': typeof SavingsRoute
+  '/year': typeof YearRoute
+  '/dev/loaders': typeof DevLoadersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/features' | '/not-found' | '/privacy'
+  fullPaths:
+    | '/'
+    | '/categories'
+    | '/ledger'
+    | '/not-found'
+    | '/recurring'
+    | '/savings'
+    | '/year'
+    | '/dev/loaders'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/features' | '/not-found' | '/privacy'
-  id: '__root__' | '/' | '/features' | '/not-found' | '/privacy'
+  to:
+    | '/'
+    | '/categories'
+    | '/ledger'
+    | '/not-found'
+    | '/recurring'
+    | '/savings'
+    | '/year'
+    | '/dev/loaders'
+  id:
+    | '__root__'
+    | '/'
+    | '/categories'
+    | '/ledger'
+    | '/not-found'
+    | '/recurring'
+    | '/savings'
+    | '/year'
+    | '/dev/loaders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  FeaturesRoute: typeof FeaturesRoute
+  CategoriesRoute: typeof CategoriesRoute
+  LedgerRoute: typeof LedgerRoute
   NotFoundRoute: typeof NotFoundRoute
-  PrivacyRoute: typeof PrivacyRoute
+  RecurringRoute: typeof RecurringRoute
+  SavingsRoute: typeof SavingsRoute
+  YearRoute: typeof YearRoute
+  DevLoadersRoute: typeof DevLoadersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -78,11 +143,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/features': {
-      id: '/features'
-      path: '/features'
-      fullPath: '/features'
-      preLoaderRoute: typeof FeaturesRouteImport
+    '/categories': {
+      id: '/categories'
+      path: '/categories'
+      fullPath: '/categories'
+      preLoaderRoute: typeof CategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ledger': {
+      id: '/ledger'
+      path: '/ledger'
+      fullPath: '/ledger'
+      preLoaderRoute: typeof LedgerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/not-found': {
@@ -92,11 +164,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotFoundRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
+    '/recurring': {
+      id: '/recurring'
+      path: '/recurring'
+      fullPath: '/recurring'
+      preLoaderRoute: typeof RecurringRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/savings': {
+      id: '/savings'
+      path: '/savings'
+      fullPath: '/savings'
+      preLoaderRoute: typeof SavingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/year': {
+      id: '/year'
+      path: '/year'
+      fullPath: '/year'
+      preLoaderRoute: typeof YearRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/loaders': {
+      id: '/dev/loaders'
+      path: '/dev/loaders'
+      fullPath: '/dev/loaders'
+      preLoaderRoute: typeof DevLoadersRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -104,9 +197,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  FeaturesRoute: FeaturesRoute,
+  CategoriesRoute: CategoriesRoute,
+  LedgerRoute: LedgerRoute,
   NotFoundRoute: NotFoundRoute,
-  PrivacyRoute: PrivacyRoute,
+  RecurringRoute: RecurringRoute,
+  SavingsRoute: SavingsRoute,
+  YearRoute: YearRoute,
+  DevLoadersRoute: DevLoadersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

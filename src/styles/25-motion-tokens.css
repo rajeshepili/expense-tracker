@@ -10,6 +10,14 @@
   --duration-data: 500ms;
   --ease-page: cubic-bezier(0.4, 0, 0.2, 1);
   --duration-page: 300ms;
+  /* Sheet / drawer dismiss — physical throw without bounce (Ionic/iOS-like). */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /*
+   * First-load gate sheet lift — custom.
+   * Early commitment (not ease-in), long coast so mid-travel (page reveal)
+   * stays on screen; critically damped landing (y2=1, no overshoot).
+   */
+  --ease-first-load-exit: cubic-bezier(0.2, 0.7, 0.1, 1);
   --duration-press: 100ms;
   --duration-reduced: 80ms;
   --ease-theme: cubic-bezier(0.22, 1, 0.36, 1);

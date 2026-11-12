@@ -4,13 +4,13 @@
 @starting-style {
   html:not([data-motion='page']):not([data-motion='month']):not(
       [data-motion='theme']
-    ):not([data-motion='overlay'])
+    ):not([data-motion='overlay']):not([data-first-load='handoff'])
     .page-content
     > *
     > *:first-child,
   html:not([data-motion='page']):not([data-motion='month']):not(
       [data-motion='theme']
-    ):not([data-motion='overlay'])
+    ):not([data-motion='overlay']):not([data-first-load='handoff'])
     .page-content
     [data-page-stack]
     > * {
@@ -31,13 +31,13 @@
   @starting-style {
     html:not([data-motion='page']):not([data-motion='month']):not(
         [data-motion='theme']
-      ):not([data-motion='overlay'])
+      ):not([data-motion='overlay']):not([data-first-load='handoff'])
       .page-content
       > *
       > *:first-child,
     html:not([data-motion='page']):not([data-motion='month']):not(
         [data-motion='theme']
-      ):not([data-motion='overlay'])
+      ):not([data-motion='overlay']):not([data-first-load='handoff'])
       .page-content
       [data-page-stack]
       > * {
@@ -60,7 +60,9 @@ html[data-motion='month'] .page-content [data-page-stack] > *,
 html[data-motion='theme'] .page-content > * > *:first-child,
 html[data-motion='theme'] .page-content [data-page-stack] > *,
 html[data-motion='overlay'] .page-content > * > *:first-child,
-html[data-motion='overlay'] .page-content [data-page-stack] > * {
+html[data-motion='overlay'] .page-content [data-page-stack] > *,
+html[data-first-load='handoff'] .page-content > * > *:first-child,
+html[data-first-load='handoff'] .page-content [data-page-stack] > * {
   opacity: 1;
   transform: none;
   transition: none;

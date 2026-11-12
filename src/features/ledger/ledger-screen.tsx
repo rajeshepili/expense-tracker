@@ -17,7 +17,10 @@ import { MonthNav } from '#/components/layout/month-nav'
 import { PageHeader } from '#/components/layout/page-header'
 import { PageError, PageLoading } from '#/components/layout/page-query-state'
 import { PageShell } from '#/components/layout/page-shell'
-import { LedgerFilters } from '#/features/ledger/ledger-filters'
+import {
+  LedgerFilters,
+  LedgerFilterChips,
+} from '#/features/ledger/ledger-filters'
 import { LedgerFormFields } from '#/features/ledger/ledger-form-fields'
 import { LedgerLists } from '#/features/ledger/ledger-lists'
 import { TransactionDetailSheet } from '#/features/ledger/transaction-detail-sheet'
@@ -176,6 +179,14 @@ export function LedgerScreen() {
     </>
   )
 
+  const activeChips = (
+    <LedgerFilterChips
+      chips={filterChips}
+      onClearFilters={clearFilters}
+      onClearChip={clearChip}
+    />
+  )
+
   const filtersAndList = (
     <>
       <LedgerFilters
@@ -189,9 +200,6 @@ export function LedgerScreen() {
         methods={methods}
         onCategoryChange={(category) => setSearchFilter({ category })}
         onMethodChange={(method) => setSearchFilter({ method })}
-        chips={filterChips}
-        onClearFilters={clearFilters}
-        onClearChip={clearChip}
       />
       <LedgerLists
         rows={rows}
@@ -281,6 +289,8 @@ export function LedgerScreen() {
           aria-busy={monthFetching || undefined}
         >
           <p className="shrink-0 text-xs text-muted-foreground">{listSummary}</p>
+          {/* Reserved chip strip — height never changes, table doesn't shift. */}
+          {activeChips}
           <div className="flex min-h-0 flex-1 flex-col gap-3">{filtersAndList}</div>
         </div>
       ) : (
@@ -289,8 +299,14 @@ export function LedgerScreen() {
           aria-busy={monthFetching || undefined}
         >
           <CardHeader className="shrink-0 border-b py-3">
-            <CardTitle className="text-base">Transactions</CardTitle>
-            <CardDescription>{listSummary}</CardDescription>
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+              <div>
+                <CardTitle className="text-base">Transactions</CardTitle>
+                <CardDescription>{listSummary}</CardDescription>
+              </div>
+              {/* Chips live in the header — selecting a filter never shifts the table. */}
+              {activeChips}
+            </div>
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col gap-4 px-4 py-4">
             {filtersAndList}

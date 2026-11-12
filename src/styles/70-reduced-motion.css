@@ -26,4 +26,51 @@
   .skeleton-shimmer {
     opacity: 0.7;
   }
+
+  /* PRM: first-load — solid mark, opacity cross-fade only (no shimmer/blur). */
+  .wordmark-shimmer {
+    animation: none !important;
+    background-image: none !important;
+    color: var(--foreground) !important;
+    -webkit-text-fill-color: var(--foreground) !important;
+    filter: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .first-load-material {
+    animation: none !important;
+    filter: none !important;
+    opacity: 0.35 !important;
+    transform: none !important;
+  }
+  .first-load-caption,
+  .first-load-subcaption {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .first-load-caption[data-phase='exit'],
+  .first-load-subcaption[data-phase='exit'],
+  .first-load-caption[data-phase='collapse'],
+  .first-load-subcaption[data-phase='collapse'],
+  .first-load-caption[data-phase='settle'],
+  .first-load-subcaption[data-phase='settle'] {
+    opacity: 0 !important;
+  }
+  .first-load-material[data-phase='collapse'] {
+    opacity: 0.35 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  /* PRM: no sheet slide — short opacity veil only (non-vestibular). */
+  .first-load-screen[data-phase='exit'] {
+    animation-name: first-load-exit-reduced !important;
+    animation-duration: 200ms !important;
+    animation-timing-function: linear !important;
+    transform: none !important;
+    will-change: auto !important;
+  }
+  .first-load-content {
+    animation-duration: var(--duration-reduced) !important;
+  }
 }
