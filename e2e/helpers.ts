@@ -4,14 +4,25 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { tmpdir } from 'node:os'
 
+/** First-load sheet must unmount before clicks (settle/collapse still capture pointer). */
+export async function waitForGateGone(page: Page) {
+  await expect(page.locator('.first-load-screen')).toHaveCount(0, {
+    timeout: 60_000,
+  })
+}
+
 /** Wait until OPFS/SQLite bootstrap finishes (onboarding or shell). */
 export async function waitForAppReady(page: Page) {
+  // PRM path: short hold + opacity exit (timers, not shimmer cycles) — keeps
+  // smoke fast while still asserting the gate always lifts after boot.
+  await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
   await expect(
     page
       .getByRole('heading', { name: /Set up your ledger|Currency & budget/i })
       .or(page.getByRole('navigation', { name: 'Primary' })),
   ).toBeVisible({ timeout: 60_000 })
+  await waitForGateGone(page)
 }
 
 export async function completeOnboarding(
@@ -111,7 +122,22 @@ export async function selectOption(
 
 /** Wide viewport (≥1024) mounts the table (useIsCompact); smoke tests use Desktop Chrome. */
 export function tableCell(page: Page, text: string) {
-  return page.locator('table').getByRole('cell', { name: text, exact: true })
+  // Categories/accounts: cell name === text. Ledger: accessible name is
+  // "Desc Category Account" but the bold span is exactly the description —
+  // don't use a prefix regex (that matches "Smoke Pets" inside "Smoke Pets Renamed").
+  const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const exact = page
+    .locator('table')
+    .getByRole('cell', { name: text, exact: true })
+  const ledgerDescription = page
+    .locator('table')
+    .locator('[data-slot="table-cell"]')
+    .filter({
+      has: page.locator('span.font-medium', {
+        hasText: new RegExp(`^${escaped}$`),
+      }),
+    })
+  return exact.or(ledgerDescription)
 }
 
 export function tableRow(page: Page, name: string | RegExp) {
@@ -119,7 +145,14 @@ export function tableRow(page: Page, name: string | RegExp) {
 }
 
 export async function dialogSave(page: Page) {
-  await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Save' }).click()
+  await expect(dialog).toBeHidden({ timeout: 15_000 })
+  // Create optimistically inserts temp-* ids; the dialog closes in onMutate
+  // before the real id lands. Editing a temp id updates 0 rows.
+  await expect(page.locator('[data-flip-key^="temp-"]')).toHaveCount(0, {
+    timeout: 15_000,
+  })
 }
 
 export async function openBackupModal(page: Page) {
@@ -164,6 +197,28 @@ export async function openRowActions(page: Page, label: string) {
       if (attempt === 1) throw error
     }
   }
+}
+
+/** Ledger/account rows open a detail sheet (no ⋯ menu). */
+export async function openRowDetail(page: Page, label: string | RegExp) {
+  // Transfer pairs share a description — act on the first matching row.
+  const row = tableRow(page, label).first()
+  await expect(row).toBeVisible()
+  await row.click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+}
+
+/** Detail-sheet Delete → confirm dialog. */
+export async function deleteFromDetailSheet(
+  page: Page,
+  confirmTitle: RegExp,
+) {
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Delete', exact: true })
+    .click()
+  await expect(page.getByRole('heading', { name: confirmTitle })).toBeVisible()
+  await page.getByRole('button', { name: 'Delete', exact: true }).click()
 }
 
 async function saveDownload(download: Download): Promise<string> {
@@ -230,6 +285,7 @@ export async function restoreBackupFromFile(
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await expect(ready).toBeVisible({ timeout: 60_000 })
   }
+  await waitForGateGone(page)
 
   const later = page.getByRole('button', { name: 'Later' })
   if (await later.isVisible().catch(() => false)) {

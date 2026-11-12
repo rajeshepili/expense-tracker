@@ -262,7 +262,11 @@ export type FirstLoadControllerOptions = {
 
 /**
  * Drives enter → loop (min cycles) → settle → exit.
- * Exit waits for bootReady AND minCycles; never cuts mid-shimmer.
+ * Exit waits for bootReady AND min dwell (cycles or time); never cuts mid-shimmer.
+ *
+ * Animation events align to the sheen when they fire, but timers are the source of
+ * truth — Chromium can paint an infinite background-position loop without delivering
+ * animationiteration, which previously left the gate up after boot forever.
  */
 export function useFirstLoadController({
   bootReady,
@@ -283,6 +287,9 @@ export function useFirstLoadController({
   const cyclesRef = useRef(0)
   const minCyclesRef = useRef(minCycles)
   minCyclesRef.current = minCycles
+  const cycleMsRef = useRef(cycleMs)
+  cycleMsRef.current = cycleMs
+  const loopStartedAtRef = useRef(0)
 
   const holdTimerRef = useRef<number | null>(null)
 
@@ -292,11 +299,25 @@ export function useFirstLoadController({
     setShowContent(true)
   }, [])
 
+  const beginSettle = useCallback(() => {
+    if (phaseRef.current !== 'loop') return
+    if (!bootReadyRef.current) return
+    beginHandoff()
+    setPhase('settle')
+  }, [beginHandoff])
+
+  const enterLoop = useCallback(() => {
+    if (phaseRef.current !== 'enter') return
+    loopStartedAtRef.current = performance.now()
+    setPhase('loop')
+  }, [])
+
   const replay = useCallback(() => {
     if (holdTimerRef.current != null) window.clearTimeout(holdTimerRef.current)
     holdTimerRef.current = null
     delete document.documentElement.dataset.firstLoad
     cyclesRef.current = 0
+    loopStartedAtRef.current = 0
     setCycles(0)
     setPhase('enter')
     setShowContent(false)
@@ -316,26 +337,57 @@ export function useFirstLoadController({
     return () => window.clearTimeout(t)
   }, [reduceMotion, bootReady, done, session, beginHandoff])
 
-  const onEnterComplete = useCallback(() => {
-    if (phaseRef.current !== 'enter') return
+  // Enter: animationend preferred; timer fallback if the event never arrives.
+  useEffect(() => {
     if (reduceMotion) return
-    setPhase('loop')
-  }, [reduceMotion])
+    if (phase !== 'enter') return
+    const t = window.setTimeout(enterLoop, FIRST_LOAD.enterMs + 80)
+    return () => window.clearTimeout(t)
+  }, [phase, reduceMotion, enterLoop, session])
+
+  const onEnterComplete = useCallback(() => {
+    if (reduceMotion) return
+    enterLoop()
+  }, [reduceMotion, enterLoop])
 
   const onCycle = useCallback(() => {
     if (phaseRef.current !== 'loop') return
     cyclesRef.current += 1
     const next = cyclesRef.current
     if (bootReadyRef.current && next >= minCyclesRef.current) {
-      // Mount app under an opaque veil so paint/layout settle before fade.
       setCycles(next)
-      beginHandoff()
-      setPhase('settle')
+      beginSettle()
       return
     }
     // Defer counter updates — sync setState every loop contended with the sweep.
     startTransition(() => setCycles(next))
-  }, [beginHandoff])
+  }, [beginSettle])
+
+  // Loop → settle: time + bootReady are authoritative; cycles only align early.
+  useEffect(() => {
+    if (reduceMotion) return
+    if (phase !== 'loop') return
+    if (!bootReady) return
+
+    const minMs = minCyclesRef.current * cycleMsRef.current
+    const elapsed = performance.now() - loopStartedAtRef.current
+    const remain = Math.max(0, minMs - elapsed)
+
+    const tryAdvance = () => {
+      if (phaseRef.current !== 'loop') return
+      if (!bootReadyRef.current) return
+      const waited = performance.now() - loopStartedAtRef.current
+      if (
+        cyclesRef.current >= minCyclesRef.current ||
+        waited >= minCyclesRef.current * cycleMsRef.current
+      ) {
+        beginSettle()
+      }
+    }
+
+    const t = window.setTimeout(tryAdvance, remain)
+    return () => window.clearTimeout(t)
+  }, [phase, bootReady, reduceMotion, beginSettle, session])
 
   // Settle no longer freezes the mark — shimmer keeps running; then collapse, then lift.
   useEffect(() => {
@@ -358,6 +410,17 @@ export function useFirstLoadController({
     }, Math.round(FIRST_LOAD.collapseMs * 0.7))
     return () => window.clearTimeout(t)
   }, [phase, reduceMotion])
+
+  // Exit → done: animationend preferred; timer so a missing event cannot trap the gate.
+  useEffect(() => {
+    if (phase !== 'exit') return
+    if (done) return
+    const ms = reduceMotion ? 280 : FIRST_LOAD.exitMs + 120
+    const t = window.setTimeout(() => {
+      setDone(true)
+    }, ms)
+    return () => window.clearTimeout(t)
+  }, [phase, reduceMotion, done, session])
 
   const onSettleComplete = useCallback(() => {
     // Kept for API compatibility; exit is timer-driven while shimmer continues.

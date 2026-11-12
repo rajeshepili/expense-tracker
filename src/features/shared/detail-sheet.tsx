@@ -78,5 +78,8 @@ export function closeDetailThen(
   action: () => void,
 ) {
   onOpenChange(false)
-  void Promise.resolve().then(action)
+  // Defer past the triggering click and Radix dismiss. A microtask (or even
+  // setTimeout 0) can still open the next dialog inside the same dismiss
+  // turn, so it flashes open and closes immediately.
+  window.setTimeout(action, 100)
 }

@@ -2,9 +2,10 @@ import { expect, test } from '@playwright/test'
 import {
   addLedgerExpense,
   completeOnboarding,
+  deleteFromDetailSheet,
   exportBackupToFile,
   goToNav,
-  openRowActions,
+  openRowDetail,
   restoreBackupFromFile,
   tableCell,
   writeTempFile,

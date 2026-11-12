@@ -3,6 +3,7 @@ import {
   completeOnboarding,
   dialogSave,
   goToNav,
+  openRowDetail,
   selectOption,
   tableCell,
 } from './helpers'
@@ -45,33 +46,32 @@ test.describe('ledger transfers @smoke', () => {
     await dialogSave(page)
 
     await expect(tableCell(page, 'E2E pocket move')).toHaveCount(2)
-    await expect(page.getByText('Transfer out').first()).toBeVisible()
-    await expect(page.getByText('Transfer in').first()).toBeVisible()
+    // Meta lead is "Transfer" (direction is in the signed amount).
+    await expect(page.getByText('Transfer').first()).toBeVisible()
 
-    // Two legs share the same description — act on the first row.
+    // Two legs share the same description — open the first row’s detail sheet.
+    await openRowDetail(page, /E2E pocket move/)
     await page
-      .locator('table')
-      .getByRole('button', { name: 'Actions for E2E pocket move' })
-      .first()
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Edit', exact: true })
       .click()
-    await expect(page.getByRole('menu')).toBeVisible()
-    await page.getByRole('menuitem', { name: 'Edit' }).click()
     await expect(
       page.getByRole('heading', { name: 'Edit transfer' }),
     ).toBeVisible()
+    await expect(page.locator('#ledger-description')).toHaveValue(
+      'E2E pocket move',
+    )
     await page.locator('#ledger-description').fill('E2E pocket move edited')
     await dialogSave(page)
 
     await expect(tableCell(page, 'E2E pocket move edited')).toHaveCount(2)
     await expect(tableCell(page, 'E2E pocket move')).toHaveCount(0)
 
+    await openRowDetail(page, /E2E pocket move edited/)
     await page
-      .locator('table')
-      .getByRole('button', { name: 'Actions for E2E pocket move edited' })
-      .first()
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Delete', exact: true })
       .click()
-    await expect(page.getByRole('menu')).toBeVisible()
-    await page.getByRole('menuitem', { name: 'Delete' }).click()
     await expect(
       page.getByRole('heading', { name: /Delete transfer/ }),
     ).toBeVisible()

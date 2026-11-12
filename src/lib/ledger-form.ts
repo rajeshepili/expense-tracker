@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { FundGoalOffer } from '#/features/savings/fund-goal-dialog'
 import type { LedgerTransaction, SavingsGoalRow } from '#/lib/types'
@@ -67,6 +68,12 @@ export function useLedgerForm({
   reset,
 }: UseLedgerFormArgs) {
   const queryClient = useQueryClient()
+  // Submit reads latest values — avoids stale closures if the composer’s
+  // onSubmit identity lags a controlled-input keystroke behind.
+  const formRef = useRef(form)
+  formRef.current = form
+  const editingRef = useRef(editing)
+  editingRef.current = editing
 
   const saveMutation = useOptimisticMutation<
     LedgerTransaction[],
@@ -273,53 +280,55 @@ export function useLedgerForm({
   }
 
   function submitForm() {
-    const amount = Number(form.amount)
+    const current = formRef.current
+    const editingRow = editingRef.current
+    const amount = Number(current.amount)
     if (!Number.isFinite(amount) || amount <= 0) {
       setSaveError('Enter a valid amount greater than 0')
       return
     }
 
-    if (form.type === 'transfer') {
-      if (!form.fromAccountId || !form.toAccountId) {
+    if (current.type === 'transfer') {
+      if (!current.fromAccountId || !current.toAccountId) {
         setSaveError('Choose from and to accounts')
         return
       }
-      if (form.fromAccountId === form.toAccountId) {
+      if (current.fromAccountId === current.toAccountId) {
         setSaveError('Choose two different accounts')
         return
       }
       transferMutation.mutate({
-        editingId: editing?.id ?? null,
-        fromAccountId: form.fromAccountId,
-        toAccountId: form.toAccountId,
+        editingId: editingRow?.id ?? null,
+        fromAccountId: current.fromAccountId,
+        toAccountId: current.toAccountId,
         amount,
-        date: form.date || todayIso(),
-        description: form.description.trim() || undefined,
+        date: current.date || todayIso(),
+        description: current.description.trim() || undefined,
       })
       return
     }
 
-    if (!form.description.trim()) {
+    if (!current.description.trim()) {
       setSaveError('Enter a description and a valid amount')
       return
     }
-    if (!form.categoryId) {
+    if (!current.categoryId) {
       setSaveError('Choose a category')
       return
     }
     const category = filteredCategories.find(
-      (item) => item.id === form.categoryId,
+      (item) => item.id === current.categoryId,
     )
-    const method = methods.find((item) => item.id === form.paymentMethodId)
+    const method = methods.find((item) => item.id === current.paymentMethodId)
     saveMutation.mutate({
-      editingId: editing?.id ?? null,
-      description: form.description.trim(),
+      editingId: editingRow?.id ?? null,
+      description: current.description.trim(),
       amount,
-      type: form.type,
-      date: form.date || todayIso(),
-      categoryId: form.categoryId,
+      type: current.type,
+      date: current.date || todayIso(),
+      categoryId: current.categoryId,
       categoryName: category?.name ?? 'Category',
-      paymentMethodId: form.paymentMethodId || null,
+      paymentMethodId: current.paymentMethodId || null,
       paymentMethodName: method?.name ?? null,
     })
   }

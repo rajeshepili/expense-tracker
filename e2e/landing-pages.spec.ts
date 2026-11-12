@@ -1,8 +1,15 @@
 import { expect, test } from '@playwright/test'
 
+/** Marketing composition needs VITE_SITE_MODE=marketing; app smoke uses app mode. */
+async function skipUnlessMarketing(page: import('@playwright/test').Page) {
+  await page.goto('/')
+  const mode = await page.locator('html').getAttribute('data-site-mode')
+  test.skip(mode !== 'marketing', 'Requires VITE_SITE_MODE=marketing')
+}
+
 test.describe('landing pages @smoke', () => {
   test('home is a single landing composition', async ({ page }) => {
-    await page.goto('/')
+    await skipUnlessMarketing(page)
     await expect(page.getByText('Pocketbook').first()).toBeVisible()
     await expect(
       page.getByRole('heading', {
@@ -16,6 +23,7 @@ test.describe('landing pages @smoke', () => {
   })
 
   test('/features redirects home', async ({ page }) => {
+    await skipUnlessMarketing(page)
     await page.goto('/features')
     await expect(page).toHaveURL(/\/(?:$|\?)/)
     await expect(
@@ -26,6 +34,7 @@ test.describe('landing pages @smoke', () => {
   })
 
   test('/privacy redirects home', async ({ page }) => {
+    await skipUnlessMarketing(page)
     await page.goto('/privacy')
     await expect(page).toHaveURL(/\/(?:$|\?)/)
     await expect(
@@ -36,6 +45,7 @@ test.describe('landing pages @smoke', () => {
   })
 
   test('unknown route shows branded 404', async ({ page }) => {
+    await skipUnlessMarketing(page)
     await page.goto('/no-such-page')
     await expect(
       page.getByRole('heading', { name: /page not found/i }),

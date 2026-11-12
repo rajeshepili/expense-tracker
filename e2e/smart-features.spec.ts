@@ -12,13 +12,19 @@ test.describe('local smart features @smoke', () => {
     await completeOnboarding(page)
     await goToNav(page, 'Bills')
     await page
-      .getByRole('button', { name: 'Add recurring N', exact: true })
+      .getByRole('button', { name: /Add bill/i })
+      .first()
       .click()
     await expect(
       page.getByRole('heading', { name: /Add recurring/i }),
     ).toBeVisible()
     await page.getByLabel(/^Name$/i).fill('Rent')
     await page.getByLabel(/^Amount$/i).fill('100')
+    // Empty next-date leaves the bill out of “upcoming this month”.
+    const next = new Date()
+    next.setDate(Math.min(next.getDate() + 3, 28))
+    const nextIso = next.toISOString().slice(0, 10)
+    await page.locator('#recurring-next').fill(nextIso)
     const categoryTrigger = page.locator('#recurring-category')
     if (
       (await categoryTrigger.count()) > 0 &&
@@ -28,10 +34,10 @@ test.describe('local smart features @smoke', () => {
     }
     await dialogSave(page)
     await goToNav(page, 'Overview')
-    await expect(
-      page.getByRole('heading', { name: /Month outlook/i }),
-    ).toBeVisible()
-    await expect(page.getByText(/At month end/i)).toBeVisible()
+    // CardTitle is a div, not a heading.
+    const outlook = page.locator('[data-tour="month-outlook"]')
+    await expect(outlook.getByText('Month outlook')).toBeVisible()
+    await expect(outlook.getByText(/At month end/i)).toBeVisible()
   })
 
   test('year view renders after adding a transaction', async ({ page }) => {
@@ -46,9 +52,8 @@ test.describe('local smart features @smoke', () => {
     await expect(
       page.getByRole('heading', { name: /Year \d{4}/ }),
     ).toBeVisible()
-    await expect(
-      page.getByRole('img', { name: /Monthly income and expenses/i }),
-    ).toBeVisible()
+    await expect(page.getByText('Monthly flow')).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Year summary' })).toBeVisible()
     await expect(
       page.getByRole('heading', { name: 'Top categories' }),
     ).toBeVisible()
@@ -58,7 +63,7 @@ test.describe('local smart features @smoke', () => {
     await completeOnboarding(page)
     await goToNav(page, 'Bills')
     await page
-      .getByRole('button', { name: /Add recurring/i })
+      .getByRole('button', { name: /Add bill|Add Recurring/i })
       .first()
       .click()
     await expect(page.getByRole('combobox', { name: 'Type' })).toBeVisible()

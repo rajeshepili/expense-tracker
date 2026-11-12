@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test'
 import {
   completeOnboarding,
+  deleteFromDetailSheet,
   dialogSave,
   exportBackupToFile,
   goToNav,
-  openRowActions,
+  openRowDetail,
   selectOption,
   tableCell,
-  tableRow,
 } from './helpers'
 
 test.describe('critical path smoke @smoke', () => {
@@ -41,24 +41,28 @@ test.describe('critical path smoke @smoke', () => {
     ).toBeHidden()
 
     // ——— Edit transaction ———
-    await openRowActions(page, 'Smoke coffee')
-    await page.getByRole('menuitem', { name: 'Edit' }).click()
+    await openRowDetail(page, /Smoke coffee/)
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Edit', exact: true })
+      .click()
     await expect(
       page.getByRole('heading', { name: 'Edit transaction' }),
     ).toBeVisible()
-    await page.locator('#ledger-description').fill('Smoke latte')
-    await page.locator('#ledger-amount').fill('5.25')
+    const description = page.locator('#ledger-description')
+    await expect(description).toHaveValue('Smoke coffee')
+    // Clear + type so React controlled state tracks (fill alone can desync).
+    await description.click()
+    await description.press('ControlOrMeta+A')
+    await description.pressSequentially('Smoke latte', { delay: 15 })
+    await expect(description).toHaveValue('Smoke latte')
     await dialogSave(page)
-    await expect(tableCell(page, 'Smoke latte')).toBeVisible()
-    await expect(tableCell(page, 'Smoke coffee')).toHaveCount(0)
+    await expect(page.getByRole('row', { name: /Smoke latte/ })).toBeVisible()
+    await expect(page.getByRole('row', { name: /Smoke coffee/ })).toHaveCount(0)
 
     // ——— Delete transaction ———
-    await openRowActions(page, 'Smoke latte')
-    await page.getByRole('menuitem', { name: 'Delete' }).click()
-    await expect(
-      page.getByRole('heading', { name: /Delete “Smoke latte”/ }),
-    ).toBeVisible()
-    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    await openRowDetail(page, /Smoke latte/)
+    await deleteFromDetailSheet(page, /Delete “Smoke latte”/)
     await expect(tableCell(page, 'Smoke latte')).toHaveCount(0)
     // Empty fill is outside <table> when there are no rows (virtualized list).
     await expect(
@@ -72,7 +76,8 @@ test.describe('critical path smoke @smoke', () => {
     await expect(page.getByRole('heading', { name: 'Bills' })).toBeVisible()
 
     await page
-      .getByRole('button', { name: 'Add recurring N', exact: true })
+      .getByRole('button', { name: /Add bill/i })
+      .first()
       .click()
     await expect(
       page.getByRole('heading', { name: 'Add recurring expense' }),
@@ -88,13 +93,13 @@ test.describe('critical path smoke @smoke', () => {
     }
     await dialogSave(page)
 
-    const billRow = tableRow(page, /Smoke internet/)
-    await expect(billRow).toBeVisible()
-
-    await billRow.getByRole('button', { name: 'Record', exact: true }).click()
-    await expect(billRow).toBeVisible()
+    // Bills are sectioned cards (not a table).
+    const bill = page.getByRole('button', { name: /Smoke internet/ })
+    await expect(bill).toBeVisible()
+    await bill.getByRole('button', { name: 'Record', exact: true }).click()
+    await expect(bill).toBeVisible()
     await expect(
-      billRow.getByRole('button', { name: 'Record', exact: true }),
+      bill.getByRole('button', { name: 'Record', exact: true }),
     ).toHaveCount(0)
 
     // ——— Backup export ———

@@ -272,6 +272,7 @@ export function LedgerScreen() {
             onSubmit={submitForm}
           >
             <LedgerFormFields
+              key={editing?.id ?? `new-${form.type}`}
               form={form}
               setForm={setForm}
               setType={setType}

@@ -154,7 +154,14 @@ export async function updateTransaction(id: string, input: TransactionInput) {
     if (existing?.type === 'transfer' || existing?.transferId) {
       throw new ValidationError('Use transfer APIs to update transfers')
     }
-    await db.update(transactions).set(values).where(eq(transactions.id, id))
+    const updated = await db
+      .update(transactions)
+      .set(values)
+      .where(eq(transactions.id, id))
+      .returning({ id: transactions.id })
+    if (updated.length === 0) {
+      throw new ValidationError('Transaction not found')
+    }
     return { success: true }
   })
 }

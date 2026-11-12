@@ -3,9 +3,12 @@ import {
   completeOnboarding,
   dialogSave,
   goToNav,
+  deleteFromDetailSheet,
   openRowActions,
+  openRowDetail,
   selectOption,
   tableCell,
+  tableRow,
 } from './helpers'
 
 test.describe('categories smoke @smoke', () => {
@@ -55,12 +58,9 @@ test.describe('categories smoke @smoke', () => {
     await dialogSave(page)
     await expect(tableCell(page, 'Smoke Wallet')).toBeVisible()
 
-    await openRowActions(page, 'Smoke Wallet')
-    await page.getByRole('menuitem', { name: 'Delete' }).click()
-    await expect(
-      page.getByRole('heading', { name: /Delete “Smoke Wallet”/ }),
-    ).toBeVisible()
-    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    // Accounts open a detail sheet (no row ⋯ menu).
+    await openRowDetail(page, /Smoke Wallet/)
+    await deleteFromDetailSheet(page, /Delete “Smoke Wallet”/)
     await expect(tableCell(page, 'Smoke Wallet')).toHaveCount(0)
   })
 })
