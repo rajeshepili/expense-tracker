@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { Filter, Search } from 'lucide-react'
-import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import {
   Select,
@@ -24,7 +32,7 @@ export type LedgerFilterChip = {
   outline?: boolean
 }
 
-type LedgerFiltersProps = {
+export type LedgerFiltersProps = {
   filter: 'all' | TransactionType
   onFilterChange: (value: 'all' | TransactionType) => void
   query: string
@@ -35,11 +43,14 @@ type LedgerFiltersProps = {
   methods: NamedOption[]
   onCategoryChange: (categoryId: string | null) => void
   onMethodChange: (methodId: string | null) => void
-  chips: LedgerFilterChip[]
-  onClearFilters: () => void
-  onClearChip?: (key: string) => void
 }
 
+/**
+ * Filter controls for the ledger. Active-filter chips are rendered by the
+ * parent (header / reserved strip) so selecting a filter never shifts the
+ * table. On compact, category/account pickers live in a popover from the
+ * filter button instead of an inline expanding row.
+ */
 export function LedgerFilters({
   filter,
   onFilterChange,
@@ -51,14 +62,10 @@ export function LedgerFilters({
   methods,
   onCategoryChange,
   onMethodChange,
-  chips,
-  onClearFilters,
-  onClearChip,
 }: LedgerFiltersProps) {
   const isCompact = useIsCompact()
   const hasAdvanced = Boolean(categoryFilter || methodFilter)
   const [advancedOpen, setAdvancedOpen] = useState(hasAdvanced)
-  const showAdvanced = !isCompact || advancedOpen || hasAdvanced
 
   return (
     <div className="flex shrink-0 flex-col gap-2 sm:gap-3">
@@ -105,110 +112,172 @@ export function LedgerFilters({
             />
           </div>
           {isCompact ? (
-            <Button
-              type="button"
-              variant={showAdvanced ? 'secondary' : 'outline'}
-              size="sm"
-              className="min-h-11 min-w-11 shrink-0 touch-manipulation pressable"
-              aria-expanded={showAdvanced}
-              aria-label={showAdvanced ? 'Hide filters' : 'Show filters'}
-              onClick={() => setAdvancedOpen((open) => !open)}
+            <DropdownMenu
+              open={advancedOpen}
+              onOpenChange={setAdvancedOpen}
             >
-              <Filter aria-hidden />
-            </Button>
-          ) : null}
-        </div>
-      </div>
-      <div className={cn('grid grid-cols-2 gap-2', !showAdvanced && 'hidden')}>
-        <Select
-          value={categoryFilter || '__all__'}
-          onValueChange={(value) =>
-            onCategoryChange(value === '__all__' ? null : value)
-          }
-        >
-          <SelectTrigger
-            className="min-h-11 w-full md:min-h-9"
-            aria-label="Filter category"
-          >
-            <SelectValue placeholder="All categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="__all__">All categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        <Select
-          value={methodFilter || '__all__'}
-          onValueChange={(value) =>
-            onMethodChange(value === '__all__' ? null : value)
-          }
-        >
-          <SelectTrigger
-            className="min-h-11 w-full md:min-h-9"
-            aria-label="Filter account"
-          >
-            <SelectValue placeholder="All accounts" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="__all__">All accounts</SelectItem>
-              {methods.map((method) => (
-                <SelectItem key={method.id} value={method.id}>
-                  {method.name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
-      {chips.length > 0 ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {chips.map((chip) =>
-            onClearChip ? (
-              <Button
-                key={chip.key}
-                type="button"
-                variant={chip.outline ? 'outline' : 'secondary'}
-                size="sm"
-                className={cn(
-                  'h-9 min-h-9 gap-1 px-2 text-xs touch-manipulation md:h-7 md:min-h-7',
-                  chip.key === 'type' && 'capitalize',
-                )}
-                aria-label={`Clear ${chip.label} filter`}
-                onClick={() => onClearChip(chip.key)}
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant={hasAdvanced ? 'secondary' : 'outline'}
+                  size="sm"
+                  className="min-h-11 min-w-11 shrink-0 touch-manipulation pressable"
+                  aria-label={
+                    advancedOpen ? 'Hide category and account filters' : 'Show category and account filters'
+                  }
+                >
+                  <Filter aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-64"
+                onCloseAutoFocus={(e) => e.preventDefault()}
               >
-                {chip.label}
-                <span aria-hidden className="text-muted-foreground">
-                  ×
-                </span>
-              </Button>
-            ) : (
-              <Badge
-                key={chip.key}
-                variant={chip.outline ? 'outline' : 'secondary'}
-                className={chip.key === 'type' ? 'capitalize' : undefined}
-              >
-                {chip.label}
-              </Badge>
-            ),
+                <DropdownMenuLabel>Category</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={categoryFilter ?? '__all__'}
+                  onValueChange={(v) =>
+                    onCategoryChange(v === '__all__' ? null : v)
+                  }
+                >
+                  <DropdownMenuRadioItem value="__all__">
+                    All categories
+                  </DropdownMenuRadioItem>
+                  {categories.map((category) => (
+                    <DropdownMenuRadioItem key={category.id} value={category.id}>
+                      {category.name}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Account</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={methodFilter ?? '__all__'}
+                  onValueChange={(v) =>
+                    onMethodChange(v === '__all__' ? null : v)
+                  }
+                >
+                  <DropdownMenuRadioItem value="__all__">
+                    All accounts
+                  </DropdownMenuRadioItem>
+                  {methods.map((method) => (
+                    <DropdownMenuRadioItem key={method.id} value={method.id}>
+                      {method.name}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="grid flex-1 grid-cols-2 gap-2">
+              <CategoryAccountSelect
+                label="Filter category"
+                placeholder="All categories"
+                value={categoryFilter}
+                options={categories}
+                onChange={onCategoryChange}
+              />
+              <CategoryAccountSelect
+                label="Filter account"
+                placeholder="All accounts"
+                value={methodFilter}
+                options={methods}
+                onChange={onMethodChange}
+              />
+            </div>
           )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-9 min-h-9 px-2 text-xs touch-manipulation md:h-7 md:min-h-7"
-            onClick={onClearFilters}
-          >
-            Clear filters
-          </Button>
         </div>
-      ) : null}
+      </div>
+    </div>
+  )
+}
+
+type SelectProps = {
+  label: string
+  placeholder: string
+  value?: string
+  options: NamedOption[]
+  onChange: (id: string | null) => void
+}
+
+function CategoryAccountSelect({
+  label,
+  placeholder,
+  value,
+  options,
+  onChange,
+}: SelectProps) {
+  return (
+    <Select
+      value={value || '__all__'}
+      onValueChange={(v) => onChange(v === '__all__' ? null : v)}
+    >
+      <SelectTrigger className="min-h-11 w-full md:min-h-9" aria-label={label}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          <SelectItem value="__all__">{placeholder}</SelectItem>
+          {options.map((o) => (
+            <SelectItem key={o.id} value={o.id}>
+              {o.name}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  )
+}
+
+export type LedgerFilterChipsProps = {
+  chips: LedgerFilterChip[]
+  onClearFilters: () => void
+  onClearChip: (key: string) => void
+}
+
+/** Active-filter chips — always mounted by the parent with reserved height. */
+export function LedgerFilterChips({
+  chips,
+  onClearFilters,
+  onClearChip,
+}: LedgerFilterChipsProps) {
+  return (
+    <div
+      className={cn(
+        'flex h-8 shrink-0 items-center gap-2 overflow-x-auto scrollbar-none',
+        chips.length === 0 && 'invisible',
+      )}
+      aria-hidden={chips.length === 0}
+    >
+      {chips.map((chip) => (
+        <Button
+          key={chip.key}
+          type="button"
+          variant={chip.outline ? 'outline' : 'secondary'}
+          size="sm"
+          className={cn(
+            'h-7 min-h-7 shrink-0 gap-1 px-2 text-xs touch-manipulation',
+            chip.key === 'type' && 'capitalize',
+          )}
+          aria-label={`Clear ${chip.label} filter`}
+          onClick={() => onClearChip(chip.key)}
+        >
+          {chip.label}
+          <span aria-hidden className="text-muted-foreground">
+            ×
+          </span>
+        </Button>
+      ))}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-7 min-h-7 shrink-0 px-2 text-xs touch-manipulation"
+        onClick={onClearFilters}
+      >
+        Clear filters
+      </Button>
     </div>
   )
 }

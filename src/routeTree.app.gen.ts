@@ -16,6 +16,7 @@ import { Route as NotFoundRouteImport } from './routes/app/not-found'
 import { Route as RecurringRouteImport } from './routes/app/recurring'
 import { Route as SavingsRouteImport } from './routes/app/savings'
 import { Route as YearRouteImport } from './routes/app/year'
+import { Route as DevLoadersRouteImport } from './routes/app/dev/loaders'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +53,11 @@ const YearRoute = YearRouteImport.update({
   path: '/year',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevLoadersRoute = DevLoadersRouteImport.update({
+  id: '/dev/loaders',
+  path: '/dev/loaders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/recurring': typeof RecurringRoute
   '/savings': typeof SavingsRoute
   '/year': typeof YearRoute
+  '/dev/loaders': typeof DevLoadersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/recurring': typeof RecurringRoute
   '/savings': typeof SavingsRoute
   '/year': typeof YearRoute
+  '/dev/loaders': typeof DevLoadersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/recurring': typeof RecurringRoute
   '/savings': typeof SavingsRoute
   '/year': typeof YearRoute
+  '/dev/loaders': typeof DevLoadersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/recurring'
     | '/savings'
     | '/year'
+    | '/dev/loaders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/recurring'
     | '/savings'
     | '/year'
+    | '/dev/loaders'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/recurring'
     | '/savings'
     | '/year'
+    | '/dev/loaders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   RecurringRoute: typeof RecurringRoute
   SavingsRoute: typeof SavingsRoute
   YearRoute: typeof YearRoute
+  DevLoadersRoute: typeof DevLoadersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof YearRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/loaders': {
+      id: '/dev/loaders'
+      path: '/dev/loaders'
+      fullPath: '/dev/loaders'
+      preLoaderRoute: typeof DevLoadersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,16 +203,8 @@ const rootRouteChildren: RootRouteChildren = {
   RecurringRoute: RecurringRoute,
   SavingsRoute: SavingsRoute,
   YearRoute: YearRoute,
+  DevLoadersRoute: DevLoadersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

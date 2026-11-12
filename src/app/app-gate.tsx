@@ -2,7 +2,10 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '#/components/ui/button'
-import { Spinner } from '#/components/ui/spinner'
+import {
+  FirstLoadScreen,
+  useFirstLoadController,
+} from '#/components/ui/loader'
 import { APP_NAME } from '#/lib/brand'
 import { checkModeConsistency, redirectForCurrentRoute } from '#/lib/site-mode'
 import { queryKeys } from '#/lib/query/keys'
@@ -24,9 +27,18 @@ function messageOf(error: unknown) {
     : 'Something went wrong while starting up.'
 }
 
+function gateCaption(status: GateState['status']) {
+  if (status === 'onboarding') return 'Almost ready…'
+  if (status === 'ready') return 'Ready'
+  return 'Loading…'
+}
+
 export function AppGate({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const [state, setState] = useState<GateState>({ status: 'loading' })
+  const bootReady =
+    state.status === 'ready' || state.status === 'onboarding'
+  const firstLoad = useFirstLoadController({ bootReady })
 
   // Client redirect fallback (previews / portless).
   useEffect(() => {
@@ -125,39 +137,6 @@ export function AppGate({ children }: { children: ReactNode }) {
     }
   }, [state.status])
 
-  if (state.status === 'loading') {
-    return (
-      <main
-        id="main"
-        className="flex h-dvh min-h-0 flex-col overflow-hidden"
-        aria-busy="true"
-        aria-live="polite"
-        aria-label={`Preparing ${APP_NAME}`}
-      >
-        <div
-          className="z-10 hidden h-12 shrink-0 border-b border-border/80 bg-background/80 backdrop-blur-md md:block"
-          aria-hidden
-        />
-        <div
-          className="z-10 h-12 shrink-0 border-b border-border/80 bg-background/80 pt-[var(--safe-top)] backdrop-blur-md md:hidden"
-          aria-hidden
-        />
-        <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-          <p className="brand-wordmark text-base font-semibold tracking-tight text-foreground">
-            {APP_NAME}
-          </p>
-          <Spinner className="size-5 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            Loading…
-          </p>
-          <p className="max-w-xs text-xs text-muted-foreground/80">
-            Stored in this browser.
-          </p>
-        </div>
-      </main>
-    )
-  }
-
   if (state.status === 'mode-mismatch') {
     return (
       <main
@@ -209,8 +188,8 @@ export function AppGate({ children }: { children: ReactNode }) {
     )
   }
 
-  if (state.status === 'onboarding') {
-    return (
+  const appBody =
+    state.status === 'onboarding' ? (
       <main id="main" className="scroll-panel h-dvh">
         <Suspense
           fallback={
@@ -244,8 +223,28 @@ export function AppGate({ children }: { children: ReactNode }) {
           />
         </Suspense>
       </main>
-    )
-  }
+    ) : state.status === 'ready' ? (
+      children
+    ) : null
 
-  return children
+  // Stable tree once content mounts: never unwrap/remount (avoids page-enter flicker).
+  // Gate is a physical sheet that lifts up over the already-painted app.
+  return (
+    <>
+      {(firstLoad.showContent || firstLoad.done) && appBody}
+      {!firstLoad.done ? (
+        <FirstLoadScreen
+          key={firstLoad.session}
+          phase={firstLoad.phase}
+          cycleMs={firstLoad.cycleMs}
+          caption={gateCaption(state.status)}
+          overlay={firstLoad.showContent}
+          onEnterComplete={firstLoad.onEnterComplete}
+          onCycle={firstLoad.onCycle}
+          onSettleComplete={firstLoad.onSettleComplete}
+          onExitComplete={firstLoad.onExitComplete}
+        />
+      ) : null}
+    </>
+  )
 }
